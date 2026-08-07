@@ -2,10 +2,13 @@
 -- No migration tool. This file is the source of truth.
 --
 -- Two very unequal categories:
---   snapshots ............... IRREPLACEABLE. Append-only. Never dropped, never lost.
---   everything else ......... derived. See db/reset-derived.sql for drop + recompute.
+--   snapshots, consent_events ... IRREPLACEABLE. Append-only. Never dropped.
+--   everything else ............. derived. See db/reset-derived.sql.
 --
--- The one discipline to hold: never write a destructive command against snapshots.
+-- The discipline to hold: never write a destructive command against either of
+-- the two irreplaceable tables. snapshots cannot be re-fetched (the API only
+-- returns current state); consent_events cannot be re-derived at all, because
+-- it records what people asked for.
 
 -- ---------------------------------------------------------------------------
 -- Source of truth. Append-only, never updated.
@@ -37,6 +40,29 @@ create table if not exists snapshots (
 create index if not exists snapshots_slug_day_idx on snapshots (startup_slug, captured_on desc);
 create index if not exists snapshots_founder_idx  on snapshots (founder_handle);
 create index if not exists snapshots_day_idx      on snapshots (captured_on desc);
+
+-- ---------------------------------------------------------------------------
+-- The second source of truth: what people asked for.
+--
+-- `founders.opted_out_at` and `founders.claimed_at` are the only two values in
+-- the whole schema that no amount of crawling can reconstruct. Keeping them
+-- only on a derived table means one `--reset` silently republishes every sheet
+-- somebody asked to remove. So the events live here, append-only, and the
+-- compute step replays them onto founders.
+-- ---------------------------------------------------------------------------
+create table if not exists consent_events (
+  id           bigserial primary key,
+  handle       text        not null,
+  action       text        not null check (action in ('opt_out', 'claim')),
+  occurred_at  timestamptz not null default now(),
+  -- A salted hash, never a raw IP. This table records people exercising a
+  -- privacy right; it must not become a log of who they are. The hash exists
+  -- for exactly one purpose: rate limiting, and spotting a mass wipe.
+  ip_hash      text,
+  user_agent   text
+);
+create index if not exists consent_events_handle_idx on consent_events (handle, occurred_at desc);
+create index if not exists consent_events_ip_idx     on consent_events (ip_hash, occurred_at desc);
 
 -- ---------------------------------------------------------------------------
 -- Rebuildable from snapshots.

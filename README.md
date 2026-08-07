@@ -134,7 +134,7 @@ Three things about the TrustMRR API that its docs don't say, measured on 2026-08
 
 ### Two ground rules, never to be broken
 
-1. **Never write a destructive command that touches `snapshots`.** It is the only irreplaceable table: the API returns current state only, and a lost day of history never comes back. Everything else is derived and recomputes in seconds.
+1. **Never write a destructive command that touches `snapshots` or `consent_events`.** They are the two irreplaceable tables. The API returns current state only, so a lost day of history never comes back; and `consent_events` records what people asked for, so dropping it republishes every sheet somebody asked to remove. Everything else is derived and recomputes in seconds. `scripts/apply-schema.ts` refuses to run a reset that mentions either.
 2. **Never import `supabase-js`.** Supabase is only a Postgres host here. With `postgres.js` on the raw connection string, a `pg_dump` is enough to leave.
 
 ### Environment variables

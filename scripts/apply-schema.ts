@@ -11,6 +11,13 @@ import { readFile } from 'node:fs/promises'
 import { join } from 'node:path'
 import { directDb } from '../lib/db'
 
+/**
+ * The two tables nothing can rebuild. `snapshots` because the API only returns
+ * current state; `consent_events` because it records what people asked for.
+ * A `--reset` that touches either is a bug, not a choice.
+ */
+const IRREPLACEABLE = ['snapshots', 'consent_events'] as const
+
 async function main() {
   const reset = process.argv.includes('--reset')
   const sql = directDb()
@@ -19,8 +26,11 @@ async function main() {
   try {
     if (reset) {
       const drop = await readFile(join(dir, 'reset-derived.sql'), 'utf8')
-      if (/\bsnapshots\b/.test(stripComments(drop))) {
-        throw new Error('reset-derived.sql touches snapshots — refusing to run.')
+      const statements = stripComments(drop)
+      for (const table of IRREPLACEABLE) {
+        if (new RegExp(`\\b${table}\\b`).test(statements)) {
+          throw new Error(`reset-derived.sql touches ${table} — refusing to run.`)
+        }
       }
       await sql.unsafe(drop)
       console.log('✓ derived tables dropped')

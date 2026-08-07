@@ -1,4 +1,5 @@
 import { revalidatePath } from 'next/cache'
+import { clientIp, hashIp, OPT_OUT_MAX_PER_HOUR } from '@/lib/consent'
 import { db } from '@/lib/db'
 
 /**
@@ -6,11 +7,11 @@ import { db } from '@/lib/db'
  *
  * No account, no email, applied immediately. That is deliberate: we crawl the
  * numbers of people who never asked for any of this, so leaving must cost less
- * than arriving.
+ * than arriving. Nothing below may add a step to that.
  *
- * Accepted consequence: anyone can remove anyone's sheet. The worst case is a
- * sheet disappearing when its owner wanted it — they ask for it back. The
- * opposite failure, a sheet that cannot be removed, is far worse.
+ * Every request is written to consent_events first, refused ones included —
+ * that table is both the audit trail and the rate limiter, so a mass wipe is
+ * visible and reversible instead of silent.
  */
 export const runtime = 'nodejs'
 
@@ -25,6 +26,30 @@ export async function POST(request: Request) {
   }
 
   const sql = db()
+  const ipHash = hashIp(clientIp(request))
+
+  // Log the attempt before deciding on it: a refused burst is exactly the
+  // signal we want on record.
+  await sql`
+    insert into consent_events (handle, action, ip_hash, user_agent)
+    values (${handle}, 'opt_out', ${ipHash}, ${request.headers.get('user-agent')})
+  `
+
+  if (ipHash) {
+    const [recent] = await sql<{ n: number }[]>`
+      select count(*)::int as n from consent_events
+      where ip_hash = ${ipHash}
+        and action = 'opt_out'
+        and occurred_at > now() - interval '1 hour'
+    `
+    if ((recent?.n ?? 0) > OPT_OUT_MAX_PER_HOUR) {
+      return Response.json(
+        { error: 'too many removal requests from this address, try again later' },
+        { status: 429 },
+      )
+    }
+  }
+
   const result = await sql`
     update founders set opted_out_at = now()
     where handle = ${handle} and opted_out_at is null

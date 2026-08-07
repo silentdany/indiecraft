@@ -169,6 +169,26 @@ export async function computeAll(sql: postgres.Sql): Promise<ComputeReport> {
         on conflict do nothing
       `
     }
+
+    // Last, and load-bearing: replay what people asked for on top of what we
+    // crawled. opted_out_at and claimed_at are the only two values here that no
+    // amount of crawling can reconstruct, and the insert above resets neither —
+    // but a `schema:apply --reset` drops the whole founders table. This replay
+    // is what makes that safe. Remove it and the next reset silently
+    // republishes every sheet somebody asked to remove.
+    await tx`
+      update founders f set
+        opted_out_at = e.opted_out_at,
+        claimed_at   = e.claimed_at
+      from (
+        select handle,
+               min(occurred_at) filter (where action = 'opt_out') as opted_out_at,
+               min(occurred_at) filter (where action = 'claim')   as claimed_at
+        from consent_events
+        group by handle
+      ) e
+      where e.handle = f.handle
+    `
   })
 
   return {

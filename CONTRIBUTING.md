@@ -32,7 +32,7 @@ To correct a number: it comes from TrustMRR, so that's where it needs correcting
 
 ## Two non-negotiable technical rules
 
-1. **No destructive command against `snapshots`.** It is the only irreplaceable table in the project: the API returns current state only, and a lost day of history never comes back. Everything else is derived.
+1. **No destructive command against `snapshots` or `consent_events`.** They are the only irreplaceable tables: the API returns current state only, so lost history never comes back, and `consent_events` records what people asked for. Everything else is derived. Dropping `founders` is safe *only* because the compute step replays consent onto it — if you touch that replay, you turn a reset into a privacy incident.
 2. **No `supabase-js` import.** Supabase is only a Postgres host. The day we need to leave, a `pg_dump` has to be enough.
 
 ## Getting started
