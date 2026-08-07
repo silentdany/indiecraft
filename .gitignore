@@ -1,0 +1,19 @@
+node_modules/
+.next/
+out/
+build/
+.vercel/
+*.tsbuildinfo
+next-env.d.ts
+
+# Secrets: nothing in the repo that looks like a key.
+.env
+.env.*
+!.env.example
+
+.DS_Store
+*.log
+*:Zone.Identifier
+
+# Internal strategy doc, kept out of the public repo.
+SPEC-v1.md

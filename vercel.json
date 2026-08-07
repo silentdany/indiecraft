@@ -1,0 +1,10 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "crons": [
+    {
+      "//": "Safety net: the GitHub Actions crawl already triggers the compute at the end of its run. This cron catches the case where the run died before that call.",
+      "path": "/api/cron/compute",
+      "schedule": "30 3 * * *"
+    }
+  ]
+}

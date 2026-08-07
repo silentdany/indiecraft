@@ -1,0 +1,62 @@
+name: crawl
+
+# A full crawl takes ~50 minutes (840 sheets at 3.5s). A Vercel serverless
+# function's ceiling is measured in minutes, not tens of minutes: the crawler
+# cannot be a Vercel Cron. GitHub Actions gives six hours.
+#
+# Every day without a collection is a day of history permanently lost.
+
+on:
+  schedule:
+    - cron: '0 2 * * *' # 02:00 UTC, daily
+  workflow_dispatch:
+    inputs:
+      limit:
+        description: 'Number of startups (empty = all)'
+        required: false
+      dump_slugs:
+        description: 'Dump the channel / techStack vocabularies'
+        type: boolean
+        default: false
+
+concurrency:
+  group: crawl
+  cancel-in-progress: false
+
+jobs:
+  crawl:
+    runs-on: ubuntu-latest
+    timeout-minutes: 180
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Apply schema
+        run: pnpm schema:apply
+        env:
+          DIRECT_URL: ${{ secrets.DIRECT_URL }}
+
+      - name: Crawl
+        # Inputs go through the environment, never through interpolation into
+        # `run:` — otherwise an input value is a command injection.
+        run: |
+          args=()
+          if [ -n "${LIMIT:-}" ]; then args+=(--limit "$LIMIT"); fi
+          if [ "${DUMP_SLUGS:-}" = "true" ]; then args+=(--dump-slugs); fi
+          pnpm exec tsx scripts/crawl.ts "${args[@]}"
+        env:
+          LIMIT: ${{ inputs.limit }}
+          DUMP_SLUGS: ${{ inputs.dump_slugs }}
+          TRUSTMRR_API_KEY: ${{ secrets.TRUSTMRR_API_KEY }}
+          # Session pooler: long-lived process, IPv4-reachable from the runner.
+          DIRECT_URL: ${{ secrets.DIRECT_URL }}
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+          NEXT_PUBLIC_SITE_URL: ${{ vars.SITE_URL }}

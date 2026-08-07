@@ -1,0 +1,180 @@
+/*
+ * Design system.
+ *
+ * No Blizzard assets. Recognition comes from four purely structural elements:
+ * a warm black, a double gold frame with corner brackets, rarity colors on
+ * borders, and a Roman serif on numbers and titles.
+ *
+ * One non-negotiable rendering rule: EVERYTHING IS FLAT.
+ * No gradients, no shadows, no glows. This is not a compromise: Satori
+ * (@vercel/og) only supports this subset, and it is what guarantees the shared
+ * thumbnail and the page look like the same product.
+ */
+
+/* Cinzel lives in the repo and is never fetched at runtime: slow, fragile, and
+   it breaks on edge. Latin subset only. */
+@font-face {
+  font-family: "Cinzel";
+  src: url("/fonts/Cinzel-Regular.ttf") format("truetype");
+  font-weight: 400;
+  font-display: block;
+}
+@font-face {
+  font-family: "Cinzel";
+  src: url("/fonts/Cinzel-Medium.ttf") format("truetype");
+  font-weight: 500;
+  font-display: block;
+}
+
+:root {
+  --ic-bg: #0d0b09;
+  --ic-surface: #16120d;
+  --ic-line: #241c10;
+  --ic-line-2: #352913;
+  --ic-frame: #6b552a;
+  --ic-gold: #c8a24a;
+  --ic-gold-bright: #f0c860;
+  --ic-text: #e8dcc0;
+  --ic-text-muted: #9a8f78;
+  --ic-positive: #8fd14f;
+
+  --ic-serif: "Cinzel", "Times New Roman", serif;
+  --ic-sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+
+  /* No light mode. The interface never inverts. */
+  color-scheme: dark;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  background: var(--ic-bg);
+  color: var(--ic-text);
+  font-family: var(--ic-sans);
+  font-size: 15px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+
+a {
+  color: var(--ic-gold);
+  text-decoration: none;
+}
+a:hover {
+  color: var(--ic-gold-bright);
+}
+
+/* Cinzel on titles and numbers only.
+   Never on body copy: unreadable at small sizes. */
+.serif {
+  font-family: var(--ic-serif);
+  font-weight: 500;
+  letter-spacing: 0.02em;
+}
+
+.page {
+  max-width: 880px;
+  margin: 0 auto;
+  padding: 32px 20px 80px;
+}
+
+/* --- The frame: outer border, inner border at 5px, 9px corner brackets ----- */
+
+.frame {
+  position: relative;
+  border: 1px solid var(--ic-frame);
+  background: var(--ic-bg);
+  padding: 18px;
+}
+.frame::before {
+  content: "";
+  position: absolute;
+  inset: 5px;
+  border: 1px solid var(--ic-gold);
+  pointer-events: none;
+}
+
+.corner {
+  position: absolute;
+  width: 9px;
+  height: 9px;
+  border: 0 solid var(--ic-gold);
+  pointer-events: none;
+}
+.corner-tl {
+  top: 5px;
+  left: 5px;
+  border-top-width: 2px;
+  border-left-width: 2px;
+}
+.corner-tr {
+  top: 5px;
+  right: 5px;
+  border-top-width: 2px;
+  border-right-width: 2px;
+}
+.corner-bl {
+  bottom: 5px;
+  left: 5px;
+  border-bottom-width: 2px;
+  border-left-width: 2px;
+}
+.corner-br {
+  bottom: 5px;
+  right: 5px;
+  border-bottom-width: 2px;
+  border-right-width: 2px;
+}
+
+/* --- Blocks --------------------------------------------------------------- */
+
+.surface {
+  background: var(--ic-surface);
+  border: 1px solid var(--ic-line);
+}
+
+.muted {
+  color: var(--ic-text-muted);
+}
+.positive {
+  color: var(--ic-positive);
+}
+.gold {
+  color: var(--ic-gold-bright);
+}
+
+.label {
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--ic-text-muted);
+}
+
+.rule {
+  height: 1px;
+  background: var(--ic-line-2);
+  border: 0;
+  margin: 20px 0;
+}
+
+/* Progress bar: two flat fills, nothing else. */
+.bar {
+  height: 6px;
+  background: var(--ic-line);
+  border: 1px solid var(--ic-line-2);
+}
+.bar > span {
+  display: block;
+  height: 100%;
+  background: var(--ic-gold);
+}
