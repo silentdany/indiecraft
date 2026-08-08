@@ -289,21 +289,41 @@ a:hover {
 }
 .topbar-mark {
   display: flex;
-  align-items: baseline;
-  gap: 6px;
-  padding: 12px 0;
-  font-size: 16px;
-  letter-spacing: 0.09em;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 0;
   white-space: nowrap;
-  color: var(--ic-gold-bright);
 }
+
+/* Two stacked lines, tight, so they read as one lockup. Set inline on a shared
+   baseline they made a single long string across a third of the bar. */
+.topbar-words {
+  display: flex;
+  flex-direction: column;
+  line-height: 1;
+  gap: 3px;
+}
+
 .topbar-over {
   font-family: var(--ic-sans);
-  font-size: 9px;
-  letter-spacing: 0.24em;
+  font-size: 8.5px;
+  font-weight: 600;
+  letter-spacing: 0.3em;
+  /* letter-spacing pads the right of the last glyph; give it back on the left
+     so the two lines actually align. */
+  text-indent: 0.3em;
   text-transform: uppercase;
-  white-space: nowrap;
   color: var(--ic-frame);
+}
+
+.topbar-name {
+  font-size: 16px;
+  letter-spacing: 0.13em;
+  text-indent: 0.13em;
+  color: var(--ic-gold);
+}
+.topbar-mark:hover .topbar-name {
+  color: var(--ic-gold-bright);
 }
 .topbar .tabs {
   border-bottom: 0;

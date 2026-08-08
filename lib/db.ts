@@ -12,6 +12,13 @@ import postgres from 'postgres'
  * re-evaluation opened a new connection and abandoned the previous one, so the
  * pooler filled up and every page after the first hung until it timed out.
  * globalThis outlives module evaluation; the module variable does not.
+ *
+ * The flip side, and it has cost time twice: changing the options below does
+ * nothing to a dev server that is already running. The cached client survives
+ * hot reload precisely because that is its job, so a pool created with the old
+ * `max` keeps serving until the process restarts. If a page starts hanging
+ * right after you edit this file, restart `next dev` before believing anything
+ * else.
  */
 const globalForDb = globalThis as { __indiecraftDb?: postgres.Sql }
 

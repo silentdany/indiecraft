@@ -23,9 +23,15 @@ export default function RootLayout({ children }: { children: ReactNode }) {
       <body>
         <PostHogProvider>
           <header className="topbar">
-            <Link href="/" className="topbar-mark serif">
-              <BrandMark size={23} className="topbar-crest" title="World of Indiecraft" />
-              <span className="topbar-over">World of</span> INDIECRAFT
+            {/* Mark, then two stacked lines. "World of" set inline on the same
+                baseline made one long string across a third of the bar and read
+                as three loose objects rather than one lockup. */}
+            <Link href="/" className="topbar-mark">
+              <BrandMark size={30} className="topbar-crest" title="World of Indiecraft" />
+              <span className="topbar-words">
+                <span className="topbar-over">World of</span>
+                <span className="topbar-name serif">INDIECRAFT</span>
+              </span>
             </Link>
             <SiteNav />
           </header>
