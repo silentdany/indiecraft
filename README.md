@@ -81,7 +81,7 @@ Fifteen, all retroactive, all phrased positively. An earned achievement is never
 
 ## Your sheet
 
-**It is not indexed until you claim it.** Claiming unlocks indexing and the dofollow link to your products. Consent and interest are the same gesture.
+**It is not indexed until you claim it.** Your products are always linked, but the link is `nofollow` until you claim the sheet — then it becomes a real dofollow backlink. Consent and interest are the same gesture. It also bounds the risk: an armory passing rank to hundreds of unvetted sites is how a directory gets read as a link farm, so only the links of people who put their hand up carry any weight.
 
 **An unclaimed sheet shows nothing negative.** No declining trend, no iLvl trough. The negative only appears after you claim it, once you've chosen to be here.
 

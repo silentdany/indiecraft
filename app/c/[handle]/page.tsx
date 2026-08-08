@@ -137,10 +137,26 @@ export default async function CharacterSheet({ params }: Props) {
                 </div>
 
                 <div className="gear-body">
-                  {/* The dofollow backlink is what claiming buys you. */}
-                  {piece.website && claimed ? (
+                  {/*
+                    The link is always there — a visitor should be able to reach
+                    the product either way — but only a claimed sheet passes
+                    rank. That keeps the spec's bargain intact: claiming buys
+                    indexation and a dofollow backlink, and it is the same
+                    gesture as consenting.
+
+                    It also bounds the risk that made plain dofollow a bad idea.
+                    An armory pointing at hundreds of unvetted sites is how a
+                    directory gets read as a link farm; here the only links that
+                    carry weight belong to people who put their hand up.
+
+                    The referrer is deliberately kept — no noreferrer — so
+                    founders see the traffic arrive from here, which is the part
+                    they actually notice.
+                  */}
+                  {piece.website ? (
                     <a
                       href={piece.website}
+                      rel={claimed ? undefined : 'nofollow'}
                       className="gear-name"
                       style={{ color: piece.rarity.hex }}
                     >
