@@ -12,6 +12,7 @@ export const metadata: Metadata = {
   title: 'The rules',
   description:
     'Every number on this site, and how it is worked out. The level table, the class tree, the rarity bands and all fifteen achievements.',
+  alternates: { canonical: '/rules' },
 }
 
 /**

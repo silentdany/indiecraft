@@ -3,6 +3,7 @@ import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { Frame } from '@/components/frame'
 import { ACHIEVEMENT_ICONS, Icon } from '@/components/icon'
+import { JsonLd } from '@/components/json-ld'
 import { OptOutButton } from '@/components/opt-out-button'
 import { ViewTracker } from '@/components/view-tracker'
 import { ACHIEVEMENTS, ACHIEVEMENTS_BY_CODE, CLASS_REASONS } from '@/engine'
@@ -26,9 +27,13 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     // Non-negotiable rule: an unclaimed sheet is noindex. Claiming unlocks
     // indexing. Consent and the growth loop are the same gesture.
     robots: character.claimed ? undefined : { index: false, follow: false },
+    alternates: { canonical: `/c/${character.handle}` },
     openGraph: {
+      type: 'profile',
       title,
-      images: [`/api/og/c/${character.handle}?v=${character.level}-${character.ilvl}`],
+      url: `/c/${character.handle}`,
+      // X caches OG images hard, so the URL carries the numbers that change.
+      images: [`/api/og/c/${character.handle}?v=${character.level}-${character.ilvl ?? 'na'}`],
     },
     twitter: { card: 'summary_large_image' },
   }
@@ -48,6 +53,30 @@ export default async function CharacterSheet({ params }: Props) {
   return (
     <main className="page">
       <ViewTracker handle={character.handle} claimed={claimed} />
+
+      {/*
+        Claimed sheets only. An unclaimed one is `noindex`, so structured data
+        about that person would be describing them to machines on a page that
+        asks the same machines to forget it — and consent is the whole reason
+        the noindex is there.
+      */}
+      {claimed && (
+        <JsonLd
+          data={{
+            '@context': 'https://schema.org',
+            '@type': 'ProfilePage',
+            dateModified: new Date().toISOString(),
+            mainEntity: {
+              '@type': 'Person',
+              name: character.displayName,
+              alternateName: `@${character.handle}`,
+              url: `${process.env.NEXT_PUBLIC_SITE_URL ?? ''}/c/${character.handle}`,
+              image: character.avatarUrl ?? undefined,
+              sameAs: [`https://x.com/${character.handle}`],
+            },
+          }}
+        />
+      )}
 
       <Frame>
         <div className="sheet-head">

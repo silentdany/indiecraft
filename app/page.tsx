@@ -3,6 +3,7 @@ import { BrandMark } from '@/components/brand-mark'
 import { Frame } from '@/components/frame'
 import { Icon, type IconName } from '@/components/icon'
 import { InspectSearch } from '@/components/inspect-search'
+import { JsonLd } from '@/components/json-ld'
 import { LadderTable } from '@/components/ladder-table'
 import { getClassCounts, getLadder, getRealmStats } from '@/lib/queries'
 
@@ -24,8 +25,27 @@ export default async function Home() {
     getClassCounts().catch(() => []),
   ])
 
+  const site = process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000'
+
   return (
     <main className="page">
+      {/* The inspect box, declared so search engines can offer it directly. */}
+      <JsonLd
+        data={{
+          '@context': 'https://schema.org',
+          '@type': 'WebSite',
+          name: 'World of Indiecraft',
+          url: site,
+          description:
+            'A public armory for indie founders. Lifetime revenue is XP, MRR is item level, products are gear.',
+          potentialAction: {
+            '@type': 'SearchAction',
+            target: { '@type': 'EntryPoint', urlTemplate: `${site}/c/{handle}` },
+            'query-input': 'required name=handle',
+          },
+        }}
+      />
+
       <Frame className="hero">
         <BrandMark size={64} className="wordmark-crest" />
         <p className="wordmark-over label">World of</p>

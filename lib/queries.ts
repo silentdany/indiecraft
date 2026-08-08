@@ -256,6 +256,30 @@ export const getLastComputedAt = cache(async (): Promise<string | null> => {
   return row?.at ?? null
 })
 
+/**
+ * Handles that belong in the sitemap.
+ *
+ * Claimed only, and that is the whole point: an unclaimed sheet is `noindex`,
+ * so listing it here would be asking search engines to crawl a page that tells
+ * them to go away. The rule the spec cares about — nobody is indexed until they
+ * ask to be — has to hold in both places or it holds in neither.
+ */
+export const getIndexableHandles = cache(
+  async (): Promise<{ handle: string; updatedAt: string }[]> => {
+    const sql = db()
+    const rows = await sql<{ handle: string; at: string }[]>`
+      select c.handle, c.computed_at::text as at
+      from characters c
+      join founders f on f.handle = c.handle
+      where f.opted_out_at is null
+        and f.claimed_at is not null
+      order by c.level desc
+      limit 5000
+    `
+    return rows.map((r) => ({ handle: r.handle, updatedAt: r.at }))
+  },
+)
+
 export interface RealmStats {
   characters: number
   maxLevel: number

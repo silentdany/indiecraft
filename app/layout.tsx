@@ -14,7 +14,22 @@ export const metadata: Metadata = {
     template: '%s — World of Indiecraft',
   },
   description:
-    'Lifetime revenue is XP, MRR is item level, products are gear. A public armory for indie founders.',
+    'Lifetime revenue is XP, MRR is item level, products are gear. A public armory for indie founders, built on TrustMRR data.',
+  applicationName: 'World of Indiecraft',
+  // Defaults every page inherits; each one overrides the title and description
+  // and lets its own opengraph-image.tsx supply the picture.
+  openGraph: {
+    type: 'website',
+    siteName: 'World of Indiecraft',
+    locale: 'en_US',
+  },
+  twitter: { card: 'summary_large_image' },
+  alternates: { canonical: '/' },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: { index: true, follow: true, 'max-image-preview': 'large' },
+  },
 }
 
 export default function RootLayout({ children }: { children: ReactNode }) {
