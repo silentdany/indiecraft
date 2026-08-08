@@ -243,6 +243,19 @@ export async function getLadder(characterClass?: string): Promise<LadderRow[]> {
   }))
 }
 
+/**
+ * When the engine last ran. Cached because the footer asks on every page.
+ * Everything on this site is a nightly snapshot, and a number with no date on
+ * it invites people to read it as live.
+ */
+export const getLastComputedAt = cache(async (): Promise<string | null> => {
+  const sql = db()
+  const [row] = await sql<{ at: string | null }[]>`
+    select max(computed_at)::text as at from characters
+  `
+  return row?.at ?? null
+})
+
 export interface RealmStats {
   characters: number
   maxLevel: number

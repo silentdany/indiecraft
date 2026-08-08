@@ -972,3 +972,268 @@ a:hover {
   cursor: default;
   opacity: 0.6;
 }
+
+/* --- Top bar: tabs, and a lookup that follows you ------------------------- */
+
+.topbar-right {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+}
+
+/* Deliberately quiet: it is a shortcut for people already inside the armory,
+   not the front door. The front door is 400px wide and on the home page. */
+.navsearch input {
+  width: 168px;
+  padding: 6px 10px;
+  background: var(--ic-well);
+  border: 1px solid var(--ic-line-2);
+  color: var(--ic-text);
+  font: inherit;
+  font-size: 12px;
+  outline: none;
+}
+.navsearch input::placeholder {
+  color: var(--ic-text-muted);
+}
+.navsearch input:focus {
+  border-color: var(--ic-gold);
+}
+
+@media (max-width: 720px) {
+  .navsearch {
+    display: none;
+  }
+  .topbar {
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+}
+
+/* --- Page heads ----------------------------------------------------------- */
+
+.page-head {
+  margin-bottom: 26px;
+}
+.page-head h1 {
+  margin: 0 0 6px;
+  font-size: 24px;
+  letter-spacing: 0.14em;
+}
+.page-head p {
+  margin: 0;
+  max-width: 62ch;
+}
+
+/* --- The rules page ------------------------------------------------------- */
+
+.rules-section {
+  margin-top: 38px;
+}
+.rules-section > h2 {
+  margin: 0 0 10px;
+  font-size: 15px;
+  letter-spacing: 0.16em;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--ic-line-2);
+}
+
+.rules-note {
+  max-width: 68ch;
+  margin: 0 0 16px;
+}
+
+.rules-formula code {
+  display: block;
+  font-size: 13px;
+  line-height: 1.9;
+  color: var(--ic-gold-bright);
+}
+.rules-formula p {
+  margin: 14px 0 0;
+  max-width: 68ch;
+}
+
+/* Sixty tiers as a grid: the shape of the curve is the argument, and a list of
+   sixty rows hides it. */
+.levels {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(88px, 1fr));
+  gap: 1px;
+  background: var(--ic-line);
+  border: 1px solid var(--ic-line);
+}
+.level-cell {
+  display: flex;
+  align-items: baseline;
+  gap: 7px;
+  padding: 7px 9px;
+  background: var(--ic-bg);
+}
+.level-cell-n {
+  font-size: 15px;
+  min-width: 20px;
+}
+.level-cell-xp {
+  font-size: 11px;
+  color: var(--ic-text-muted);
+}
+
+.bands {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+.band {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 7px 12px 7px 8px;
+  border: 1px solid var(--ic-line);
+  background: var(--ic-surface);
+}
+.band-chip {
+  width: 18px;
+  height: 18px;
+}
+.band-name {
+  font-size: 12px;
+  text-transform: capitalize;
+}
+
+.rules-classes {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 8px;
+}
+.rules-class {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 11px 13px;
+  border: 1px solid var(--ic-line);
+  background: var(--ic-surface);
+}
+.rules-class-n {
+  min-width: 14px;
+  padding-top: 6px;
+}
+.rules-class-icon {
+  width: 34px;
+  height: 34px;
+  color: var(--ic-gold);
+}
+.rules-class-body {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+.rules-class-head {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.rules-class-head .serif {
+  font-size: 15px;
+}
+.rules-class-cond {
+  font-size: 13px;
+}
+.rules-class-reason {
+  font-size: 12px;
+  font-style: italic;
+}
+
+.rules-outro {
+  margin-top: 38px;
+  padding-top: 18px;
+  border-top: 1px solid var(--ic-line-2);
+  max-width: 68ch;
+}
+
+/* --- Site footer ---------------------------------------------------------- */
+
+.sitefooter {
+  margin-top: 64px;
+  border-top: 1px solid var(--ic-line-2);
+  background: var(--ic-well);
+}
+
+.sitefooter-inner {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 34px 20px 26px;
+  display: grid;
+  grid-template-columns: 1.6fr 1fr 1fr 1.6fr;
+  gap: 30px;
+}
+
+.sitefooter-brand > a {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--ic-gold);
+  font-size: 14px;
+  letter-spacing: 0.08em;
+  line-height: 1.15;
+}
+.sitefooter-over {
+  font-family: var(--ic-sans);
+  font-size: 9px;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  color: var(--ic-frame);
+}
+.sitefooter-brand p {
+  margin: 12px 0 0;
+  font-size: 12px;
+  max-width: 34ch;
+}
+
+.sitefooter-col {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  font-size: 13px;
+}
+.sitefooter-col .label {
+  margin: 0 0 3px;
+}
+.sitefooter-note {
+  font-size: 12px;
+  line-height: 1.6;
+}
+
+.sitefooter-base {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 14px 20px 30px;
+  border-top: 1px solid var(--ic-line);
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 10px;
+  font-size: 12px;
+}
+
+@media (max-width: 780px) {
+  .sitefooter-inner {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+@media (max-width: 460px) {
+  .sitefooter-inner {
+    grid-template-columns: 1fr;
+    gap: 24px;
+  }
+}

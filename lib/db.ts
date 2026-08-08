@@ -27,7 +27,7 @@ const globalForDb = globalThis as { __indiecraftDb?: postgres.Sql }
  * diagnose than a page that errors.
  *
  * ---------------------------------------------------------------------------
- * `max: 3`, and not the `max: 1` the spec calls for. Do not lower it back.
+ * `max: 8`, and not the `max: 1` the spec calls for. Do not lower it back.
  *
  * With `max: 1`, any two queries awaited concurrently inside the Next server
  * runtime deadlock permanently. Measured, not guessed: the same `Promise.all`
@@ -41,9 +41,16 @@ const globalForDb = globalThis as { __indiecraftDb?: postgres.Sql }
  * not always ours to remove: Next runs `generateMetadata` and the page body of
  * the same route at the same time, and both read the character sheet.
  *
- * Three connections per instance is still small enough for the serverless
- * shape the spec was protecting, and it makes the deadlock structurally
- * impossible rather than a rule contributors have to remember.
+ * The number has to stay above the peak count of queries awaited concurrently
+ * in a single render, and that peak is not obvious from any one file. It was 3
+ * until a footer was added to the root layout: the armory front already ran
+ * three in a Promise.all, the footer's freshness query made four, and the build
+ * stopped dead at a 60-second timeout on a page that had rendered in
+ * milliseconds the day before. Eight leaves room for the next component that
+ * needs a number without anyone having to rediscover this.
+ *
+ * Eight connections per instance is still small enough for the serverless shape
+ * the spec was protecting.
  * ---------------------------------------------------------------------------
  */
 export function db(): postgres.Sql {
@@ -52,7 +59,7 @@ export function db(): postgres.Sql {
     if (!url) throw new Error('DATABASE_URL is not set')
     globalForDb.__indiecraftDb = postgres(url, {
       prepare: false,
-      max: 3,
+      max: 8,
       idle_timeout: 20,
       connect_timeout: 10,
     })

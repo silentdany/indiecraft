@@ -3,6 +3,7 @@ import Link from 'next/link'
 import type { ReactNode } from 'react'
 import { BrandMark } from '@/components/brand-mark'
 import { PostHogProvider } from '@/components/posthog-provider'
+import { SiteFooter } from '@/components/site-footer'
 import { SiteNav } from '@/components/site-nav'
 import './globals.css'
 
@@ -29,6 +30,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
             <SiteNav />
           </header>
           {children}
+          <SiteFooter />
         </PostHogProvider>
       </body>
     </html>

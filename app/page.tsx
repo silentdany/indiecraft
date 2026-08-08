@@ -81,14 +81,6 @@ export default async function Home() {
 
         <LadderTable rows={rows.slice(0, 20)} />
       </section>
-
-      <footer className="footer">
-        <span className="muted">
-          Numbers from <a href="https://trustmrr.com">TrustMRR</a>. Nothing shown that they
-          don&rsquo;t already show.
-        </span>
-        <a href="https://github.com/silentdany/indiecraft">Read the formula</a>
-      </footer>
     </main>
   )
 }

@@ -199,6 +199,13 @@ export interface ClassRule {
   class: CharacterClass
   /** Why this class, in one sentence, displayable on the sheet. */
   reason: string
+  /**
+   * The same rule in words, for /rules. It lives beside the predicate on
+   * purpose: a contributor who changes a threshold has to walk past the
+   * sentence that describes it, which is the only thing that keeps the public
+   * explanation honest.
+   */
+  condition: string
   test: (a: FounderAggregate, ctx: { level: number; arpu: number }) => boolean
 }
 
@@ -208,6 +215,7 @@ export const CLASS_RULES: readonly ClassRule[] = [
   {
     class: 'Adventurer',
     reason: 'Where everything starts.',
+    condition: 'No products yet, or below level 5',
     test: (a, { level }) => a.nProducts === 0 || level < 5,
   },
   // --- How they build, then how they get customers. Both are chosen; the
@@ -215,6 +223,7 @@ export const CLASS_RULES: readonly ClassRule[] = [
   {
     class: 'Mage',
     reason: 'Building with whatever just shipped.',
+    condition: 'Builds on openai or anthropic',
     test: (a) => hasAny(a.stack, AI_STACK),
   },
   {
@@ -222,6 +231,7 @@ export const CLASS_RULES: readonly ClassRule[] = [
     // A domain rating of 50 is not something you drift into. It is the same
     // threshold the Authority achievement uses, on purpose.
     reason: 'Found before they go looking.',
+    condition: 'An SEO channel with domain rating 30+, or domain rating 50 on its own',
     test: (a) =>
       (hasAny(a.channels, SEO_CHANNELS) && (a.domainRating ?? 0) >= 30) ||
       (a.domainRating ?? 0) >= 50,
@@ -229,17 +239,20 @@ export const CLASS_RULES: readonly ClassRule[] = [
   {
     class: 'Warlock',
     reason: 'Summons customers, and pays for every one.',
+    condition: 'Buys acquisition: search, social or influencer ads',
     test: (a) => hasAny(a.channels, PAID_CHANNELS),
   },
   {
     class: 'Bard',
     reason: 'Their audience is their channel.',
+    condition: 'Runs on an audience they built — X, YouTube, a newsletter',
     test: (a) => hasAny(a.channels, AUDIENCE_CHANNELS),
   },
   // --- Then the shape of the business itself.
   {
     class: 'Priest',
     reason: 'Their customers stay.',
+    condition: 'Measured retention above 60% across more than 50 customers',
     test: (a) => a.hasRetentionSignal && a.retention > 0.6 && a.customers > 50,
   },
   {
@@ -249,16 +262,19 @@ export const CLASS_RULES: readonly ClassRule[] = [
     // boilerplate and template seller. Phrased as independence, because that is
     // what it is: nothing to renew, nothing to churn.
     reason: 'Takes no rent. Every sale is finished the day it happens.',
+    condition: 'Real lifetime revenue and no recurring revenue at all',
     test: (a) => a.mrrUsd === 0 && a.revenueTotalUsd > 0,
   },
   {
     class: 'Rogue',
     reason: 'Few marks, big scores.',
+    condition: '$300 or more per customer per month',
     test: (a, { arpu }) => a.effectiveCustomers > 0 && arpu >= 300,
   },
   {
     class: 'Warrior',
     reason: 'Volume, earned one dollar at a time.',
+    condition: '100+ paying, under $30 each',
     test: (a, { arpu }) => a.effectiveCustomers >= 100 && arpu < 30,
   },
   {
@@ -268,6 +284,7 @@ export const CLASS_RULES: readonly ClassRule[] = [
     // how the most ordinary founder on the ladder ended up labelled "we don't
     // know".
     reason: 'Holds the line. A real base at a price that lasts.',
+    condition: '10+ paying, $30 or more each',
     test: (a, { arpu }) => a.effectiveCustomers >= 10 && arpu >= 30,
   },
 ]
