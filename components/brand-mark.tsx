@@ -24,10 +24,13 @@ export function BrandMark({
   size = 40,
   className,
   title,
+  color,
 }: {
   size?: number
   className?: string
   title?: string
+  /** Explicit fill, for Satori — it does not resolve `currentColor`. */
+  color?: string
 }) {
   return (
     <svg
@@ -39,10 +42,17 @@ export function BrandMark({
       aria-label={title}
       aria-hidden={title ? undefined : true}
       focusable="false"
-      fill="currentColor"
+      fill={color ?? 'currentColor'}
     >
       {/* The ring. */}
-      <circle cx="32" cy="32" r="19" fill="none" stroke="currentColor" strokeWidth="2.4" />
+      <circle
+        cx="32"
+        cy="32"
+        r="19"
+        fill="none"
+        stroke={color ?? 'currentColor'}
+        strokeWidth="2.4"
+      />
 
       {/* Four spikes on the diagonals, short and broad. Based inside the ring so
           the whole thing reads as one silhouette rather than four shapes

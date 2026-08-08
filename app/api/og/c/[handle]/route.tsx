@@ -1,6 +1,8 @@
 import { readFile } from 'node:fs/promises'
 import { join } from 'node:path'
 import { ImageResponse } from '@vercel/og'
+import { BrandMark } from '@/components/brand-mark'
+import { ACHIEVEMENT_ICONS, Icon } from '@/components/icon'
 import { ACHIEVEMENTS_BY_CODE } from '@/engine'
 import { getCharacter } from '@/lib/queries'
 
@@ -8,15 +10,22 @@ import { getCharacter } from '@/lib/queries'
  * The OG image — technically the most important part of the product: this is
  * what travels, not the page.
  *
- * Principle: an achievement toast, not a character panel. What players share is
- * the gold frame that slides in at the top of the screen, not their stat sheet.
+ * Acceptance constraint: 1200 × 630, but consumed at ~500px in a timeline and
+ * usually on a phone. Shrink it to 300px and squint. The level has to survive
+ * that, which is why it sits in a fixed badge no variant can displace.
  *
- * Acceptance constraint: 1200 × 630, but consumed at ~500px in a timeline.
- * Shrink to 300px and squint — if the level is no longer legible, redo it.
- * Hence three elements, maximum.
+ * The one thing it must never do is arrive anonymous. A gold card reading
+ * "PALADIN 56" with no mark on it is a handsome picture of nothing: whoever
+ * sees it has no idea what made it or where to go. The wordmark at the foot is
+ * not decoration, it is most of the reason the image is worth rendering.
  *
- * Node runtime rather than edge, contrary to the original intent: the sheet is
- * read with postgres.js, which opens a TCP socket unavailable on edge.
+ * The palette is duplicated from app/globals.css by hand, because Satori has no
+ * CSS variables. Change one, change both. The glyphs come from the same two
+ * components the site uses, passed an explicit colour — Satori does not resolve
+ * `currentColor`.
+ *
+ * Node runtime rather than edge: the sheet is read with postgres.js, which
+ * opens a TCP socket unavailable at the edge.
  */
 export const runtime = 'nodejs'
 
@@ -34,16 +43,14 @@ const fonts = (async () => {
   ]
 })()
 
-// Kept byte-for-byte in step with the tokens in app/globals.css. The whole
-// point of the flat-rendering rule is that the thumbnail and the page look like
-// the same product; letting these two palettes drift apart defeats it.
 const BG = '#170e09'
-const SURFACE = '#1e1610'
-const FRAME = '#6b552a'
+const PANEL = '#1a120c'
+const WELL = '#100a06'
 const GOLD = '#f8b700'
 const BUTTER = '#fff468'
 const TEXT = '#ede7dc'
 const MUTED = '#9b9187'
+const FRAME = '#6b552a'
 
 export async function GET(_request: Request, { params }: { params: Promise<{ handle: string }> }) {
   const { handle } = await params
@@ -62,10 +69,8 @@ export async function GET(_request: Request, { params }: { params: Promise<{ han
         height: '100%',
         display: 'flex',
         flexDirection: 'column',
-        alignItems: 'center',
-        justifyContent: 'center',
         background: BG,
-        // The rarity color on the border gives the hierarchy without a word.
+        // The quality colour states the hierarchy before a word is read.
         border: `10px solid ${character.rarity.hex}`,
         fontFamily: 'Cinzel',
       }}
@@ -73,63 +78,92 @@ export async function GET(_request: Request, { params }: { params: Promise<{ han
       <div
         style={{
           display: 'flex',
-          alignItems: 'center',
-          width: 1120,
-          height: 550,
-          background: SURFACE,
+          flexDirection: 'column',
+          justifyContent: 'space-between',
+          flex: 1,
+          margin: 24,
+          padding: '38px 46px 28px',
+          background: PANEL,
           border: `2px solid ${FRAME}`,
-          padding: '0 56px',
         }}
       >
-        {/*
-          The level badge is the anchor and never moves, whatever the variant
-          says. The spec's acceptance test is "shrink to 300px and squint — if
-          the level is not legible, redo it", and an achievement toast that
-          replaced the number failed it outright: at thumbnail size there was a
-          gold word and nothing else.
-        */}
-        <div
-          style={{
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            justifyContent: 'center',
-            width: 300,
-            height: 300,
-            flexShrink: 0,
-            border: `4px solid ${character.rarity.hex}`,
-            background: BG,
-          }}
-        >
-          <div style={{ display: 'flex', fontSize: 190, color: BUTTER, lineHeight: 1 }}>
-            {character.level}
-          </div>
-          <div style={{ display: 'flex', fontSize: 24, color: MUTED, letterSpacing: 8 }}>LEVEL</div>
-        </div>
-
-        <div style={{ display: 'flex', flexDirection: 'column', marginLeft: 56, flex: 1 }}>
-          {/* What changed — the only part that varies over time. */}
-          <div style={{ display: 'flex', fontSize: 30, color: GOLD, letterSpacing: 7 }}>
-            {variant.kicker}
-          </div>
+        {/* Centred in whatever space the wordmark leaves, rather than pinned to
+            the top: space-between put the whole card in its upper half and left
+            a third of it empty. */}
+        <div style={{ display: 'flex', alignItems: 'center', flex: 1 }}>
+          {/* The anchor. Every variant changes around it; it never moves. */}
           <div
             style={{
               display: 'flex',
-              fontSize: variant.headlineSize,
-              color: BUTTER,
-              lineHeight: 1.05,
-              marginTop: 10,
+              flexDirection: 'column',
+              alignItems: 'center',
+              justifyContent: 'center',
+              width: 246,
+              height: 246,
+              flexShrink: 0,
+              border: `4px solid ${character.rarity.hex}`,
+              background: WELL,
             }}
           >
-            {variant.headline}
+            <div style={{ display: 'flex', fontSize: 148, color: BUTTER, lineHeight: 1 }}>
+              {character.level}
+            </div>
+            <div style={{ display: 'flex', fontSize: 21, color: MUTED, letterSpacing: 8 }}>
+              LEVEL
+            </div>
           </div>
 
-          {/* Who, and of what class. */}
-          <div style={{ display: 'flex', fontSize: 38, color: TEXT, marginTop: 30 }}>
-            @{character.handle}
+          <div style={{ display: 'flex', flexDirection: 'column', marginLeft: 44, flex: 1 }}>
+            {/* What changed — the only line that varies over time. */}
+            <div style={{ display: 'flex', alignItems: 'center' }}>
+              <Icon name={variant.icon} size={30} color={GOLD} />
+              <div
+                style={{
+                  display: 'flex',
+                  marginLeft: 12,
+                  fontSize: 27,
+                  color: GOLD,
+                  letterSpacing: 5,
+                }}
+              >
+                {variant.kicker}
+              </div>
+            </div>
+
+            {/* Who. The name is the headline because a name is what gets
+                recognised in a timeline, and the level and class are already
+                stated elsewhere on the card. */}
+            <div
+              style={{
+                display: 'flex',
+                fontSize: variant.nameSize,
+                color: BUTTER,
+                lineHeight: 1.05,
+                marginTop: 12,
+              }}
+            >
+              {variant.headline}
+            </div>
+
+            <div style={{ display: 'flex', fontSize: 24, color: TEXT, marginTop: 16 }}>
+              @{character.handle}
+            </div>
+            <div style={{ display: 'flex', fontSize: 21, color: MUTED, marginTop: 8 }}>
+              {variant.subline}
+            </div>
           </div>
-          <div style={{ display: 'flex', fontSize: 26, color: MUTED, marginTop: 10 }}>
-            {variant.subline}
+        </div>
+
+        {/* Never arrive anonymous. */}
+        <div style={{ display: 'flex', alignItems: 'center' }}>
+          <BrandMark size={30} color={GOLD} />
+          <div style={{ display: 'flex', flexDirection: 'column', marginLeft: 11 }}>
+            <div style={{ display: 'flex', fontSize: 11, color: FRAME, letterSpacing: 5 }}>
+              WORLD OF
+            </div>
+            <div style={{ display: 'flex', fontSize: 19, color: GOLD, letterSpacing: 3 }}>
+              INDIECRAFT
+            </div>
           </div>
         </div>
       </div>
@@ -142,42 +176,37 @@ export async function GET(_request: Request, { params }: { params: Promise<{ han
  * The same URL yields a different image over time, so resharing the same page
  * stays interesting.
  */
-function pickVariant(character: Awaited<ReturnType<typeof getCharacter>> & object) {
-  const rank = `rank ${character.rank}`
+function pickVariant(character: NonNullable<Awaited<ReturnType<typeof getCharacter>>>) {
+  const name = character.displayName
+  // A long name has to shrink or it runs off the card.
+  const nameSize = name.length > 18 ? 44 : name.length > 13 ? 56 : 66
+  const rank = `rank #${character.rank}`
+  const gear = character.ilvl === null ? 'no monthly score' : `item level ${character.ilvl}`
+
   if (character.recentLevelUp) {
     return {
+      icon: 'level' as const,
       kicker: 'DING!',
-      headline: 'LEVEL UP',
-      headlineSize: 88,
+      headline: name,
+      nameSize,
       subline: `${character.characterClass} · ${rank}`,
     }
   }
   if (character.recentAchievement) {
     const def = ACHIEVEMENTS_BY_CODE.get(character.recentAchievement.code)
-    const label = (def?.label ?? character.recentAchievement.code).toUpperCase()
-    // Long labels have to shrink, or "THOUSAND CUSTOMERS" runs off the card.
     return {
-      kicker: 'ACHIEVEMENT',
-      headline: label,
-      headlineSize: label.length > 14 ? 62 : 84,
+      icon: ACHIEVEMENT_ICONS[character.recentAchievement.code] ?? ('achievement' as const),
+      kicker: (def?.label ?? character.recentAchievement.code).toUpperCase(),
+      headline: name,
+      nameSize,
       subline: `${character.characterClass} · ${rank}`,
     }
   }
-  const delta = character.ilvlDelta
-  if (delta !== null && delta > 0 && character.ilvl !== null) {
-    return {
-      kicker: 'GEARING UP',
-      headline: `ILVL ${character.ilvl}`,
-      headlineSize: 84,
-      subline: `${character.characterClass} · ${rank}`,
-    }
-  }
-  // The headline is already the class here, so repeating it below would waste
-  // the one line left. iLvl is the number the sheet is actually about.
   return {
-    kicker: 'THE ARMORY',
-    headline: character.characterClass.toUpperCase(),
-    headlineSize: 84,
-    subline: character.ilvl === null ? rank : `item level ${character.ilvl} · ${rank}`,
+    icon: character.characterClass,
+    kicker: character.characterClass.toUpperCase(),
+    headline: name,
+    nameSize,
+    subline: `${gear} · ${rank}`,
   }
 }
