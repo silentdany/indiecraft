@@ -456,6 +456,34 @@ a:hover {
 .realm-cell:last-child {
   border-right: 0;
 }
+
+/*
+ * Below two-and-a-bit columns the strip wraps, and a separator that only the
+ * very last cell clears is right on one row and wrong on every row after it:
+ * the second column kept a rule against the screen edge while the final cell
+ * lost the one it needed. Two fixed columns with the separator on the left,
+ * cleared for whichever cell starts a row, holds at any count. The row gap
+ * goes from 1px to something that actually reads as rows.
+ */
+@media (max-width: 560px) {
+  .realm {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 16px 0;
+    padding: 16px 0;
+  }
+  .realm-cell {
+    padding: 0 14px;
+    border-right: 0;
+    border-left: 1px solid var(--ic-line);
+  }
+  .realm-cell:nth-child(2n + 1) {
+    border-left: 0;
+    padding-left: 0;
+  }
+  .realm-cell > .serif {
+    font-size: 22px;
+  }
+}
 .realm-cell > .serif {
   font-size: 26px;
   line-height: 1.1;
@@ -625,9 +653,12 @@ a:hover {
   color: var(--ic-butter);
 }
 /* Name and headline numbers sit on one row, split by a vertical hairline. */
+/* The readouts sit on the name, not on the middle of the block. Centering was
+   fine while the left column was two lines; adding the class reason made a
+   third, and the numbers drifted up off the name they belong to. */
 .sheet-topline {
   display: flex;
-  align-items: center;
+  align-items: flex-end;
   gap: 22px;
   flex-wrap: wrap;
 }
@@ -776,6 +807,33 @@ a:hover {
   color: var(--ic-text-muted);
 }
 
+/* Not yet earned. Dim enough to read as the back half of the set, never so dim
+   it looks broken — and never styled as failure: every one of these is phrased
+   as something to gain. */
+.ach-locked-head {
+  margin: 22px 0 8px;
+}
+
+.ach-locked .ach-card {
+  background: none;
+  border-color: var(--ic-line);
+  border-style: dashed;
+}
+.ach-locked .ach-title {
+  color: var(--ic-text-muted);
+}
+.ach-locked .ach-desc {
+  opacity: 0.7;
+}
+
+/* The one line that says why this class and not another. */
+.sheet-why {
+  margin: 2px 0 0;
+  font-size: 12px;
+  color: var(--ic-text-muted);
+  font-style: italic;
+}
+
 /* --- Guild ----------------------------------------------------------------- */
 
 .guild {
@@ -811,23 +869,39 @@ a:hover {
   flex-wrap: wrap;
   justify-content: space-between;
 }
+/* The one solid amber block on the sheet, matching INSPECT on the armory
+   front, so the two things we ever ask anyone to do look like each other. */
 .consent-claim {
-  font-size: 14px;
-  letter-spacing: 0.04em;
+  padding: 9px 16px;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #211510;
+  background: var(--ic-gold);
 }
-.consent button {
+.consent-claim:hover {
+  color: #211510;
+  background: var(--ic-gold-bright);
+}
+
+/* Quiet, but never hidden and never more than one click away. */
+.consent-remove {
   background: none;
-  border: 1px solid var(--ic-line-2);
+  border: 0;
+  padding: 6px 0;
   color: var(--ic-text-muted);
-  padding: 6px 10px;
   cursor: pointer;
   font-family: inherit;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  text-decoration-color: var(--ic-line-2);
 }
-.consent button:hover:not(:disabled) {
-  border-color: var(--ic-text-muted);
+.consent-remove:hover:not(:disabled) {
   color: var(--ic-text);
+  text-decoration-color: currentColor;
 }
-.consent button:disabled {
+.consent-remove:disabled {
   cursor: default;
   opacity: 0.6;
 }

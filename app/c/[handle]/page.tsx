@@ -4,7 +4,7 @@ import { notFound } from 'next/navigation'
 import { Frame } from '@/components/frame'
 import { OptOutButton } from '@/components/opt-out-button'
 import { ViewTracker } from '@/components/view-tracker'
-import { ACHIEVEMENTS_BY_CODE } from '@/engine'
+import { ACHIEVEMENTS, ACHIEVEMENTS_BY_CODE, CLASS_REASONS } from '@/engine'
 import { getCharacter } from '@/lib/queries'
 
 export const revalidate = 300
@@ -40,6 +40,8 @@ export default async function CharacterSheet({ params }: Props) {
   if (!character) notFound()
 
   const { rarity, claimed } = character
+  const earnedCodes = new Set(character.achievements.map((a) => a.code))
+  const locked = ACHIEVEMENTS.filter((def) => !earnedCodes.has(def.code))
 
   return (
     <main className="page">
@@ -63,6 +65,10 @@ export default async function CharacterSheet({ params }: Props) {
             <div className="sheet-topline">
               <div>
                 <p className="sheet-eyebrow">{character.characterClass}</p>
+                {/* The reason was written alongside the rule and never shown,
+                    which is backwards for a product whose answer to "why did
+                    you call me that" is "the formula is public, go read it". */}
+                <p className="sheet-why">{CLASS_REASONS.get(character.characterClass)}</p>
                 <h1 className="sheet-name serif">{character.displayName}</h1>
               </div>
 
@@ -160,7 +166,7 @@ export default async function CharacterSheet({ params }: Props) {
         )}
       </Section>
 
-      <Section title={`Achievements — ${character.achievements.length}`}>
+      <Section title={`Achievements — ${character.achievements.length} of ${ACHIEVEMENTS.length}`}>
         <ul className="ach">
           {character.achievements.map((earned) => {
             const def = ACHIEVEMENTS_BY_CODE.get(earned.code)
@@ -172,6 +178,27 @@ export default async function CharacterSheet({ params }: Props) {
             )
           })}
         </ul>
+
+        {/*
+          What is left to earn, dimmed. Every achievement is phrased as
+          something gained, so listing the unearned ones reads as a set of goals
+          rather than a verdict — which is the same reason the game shows them.
+          It also gives the sheet a second half: without it the page ended a
+          third of the way down for anyone with a handful of achievements.
+        */}
+        {locked.length > 0 && (
+          <>
+            <p className="ach-locked-head label">Still to earn</p>
+            <ul className="ach ach-locked">
+              {locked.map((def) => (
+                <li key={def.code} className="ach-card">
+                  <div className="ach-title serif">{def.label}</div>
+                  <div className="ach-desc">{def.description}</div>
+                </li>
+              ))}
+            </ul>
+          </>
+        )}
       </Section>
 
       {character.cofounders.length > 0 && (

@@ -275,6 +275,19 @@ export const CLASS_RULES: readonly ClassRule[] = [
 /** Safety net: never demeaning, always reachable. */
 export const DEFAULT_CLASS: CharacterClass = 'Adventurer'
 
+/**
+ * One sentence per class, for the sheet to say why it landed there.
+ *
+ * The reasons were written with the rules and then never shown, which is the
+ * wrong way round for a project whose answer to "why did you call me that" is
+ * supposed to be "the formula is public, go read it". First rule wins, matching
+ * the tree: Adventurer appears twice and the opening line is the one that
+ * describes it.
+ */
+export const CLASS_REASONS: ReadonlyMap<CharacterClass, string> = new Map(
+  CLASS_RULES.map((rule) => [rule.class, rule.reason] as const).reverse(),
+)
+
 // ---------------------------------------------------------------------------
 // 7. Achievements
 // ---------------------------------------------------------------------------
