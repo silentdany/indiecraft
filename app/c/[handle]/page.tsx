@@ -5,6 +5,7 @@ import { Frame } from '@/components/frame'
 import { OptOutButton } from '@/components/opt-out-button'
 import { ViewTracker } from '@/components/view-tracker'
 import { ACHIEVEMENTS, ACHIEVEMENTS_BY_CODE, CLASS_REASONS } from '@/engine'
+import { CONSENT_ACTIONS_ENABLED } from '@/lib/consent'
 import { getCharacter } from '@/lib/queries'
 
 export const revalidate = 300
@@ -232,8 +233,12 @@ export default async function CharacterSheet({ params }: Props) {
         </Section>
       )}
 
-      <hr className="rule" />
-      <OptOutButton handle={character.handle} claimed={claimed} />
+      {CONSENT_ACTIONS_ENABLED && (
+        <>
+          <hr className="rule" />
+          <OptOutButton handle={character.handle} claimed={claimed} />
+        </>
+      )}
     </main>
   )
 }

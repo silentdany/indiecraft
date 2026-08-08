@@ -1,5 +1,5 @@
 import { revalidatePath } from 'next/cache'
-import { clientIp, hashIp, OPT_OUT_MAX_PER_HOUR } from '@/lib/consent'
+import { CONSENT_ACTIONS_ENABLED, clientIp, hashIp, OPT_OUT_MAX_PER_HOUR } from '@/lib/consent'
 import { db } from '@/lib/db'
 
 /**
@@ -16,6 +16,13 @@ import { db } from '@/lib/db'
 export const runtime = 'nodejs'
 
 export async function POST(request: Request) {
+  // Disabled at the route, not just in the interface: a hidden button in front
+  // of a live endpoint protects nobody on a public repo. 404 rather than 403 —
+  // there is nothing here to describe.
+  if (!CONSENT_ACTIONS_ENABLED) {
+    return Response.json({ error: 'not found' }, { status: 404 })
+  }
+
   let handle: string
   try {
     const body = (await request.json()) as { handle?: unknown }

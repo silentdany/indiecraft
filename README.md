@@ -85,7 +85,7 @@ Fifteen, all retroactive, all phrased positively. An earned achievement is never
 
 **An unclaimed sheet shows nothing negative.** No declining trend, no iLvl trough. The negative only appears after you claim it, once you've chosen to be here.
 
-**One-click removal**, on the sheet, no account, no email, applied immediately.
+**Removal is temporarily unavailable from the sheet.** The button was one unauthenticated click, which meant anyone could remove anyone — a competitor, or a passer-by working down the ladder. It is disabled, endpoint included, until ownership can be checked. Ask via [an issue](https://github.com/silentdany/indiecraft/issues) in the meantime and it will be done by hand. Anyone already removed stays removed.
 
 Nothing is shown that TrustMRR doesn't already show.
 

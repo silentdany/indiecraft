@@ -13,6 +13,24 @@ import { createHmac } from 'node:crypto'
  */
 
 /**
+ * Both consent actions are off for now.
+ *
+ * Removal was one unauthenticated click, which means anyone could remove
+ * anyone: a competitor, or a bored passer-by working down /ladder. The rate
+ * limit slows a script, it does not stop a person. Rather than ship a control
+ * that invites abuse, the actions are disabled until the ownership check is
+ * settled.
+ *
+ * This flag gates the button AND the route. Hiding the button alone would be
+ * theatre — the endpoint would still be there for anyone reading the source,
+ * which on a public repo is everyone.
+ *
+ * Note what does NOT change: an existing opted_out_at is still honoured, so
+ * anyone already removed stays removed.
+ */
+export const CONSENT_ACTIONS_ENABLED = false
+
+/**
  * Requests allowed per IP per hour.
  *
  * A real person removes one sheet, once. Five leaves room for an office NAT or
