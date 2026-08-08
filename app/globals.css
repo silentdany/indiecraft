@@ -349,6 +349,11 @@ a:hover {
 
 /* The wordmark apes the shape of the WoW logo — a small "World of" riding
    above a much larger title — without borrowing a single pixel of it. */
+.wordmark-crest {
+  display: block;
+  margin: 0 auto 12px;
+}
+
 .wordmark-over {
   margin: 0;
   font-size: 12px;

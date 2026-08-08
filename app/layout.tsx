@@ -1,7 +1,7 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
 import type { ReactNode } from 'react'
-import { Icon } from '@/components/icon'
+import { BrandMark } from '@/components/brand-mark'
 import { PostHogProvider } from '@/components/posthog-provider'
 import { SiteNav } from '@/components/site-nav'
 import './globals.css'
@@ -23,8 +23,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
         <PostHogProvider>
           <header className="topbar">
             <Link href="/" className="topbar-mark serif">
-              {/* The crest slot the reference fills with a faction sigil. */}
-              <Icon name="crest" size={22} className="topbar-crest" />
+              <BrandMark size={26} className="topbar-crest" title="World of Indiecraft" />
               <span className="topbar-over">World of</span> INDIECRAFT
             </Link>
             <SiteNav />

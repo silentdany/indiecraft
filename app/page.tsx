@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import { BrandMark } from '@/components/brand-mark'
 import { Frame } from '@/components/frame'
 import { Icon, type IconName } from '@/components/icon'
 import { InspectSearch } from '@/components/inspect-search'
@@ -26,6 +27,7 @@ export default async function Home() {
   return (
     <main className="page">
       <Frame className="hero">
+        <BrandMark size={72} className="wordmark-crest" />
         <p className="wordmark-over label">World of</p>
         <h1 className="wordmark serif">INDIECRAFT</h1>
         <p className="wordmark-under label">The founders&rsquo; armory</p>
