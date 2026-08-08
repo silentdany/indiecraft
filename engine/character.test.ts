@@ -9,7 +9,7 @@ import {
   rarityFor,
   xpFrom,
 } from './character'
-import { LEVEL_THRESHOLDS, MAX_LEVEL } from './tuning'
+import { CLASS_RULES, LEVEL_THRESHOLDS, MAX_LEVEL } from './tuning'
 import type { FounderAggregate } from './types'
 
 /**
@@ -163,50 +163,121 @@ describe('class', () => {
   })
 
   it('returns Adventurer below level 5 regardless of other rules', () => {
-    const a = founder({ nProducts: 1, customers: 100, activeSubscriptions: 90, retention: 0.9 })
+    const a = founder({ nProducts: 1, stack: ['anthropic'] })
     expect(classFrom(a, 4)).toBe('Adventurer')
-    expect(classFrom(a, 5)).toBe('Priest')
+    expect(classFrom(a, 5)).toBe('Mage')
   })
 
-  it('first match wins: Priest beats Warrior', () => {
-    const a = founder({
-      nProducts: 1,
-      customers: 1_000,
-      activeSubscriptions: 700,
-      retention: 0.7,
-      mrrUsd: 5_000, // arpu = 5, which would also satisfy Warrior
+  it('returns Mage on an AI stack', () => {
+    expect(classFrom(founder({ nProducts: 1, stack: ['openai'] }), 20)).toBe('Mage')
+    expect(classFrom(founder({ nProducts: 1, stack: ['anthropic'] }), 20)).toBe('Mage')
+  })
+
+  it('uses the real channel slugs, not the invented ones', () => {
+    // `x-twitter` was guessed and does not exist; the slug is `twitter`. The
+    // old rule looked correct and matched nobody.
+    expect(classFrom(founder({ nProducts: 1, channels: ['twitter'] }), 20)).toBe('Bard')
+    expect(classFrom(founder({ nProducts: 1, channels: ['x-twitter'] }), 20)).not.toBe('Bard')
+  })
+
+  describe('Hunter', () => {
+    it('needs domain rating alongside an SEO channel', () => {
+      expect(classFrom(founder({ nProducts: 1, channels: ['seo'], domainRating: 40 }), 20)).toBe(
+        'Hunter',
+      )
+      expect(
+        classFrom(founder({ nProducts: 1, channels: ['seo'], domainRating: 10 }), 20),
+      ).not.toBe('Hunter')
     })
-    expect(classFrom(a, 30)).toBe('Priest')
+
+    it('accepts a strong domain rating on its own', () => {
+      // Only 22% of listings report marketing channels, but 62% report a domain
+      // rating. DR 50 is earned, and it is the Authority threshold too.
+      expect(classFrom(founder({ nProducts: 1, domainRating: 50 }), 20)).toBe('Hunter')
+      expect(classFrom(founder({ nProducts: 1, domainRating: 49 }), 20)).not.toBe('Hunter')
+    })
   })
 
-  it('returns Rogue on few customers at a high ticket', () => {
-    const a = founder({ nProducts: 1, customers: 10, mrrUsd: 5_000 })
+  it('returns Warlock on paid acquisition', () => {
+    expect(classFrom(founder({ nProducts: 1, channels: ['google-ads'] }), 20)).toBe('Warlock')
+    expect(classFrom(founder({ nProducts: 1, channels: ['meta-ads'] }), 20)).toBe('Warlock')
+  })
+
+  it('prefers paid over audience when a founder does both', () => {
+    const a = founder({ nProducts: 1, channels: ['twitter', 'google-ads'] })
+    expect(classFrom(a, 20)).toBe('Warlock')
+  })
+
+  it('returns Priest only with a real retention signal', () => {
+    const measured = founder({
+      nProducts: 1,
+      customers: 100,
+      activeSubscriptions: 90,
+      retention: 0.9,
+    })
+    expect(classFrom(measured, 20)).toBe('Priest')
+
+    // customers: 0 is missing data, not perfect churn. It must never be read as
+    // retention either way.
+    const unmeasured = founder({
+      nProducts: 1,
+      customers: 0,
+      activeSubscriptions: 5_000,
+      retention: 0.9,
+      hasRetentionSignal: false,
+    })
+    expect(classFrom(unmeasured, 20)).not.toBe('Priest')
+  })
+
+  it('returns Monk for real lifetime revenue with no recurring revenue', () => {
+    // Gumroad's shape: hundreds of millions earned, zero MRR. A business model,
+    // not a gap in the data.
+    const a = founder({ nProducts: 1, revenueTotalUsd: 878_595_860, mrrUsd: 0 })
+    expect(classFrom(a, 60)).toBe('Monk')
+  })
+
+  it('does not call someone a Monk for having earned nothing yet', () => {
+    expect(classFrom(founder({ nProducts: 1, revenueTotalUsd: 0, mrrUsd: 0 }), 20)).toBe(
+      'Adventurer',
+    )
+  })
+
+  it('returns Rogue on a high ticket', () => {
+    const a = founder({ nProducts: 1, customers: 10, activeSubscriptions: 10, mrrUsd: 5_000 })
     expect(classFrom(a, 30)).toBe('Rogue')
   })
 
   it('returns Warrior on volume at a low ticket', () => {
-    const a = founder({ nProducts: 1, customers: 1_000, mrrUsd: 5_000 })
+    const a = founder({ nProducts: 1, customers: 1_000, activeSubscriptions: 1_000, mrrUsd: 5_000 })
     expect(classFrom(a, 30)).toBe('Warrior')
   })
 
-  it('requires domain rating for Hunter, otherwise falls further down', () => {
-    const seo = founder({ nProducts: 1, channels: ['seo'], domainRating: 40 })
-    expect(classFrom(seo, 20)).toBe('Hunter')
-
-    const weak = founder({ nProducts: 1, channels: ['seo'], domainRating: 10 })
-    expect(classFrom(weak, 20)).toBe('Adventurer')
+  it('returns Paladin for the ordinary bootstrapped SaaS', () => {
+    // 200 subscribers at $50. No standout signal, and previously no class:
+    // the most ordinary founder on the ladder was labelled "we don't know".
+    const a = founder({ nProducts: 1, customers: 200, activeSubscriptions: 200, mrrUsd: 10_000 })
+    expect(classFrom(a, 40)).toBe('Paladin')
   })
 
-  it('returns Bard on a social channel', () => {
-    expect(classFrom(founder({ nProducts: 1, channels: ['x-twitter'] }), 20)).toBe('Bard')
-  })
-
-  it('returns Mage on an AI stack', () => {
-    expect(classFrom(founder({ nProducts: 1, stack: ['anthropic'] }), 20)).toBe('Mage')
+  it('sizes the business off subscriptions when customers is missing', () => {
+    // The whole reason two thirds of the ladder used to be Adventurer.
+    const a = founder({ nProducts: 1, customers: 0, activeSubscriptions: 3_618, mrrUsd: 185_870 })
+    expect(classFrom(a, 50)).toBe('Paladin')
   })
 
   it('falls back to Adventurer when the data says nothing, never anything else', () => {
-    expect(classFrom(founder({ nProducts: 1 }), 20)).toBe('Adventurer')
+    expect(classFrom(founder({ nProducts: 1, mrrUsd: 39, revenueTotalUsd: 0 }), 20)).toBe(
+      'Adventurer',
+    )
+  })
+
+  it('never leaves a class that could read as an insult', () => {
+    // Every rule must be phrased as something earned. If a reason ever reads as
+    // a verdict on the person, it does not ship.
+    for (const rule of CLASS_RULES) {
+      expect(rule.reason.length).toBeGreaterThan(0)
+      expect(rule.class).not.toBe('')
+    }
   })
 })
 

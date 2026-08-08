@@ -41,20 +41,25 @@ Going from 40 to 41 costs proportionally the same as going from 10 to 11. The fi
 
 ### The classes
 
-Deterministic tree, **first match wins**. Order matters.
+Deterministic tree, **first match wins**. Order matters: how you build and how you find customers are choices, so they come first; the size and price of the business follow.
 
-| # | Class | Condition |
-| --- | --- | --- |
-| 1 | **Adventurer** | no products, or level < 5 |
-| 2 | **Priest** | retention > 60% and more than 50 customers |
-| 3 | **Rogue** | 20 customers or fewer, ARPU > $200 |
-| 4 | **Warrior** | more than 500 customers, ARPU < $20 |
-| 5 | **Hunter** | SEO channel and domain rating ≥ 30 |
-| 6 | **Bard** | X, LinkedIn, YouTube or TikTok channel |
-| 7 | **Mage** | AI stack |
-| — | **Adventurer** | default |
+| # | Class | Condition | Share |
+| --- | --- | --- | --- |
+| 1 | **Adventurer** | no products, or level < 5 | — |
+| 2 | **Mage** | AI stack (`openai`, `anthropic`) | 4% |
+| 3 | **Hunter** | SEO channel with domain rating ≥ 30, or DR ≥ 50 alone | 24% |
+| 4 | **Warlock** | paid acquisition (`google-ads`, `meta-ads`, …) | 7% |
+| 5 | **Bard** | an audience they built (`twitter`, `youtube`, `newsletter`, …) | 2% |
+| 6 | **Priest** | measured retention > 60% on more than 50 customers | 4% |
+| 7 | **Monk** | real lifetime revenue, no recurring revenue at all | 17% |
+| 8 | **Rogue** | ARPU ≥ $300 | 10% |
+| 9 | **Warrior** | 100+ paying, ARPU < $30 | 17% |
+| 10 | **Paladin** | 10+ paying, ARPU ≥ $30 | 13% |
+| — | **Adventurer** | default | 1% |
 
-`Adventurer` is the class of insufficient data. It's neutral and never demeaning: nobody should be able to read their class as a joke.
+`Adventurer` is the class of insufficient data. It's neutral and never demeaning: nobody should be able to read their class as a joke. `Monk` means you sell outright — nothing to renew, nothing to churn. Gumroad is a Monk.
+
+The shares are measured over the real corpus, not estimated. The first version of this tree keyed on a `customers` field that TrustMRR populates 16% of the time, and 66% of founders came out Adventurer — a ladder where two thirds of people sit in the "we don't know" class isn't a game. The rules now lead with the fields that actually exist, and size falls back to `activeSubscriptions` (78% coverage) when `customers` is missing.
 
 ### Rarity
 

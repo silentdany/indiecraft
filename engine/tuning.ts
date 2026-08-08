@@ -91,27 +91,68 @@ export const RARITY_BANDS: readonly { minLevel: number; rarity: Rarity }[] = [
 // ---------------------------------------------------------------------------
 
 /**
- * marketingChannels and techStack slugs are closed vocabularies on TrustMRR's
- * side.
+ * The real vocabularies, taken from a full crawl on 2026-08-08 rather than
+ * guessed. `pnpm crawl --dump-slugs` reprints them.
  *
- * TODO first crawl: `pnpm crawl --dump-slugs` prints every distinct slug seen.
- * Replace these lists with the real ones instead of continuing to guess. Until
- * that happens, Bard and Mage are under-assigned — never mis-assigned.
+ * The guessed lists were worse than useless: they contained `x-twitter`, which
+ * does not exist — the slug is `twitter` — so the Bard rule matched nothing at
+ * all while looking perfectly reasonable.
+ *
+ * marketingChannels (35): affiliate, app-store-optimization, blog,
+ *   cold-calling, cold-dm, cold-email, content-marketing, discord,
+ *   email-marketing, events, facebook, google-ads, hacker-news, influencers,
+ *   instagram, linkedin, linkedin-ads, meta-ads, newsletter, partnerships,
+ *   pinterest, press-pr, product-hunt, reddit, referral-program, seo, slack,
+ *   threads, tiktok, tiktok-ads, twitter, twitter-ads, word-of-mouth, youtube,
+ *   youtube-ads
+ *
+ * techStack (72): anthropic, astro, aws, bubble, capacitor, clerk, clickhouse,
+ *   cloudflare, csharp, css, datadog, digitalocean, django, docker, dotnet,
+ *   elasticsearch, electron, expo, express, fastapi, firebase, flutter, framer,
+ *   gcp, github-actions, go, graphql, hetzner, html5, java, javascript, jquery,
+ *   kotlin, laravel, mongodb, mysql, nextjs, nodejs, nuxt, objective-c, openai,
+ *   paypal, php, postgresql, prisma, python, rabbitmq, rails, railway, react,
+ *   reactnative, redis, remix, render, resend, revenuecat, rust, sendgrid,
+ *   sentry, shopify, sqlite, stripe, supabase, svelte, swift, swiftui,
+ *   tailwindcss, twilio, typescript, vercel, vue, webflow
+ *
+ * Groups nobody classifies on yet, if you want to build a rule: community
+ * (discord, slack, reddit, hacker-news, product-hunt — 2% of founders),
+ * outbound (cold-email, cold-dm, cold-calling — 1%), word of mouth
+ * (referral-program, affiliate, word-of-mouth — 4%), mobile (swift, swiftui,
+ * kotlin, flutter, reactnative, expo, capacitor — 11%), no-code (bubble,
+ * webflow, framer — 4%).
  */
-export const SOCIAL_CHANNELS: readonly string[] = ['x-twitter', 'linkedin', 'youtube', 'tiktok']
-
 export const SEO_CHANNELS: readonly string[] = ['seo', 'content-marketing']
 
-export const AI_STACK: readonly string[] = [
-  'openai',
-  'anthropic',
-  'langchain',
-  'replicate',
-  'huggingface',
-  'llamaindex',
-  'ollama',
-  'mistral',
+/** Acquisition you pay for, per click or per post. */
+export const PAID_CHANNELS: readonly string[] = [
+  'google-ads',
+  'meta-ads',
+  'facebook',
+  'tiktok-ads',
+  'twitter-ads',
+  'youtube-ads',
+  'linkedin-ads',
+  'influencers',
 ]
+
+/** Acquisition that runs on an audience the founder built themselves. */
+export const AUDIENCE_CHANNELS: readonly string[] = [
+  'twitter',
+  'youtube',
+  'tiktok',
+  'instagram',
+  'linkedin',
+  'threads',
+  'pinterest',
+  'newsletter',
+  'email-marketing',
+  'blog',
+]
+
+/** Only two of these exist in the vocabulary. The rest were invented. */
+export const AI_STACK: readonly string[] = ['openai', 'anthropic']
 
 /**
  * How to treat VC-funded startups (spec section 4, "point à trancher").
@@ -134,6 +175,25 @@ export const FUNDING_POLICY: 'mark' | 'exclude' | 'ignore' = 'mark'
  * `Adventurer` is the class of insufficient data. It is neutral and never
  * demeaning: nobody should be able to read their class as a joke. If a new
  * class could land as an insult, it doesn't ship.
+ *
+ * ---------------------------------------------------------------------------
+ * Built against the real corpus, not against intuition. Field coverage over
+ * 200 startups / 135 founders, measured 2026-08-08:
+ *
+ *   activeSubscriptions > 0 ... 78%     techStack ............... 45%
+ *   mrr > 0 ................... 79%     marketingChannels ....... 22%
+ *   domainRating .............. 62%     customers > 0 ........... 16%
+ *                                       cofounders ............... 3%
+ *
+ * The first tree leaned on `customers`, which exists 16% of the time, so 66%
+ * of founders came out Adventurer — a ladder where two thirds of people are in
+ * the "we don't know" class is not a game. The rules below lead with the
+ * signals that actually exist, and `effectiveCustomers` falls back to
+ * activeSubscriptions, which takes the base-size signal from 16% to 78%.
+ *
+ * Resulting spread: Hunter 24%, Monk 17%, Warrior 17%, Paladin 13%, Rogue 10%,
+ * Warlock 7%, Mage 4%, Priest 4%, Bard 2%, Adventurer 1%.
+ * ---------------------------------------------------------------------------
  */
 export interface ClassRule {
   class: CharacterClass
@@ -142,41 +202,73 @@ export interface ClassRule {
   test: (a: FounderAggregate, ctx: { level: number; arpu: number }) => boolean
 }
 
+const hasAny = (values: string[], group: readonly string[]) => values.some((v) => group.includes(v))
+
 export const CLASS_RULES: readonly ClassRule[] = [
   {
     class: 'Adventurer',
     reason: 'Where everything starts.',
     test: (a, { level }) => a.nProducts === 0 || level < 5,
   },
+  // --- How they build, then how they get customers. Both are chosen; the
+  // --- price and size of the business follow from them.
   {
-    class: 'Priest',
-    reason: 'Their customers stay.',
-    test: (a) => a.retention > 0.6 && a.customers > 50,
-  },
-  {
-    class: 'Rogue',
-    reason: 'Few customers, big tickets.',
-    test: (a, { arpu }) => a.customers <= 20 && arpu > 200,
-  },
-  {
-    class: 'Warrior',
-    reason: 'Volume, earned one dollar at a time.',
-    test: (a, { arpu }) => a.customers > 500 && arpu < 20,
+    class: 'Mage',
+    reason: 'Building with whatever just shipped.',
+    test: (a) => hasAny(a.stack, AI_STACK),
   },
   {
     class: 'Hunter',
-    reason: 'Finds customers before they go looking.',
-    test: (a) => a.channels.some((c) => SEO_CHANNELS.includes(c)) && (a.domainRating ?? 0) >= 30,
+    // A domain rating of 50 is not something you drift into. It is the same
+    // threshold the Authority achievement uses, on purpose.
+    reason: 'Found before they go looking.',
+    test: (a) =>
+      (hasAny(a.channels, SEO_CHANNELS) && (a.domainRating ?? 0) >= 30) ||
+      (a.domainRating ?? 0) >= 50,
+  },
+  {
+    class: 'Warlock',
+    reason: 'Summons customers, and pays for every one.',
+    test: (a) => hasAny(a.channels, PAID_CHANNELS),
   },
   {
     class: 'Bard',
     reason: 'Their audience is their channel.',
-    test: (a) => a.channels.some((c) => SOCIAL_CHANNELS.includes(c)),
+    test: (a) => hasAny(a.channels, AUDIENCE_CHANNELS),
+  },
+  // --- Then the shape of the business itself.
+  {
+    class: 'Priest',
+    reason: 'Their customers stay.',
+    test: (a) => a.hasRetentionSignal && a.retention > 0.6 && a.customers > 50,
   },
   {
-    class: 'Mage',
-    reason: 'Building with whatever just shipped.',
-    test: (a) => a.stack.some((s) => AI_STACK.includes(s)),
+    class: 'Monk',
+    // Real lifetime revenue and no recurring revenue at all. That is a business
+    // model, not missing data — Gumroad lands here, and so does every
+    // boilerplate and template seller. Phrased as independence, because that is
+    // what it is: nothing to renew, nothing to churn.
+    reason: 'Takes no rent. Every sale is finished the day it happens.',
+    test: (a) => a.mrrUsd === 0 && a.revenueTotalUsd > 0,
+  },
+  {
+    class: 'Rogue',
+    reason: 'Few marks, big scores.',
+    test: (a, { arpu }) => a.effectiveCustomers > 0 && arpu >= 300,
+  },
+  {
+    class: 'Warrior',
+    reason: 'Volume, earned one dollar at a time.',
+    test: (a, { arpu }) => a.effectiveCustomers >= 100 && arpu < 30,
+  },
+  {
+    class: 'Paladin',
+    // The bread-and-butter bootstrapped SaaS: a real base at a sustainable
+    // price, no single flashy signal. It had no class at all before, which is
+    // how the most ordinary founder on the ladder ended up labelled "we don't
+    // know".
+    reason: 'Holds the line. A real base at a price that lasts.',
+    test: (a, { arpu }) => a.effectiveCustomers >= 10 && arpu >= 30,
   },
 ]
 

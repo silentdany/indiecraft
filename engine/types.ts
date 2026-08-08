@@ -66,8 +66,11 @@ export type CharacterClass =
   | 'Priest'
   | 'Rogue'
   | 'Warrior'
+  | 'Paladin'
   | 'Hunter'
   | 'Bard'
+  | 'Warlock'
+  | 'Monk'
   | 'Mage'
 
 export interface AchievementDef {
