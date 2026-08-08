@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import { Icon } from '@/components/icon'
 import type { LadderRow } from '@/lib/queries'
 
 /**
@@ -29,7 +30,10 @@ export function LadderTable({ rows }: { rows: LadderRow[] }) {
             <span className="ladder-name" style={{ color: row.rarity.hex }}>
               @{row.handle}
             </span>
-            <span className="ladder-class label">{row.characterClass}</span>
+            <span className="ladder-class label">
+              <Icon name={row.characterClass} size={14} />
+              {row.characterClass}
+            </span>
             {/*
               The iLvl carries its own quality colour, and it is the one that
               works here. Level rarity paints the entire top 20 orange and the

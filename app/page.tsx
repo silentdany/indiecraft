@@ -1,5 +1,6 @@
 import Link from 'next/link'
 import { Frame } from '@/components/frame'
+import { Icon, type IconName } from '@/components/icon'
 import { InspectSearch } from '@/components/inspect-search'
 import { LadderTable } from '@/components/ladder-table'
 import { getClassCounts, getLadder, getRealmStats } from '@/lib/queries'
@@ -38,11 +39,19 @@ export default async function Home() {
 
       {stats && stats.characters > 0 && (
         <section className="realm" aria-label="Realm status">
-          <Stat label="Characters" value={stats.characters.toLocaleString('en-US')} />
-          <Stat label="Highest level" value={String(stats.maxLevel)} />
-          <Stat label="Tracked MRR" value={compactUsd(stats.trackedMrrUsd)} />
-          <Stat label="Gear" value={stats.products.toLocaleString('en-US')} />
-          <Stat label="Achievements" value={stats.achievements.toLocaleString('en-US')} />
+          <Stat
+            icon="characters"
+            label="Characters"
+            value={stats.characters.toLocaleString('en-US')}
+          />
+          <Stat icon="level" label="Highest level" value={String(stats.maxLevel)} />
+          <Stat icon="revenue" label="Tracked MRR" value={compactUsd(stats.trackedMrrUsd)} />
+          <Stat icon="gear" label="Gear" value={stats.products.toLocaleString('en-US')} />
+          <Stat
+            icon="achievement"
+            label="Achievements"
+            value={stats.achievements.toLocaleString('en-US')}
+          />
         </section>
       )}
 
@@ -82,11 +91,22 @@ export default async function Home() {
   )
 }
 
-function Stat({ label, value }: { label: string; value: string }) {
+/*
+ * The reference pairs every stat with a glyph in a bordered square, the value
+ * in the stat's own colour and the name in bold uppercase beneath. That pairing
+ * is most of why its numbers read as a readout rather than a table, and it cost
+ * us nothing to adopt — the drawings are ours.
+ */
+function Stat({ icon, label, value }: { icon: IconName; label: string; value: string }) {
   return (
     <div className="realm-cell">
-      <span className="serif">{value}</span>
-      <span className="stat-name">{label}</span>
+      <span className="qsquare realm-icon">
+        <Icon name={icon} size={18} />
+      </span>
+      <span className="realm-figures">
+        <span className="serif">{value}</span>
+        <span className="stat-name">{label}</span>
+      </span>
     </div>
   )
 }

@@ -439,7 +439,9 @@ a:hover {
    underneath in bold uppercase — with no box around the group. */
 .realm {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(128px, 1fr));
+  /* Wide enough that "Highest level" stays on one line: a wrapped label breaks
+     the baseline the whole strip is read along. */
+  grid-template-columns: repeat(auto-fit, minmax(172px, 1fr));
   gap: 1px 0;
   margin-top: 24px;
   padding: 18px 0;
@@ -450,8 +452,11 @@ a:hover {
   display: flex;
   flex-direction: column;
   gap: 3px;
-  padding: 0 18px;
+  padding: 0 14px;
   border-right: 1px solid var(--ic-line);
+}
+.realm-cell .stat-name {
+  white-space: nowrap;
 }
 .realm-cell:last-child {
   border-right: 0;
@@ -484,8 +489,27 @@ a:hover {
     font-size: 22px;
   }
 }
-.realm-cell > .serif {
-  font-size: 26px;
+.realm-cell {
+  flex-direction: row;
+  align-items: center;
+  gap: 11px;
+}
+
+.realm-icon {
+  width: 34px;
+  height: 34px;
+  color: var(--ic-gold);
+}
+
+.realm-figures {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.realm-cell .serif {
+  font-size: 24px;
   line-height: 1.1;
   color: var(--ic-gold);
 }
@@ -550,6 +574,18 @@ a:hover {
 .ladder-class {
   white-space: nowrap;
   font-size: 11px;
+}
+
+/* The glyph is the fast half of this pair: at a glance you read the shape, and
+   only slow down for the word when two classes look alike. */
+.ladder-class {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  color: var(--ic-text-muted);
+}
+.ladder a:hover .ladder-class {
+  color: var(--ic-gold);
 }
 /* iLvl is the number the ladder is actually sorted on after level, so it keeps
    its digits in the interface's own colour rather than the muted grey. */
@@ -638,6 +674,9 @@ a:hover {
   min-width: 260px;
 }
 .sheet-eyebrow {
+  display: flex;
+  align-items: center;
+  gap: 6px;
   margin: 0;
   font-size: 12px;
   color: var(--ic-text);
@@ -793,9 +832,26 @@ a:hover {
   gap: 8px;
 }
 .ach-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
   padding: 10px 12px;
   border: 1px solid var(--ic-line);
   background: var(--ic-surface);
+}
+
+/* Same square as the portrait and the gear icon, three sizes down. Carrying
+   one shape at every scale is what makes them read as one system. */
+.ach-icon {
+  width: 32px;
+  height: 32px;
+  color: var(--ic-gold);
+}
+
+.ach-body {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
 }
 .ach-title {
   font-size: 13px;
@@ -821,6 +877,9 @@ a:hover {
 }
 .ach-locked .ach-title {
   color: var(--ic-text-muted);
+}
+.ach-locked .ach-icon {
+  opacity: 0.45;
 }
 .ach-locked .ach-desc {
   opacity: 0.7;

@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { Frame } from '@/components/frame'
+import { ACHIEVEMENT_ICONS, Icon } from '@/components/icon'
 import { OptOutButton } from '@/components/opt-out-button'
 import { ViewTracker } from '@/components/view-tracker'
 import { ACHIEVEMENTS, ACHIEVEMENTS_BY_CODE, CLASS_REASONS } from '@/engine'
@@ -65,7 +66,10 @@ export default async function CharacterSheet({ params }: Props) {
           <div className="sheet-identity">
             <div className="sheet-topline">
               <div>
-                <p className="sheet-eyebrow">{character.characterClass}</p>
+                <p className="sheet-eyebrow">
+                  <Icon name={character.characterClass} size={15} />
+                  {character.characterClass}
+                </p>
                 {/* The reason was written alongside the rule and never shown,
                     which is backwards for a product whose answer to "why did
                     you call me that" is "the formula is public, go read it". */}
@@ -189,8 +193,13 @@ export default async function CharacterSheet({ params }: Props) {
             const def = ACHIEVEMENTS_BY_CODE.get(earned.code)
             return (
               <li key={earned.code} className="ach-card">
-                <div className="ach-title serif">{def?.label ?? earned.code}</div>
-                <div className="ach-desc">{def?.description}</div>
+                <span className="qsquare ach-icon">
+                  <Icon name={ACHIEVEMENT_ICONS[earned.code] ?? 'achievement'} size={17} />
+                </span>
+                <span className="ach-body">
+                  <span className="ach-title serif">{def?.label ?? earned.code}</span>
+                  <span className="ach-desc">{def?.description}</span>
+                </span>
               </li>
             )
           })}
@@ -209,8 +218,13 @@ export default async function CharacterSheet({ params }: Props) {
             <ul className="ach ach-locked">
               {locked.map((def) => (
                 <li key={def.code} className="ach-card">
-                  <div className="ach-title serif">{def.label}</div>
-                  <div className="ach-desc">{def.description}</div>
+                  <span className="qsquare ach-icon">
+                    <Icon name={ACHIEVEMENT_ICONS[def.code] ?? 'achievement'} size={17} />
+                  </span>
+                  <span className="ach-body">
+                    <span className="ach-title serif">{def.label}</span>
+                    <span className="ach-desc">{def.description}</span>
+                  </span>
                 </li>
               ))}
             </ul>
