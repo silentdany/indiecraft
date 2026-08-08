@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 import Link from 'next/link'
 import type { ReactNode } from 'react'
 import { PostHogProvider } from '@/components/posthog-provider'
+import { SiteNav } from '@/components/site-nav'
 import './globals.css'
 
 export const metadata: Metadata = {
@@ -20,17 +21,10 @@ export default function RootLayout({ children }: { children: ReactNode }) {
       <body>
         <PostHogProvider>
           <header className="topbar">
-            <Link href="/" className="serif gold">
+            <Link href="/" className="topbar-mark serif">
               <span className="topbar-over">World of</span> INDIECRAFT
             </Link>
-            <nav>
-              <Link href="/ladder" className="label">
-                Ladder
-              </Link>
-              <a href="https://github.com/silentdany/indiecraft" className="label">
-                Source
-              </a>
-            </nav>
+            <SiteNav />
           </header>
           {children}
         </PostHogProvider>

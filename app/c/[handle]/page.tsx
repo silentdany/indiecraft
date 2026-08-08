@@ -46,71 +46,60 @@ export default async function CharacterSheet({ params }: Props) {
       <ViewTracker handle={character.handle} claimed={claimed} />
 
       <Frame>
-        <div style={{ display: 'flex', gap: 20, alignItems: 'flex-start', flexWrap: 'wrap' }}>
-          {/* Portrait: 2px rarity border. */}
-          <div
-            className="surface"
-            style={{
-              width: 96,
-              height: 96,
-              border: `2px solid ${rarity.hex}`,
-              display: 'grid',
-              placeItems: 'center',
-              overflow: 'hidden',
-              flexShrink: 0,
-            }}
-          >
+        <div className="sheet-head">
+          {/* Portrait: the rarity square at its largest. */}
+          <div className="qsquare sheet-portrait" style={{ color: rarity.hex }}>
             {character.avatarUrl ? (
               // biome-ignore lint/performance/noImgElement: Satori and next/image share no pipeline; visual consistency wins.
-              <img
-                src={character.avatarUrl}
-                alt=""
-                width={96}
-                height={96}
-                style={{ objectFit: 'cover' }}
-              />
+              <img src={character.avatarUrl} alt="" width={96} height={96} />
             ) : (
-              <span className="serif" style={{ fontSize: 34, color: rarity.hex }}>
+              <span className="serif" style={{ fontSize: 34 }}>
                 {character.handle.slice(0, 1).toUpperCase()}
               </span>
             )}
           </div>
 
-          <div style={{ flex: '1 1 240px', minWidth: 220 }}>
-            <div className="serif" style={{ fontSize: 26, color: rarity.hex }}>
-              {character.displayName}
-            </div>
-            <div className="muted" style={{ fontSize: 13 }}>
-              @{character.handle} · {character.characterClass}
-            </div>
+          <div className="sheet-identity">
+            <div className="sheet-topline">
+              <div>
+                <p className="sheet-eyebrow">{character.characterClass}</p>
+                <h1 className="sheet-name serif">{character.displayName}</h1>
+              </div>
 
-            <div style={{ marginTop: 14 }}>
-              <span className="label">Level</span>
-              <div style={{ display: 'flex', alignItems: 'baseline', gap: 14 }}>
-                <span className="serif gold" style={{ fontSize: 64, lineHeight: 1 }}>
-                  {character.level}
+              {/* The two numbers the sheet exists to state. */}
+              <div className="sheet-readouts">
+                <span className="sheet-readout">
+                  <span className="serif" style={{ color: 'var(--ic-butter)' }}>
+                    {character.level}
+                  </span>
+                  <span className="stat-name">Level</span>
                 </span>
-                <IlvlDelta ilvl={character.ilvl} delta={character.ilvlDelta} claimed={claimed} />
+                <span className="sheet-readout">
+                  <span className="serif" style={{ color: rarity.hex }}>
+                    {character.ilvl}
+                  </span>
+                  <span className="stat-name">iLvl</span>
+                  <IlvlDelta delta={character.ilvlDelta} claimed={claimed} />
+                </span>
               </div>
             </div>
 
-            <div style={{ marginTop: 12 }}>
+            <p className="sheet-meta">
+              @{character.handle} · rank <span className="gold">#{character.rank}</span> ·{' '}
+              {character.nProducts} product{character.nProducts === 1 ? '' : 's'} ·{' '}
+              {formatUsd(character.mrrUsd)} MRR · {formatUsd(character.revenueTotalUsd)} lifetime
+            </p>
+
+            <div className="sheet-progress">
               <div className="bar">
                 <span style={{ width: `${Math.round(character.progress.ratio * 100)}%` }} />
               </div>
-              <div className="muted" style={{ fontSize: 12, marginTop: 6 }}>
+              <span className="label">
                 {character.progress.next === null
-                  ? 'Max level reached.'
+                  ? 'Max level reached'
                   : `${formatUsd(character.progress.next - character.xp)} of XP to level ${character.level + 1}`}
-              </div>
+              </span>
             </div>
-          </div>
-
-          <div style={{ minWidth: 150 }}>
-            <Stat label="Rank" value={`#${character.rank}`} />
-            <Stat label="Products" value={String(character.nProducts)} />
-            <Stat label="MRR" value={formatUsd(character.mrrUsd)} />
-            <Stat label="Lifetime revenue" value={formatUsd(character.revenueTotalUsd)} />
           </div>
         </div>
       </Frame>
@@ -119,36 +108,40 @@ export default async function CharacterSheet({ params }: Props) {
         {character.equipment.length === 0 ? (
           <p className="muted">No products linked yet.</p>
         ) : (
-          <ul style={{ listStyle: 'none', margin: 0, padding: 0, display: 'grid', gap: 8 }}>
+          <ul className="gear">
             {character.equipment.map((piece) => (
-              <li
-                key={piece.slug}
-                className="surface"
-                style={{
-                  padding: '10px 12px',
-                  borderLeft: `2px solid ${piece.rarity.hex}`,
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  gap: 12,
-                  alignItems: 'center',
-                }}
-              >
-                <span>
+              <li key={piece.slug} className="gear-row">
+                {/* Icon and name carry the same quality colour, as on a real
+                    item: the border is the whole label. */}
+                <div className="qsquare gear-icon" style={{ color: piece.rarity.hex }}>
+                  {piece.iconUrl ? (
+                    // biome-ignore lint/performance/noImgElement: Satori and next/image share no pipeline; visual consistency wins.
+                    <img src={piece.iconUrl} alt="" width={56} height={56} />
+                  ) : (
+                    <span className="serif">{piece.name.slice(0, 1).toUpperCase()}</span>
+                  )}
+                </div>
+
+                <div className="gear-body">
                   {/* The dofollow backlink is what claiming buys you. */}
                   {piece.website && claimed ? (
-                    <a href={piece.website} style={{ color: piece.rarity.hex }}>
+                    <a
+                      href={piece.website}
+                      className="gear-name"
+                      style={{ color: piece.rarity.hex }}
+                    >
                       {piece.name}
                     </a>
                   ) : (
-                    <span style={{ color: piece.rarity.hex }}>{piece.name}</span>
-                  )}
-                  {piece.vcFunded && (
-                    <span className="label" style={{ marginLeft: 8 }}>
-                      VC
+                    <span className="gear-name" style={{ color: piece.rarity.hex }}>
+                      {piece.name}
                     </span>
                   )}
-                </span>
-                <span className="label">item level {piece.itemLevel}</span>
+                  <div className="gear-sub">
+                    <span className="label">item level {piece.itemLevel}</span>
+                    {piece.vcFunded && <span className="gear-flag">VC</span>}
+                  </div>
+                </div>
               </li>
             ))}
           </ul>
@@ -156,30 +149,13 @@ export default async function CharacterSheet({ params }: Props) {
       </Section>
 
       <Section title={`Achievements — ${character.achievements.length}`}>
-        <ul
-          style={{
-            listStyle: 'none',
-            margin: 0,
-            padding: 0,
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))',
-            gap: 8,
-          }}
-        >
+        <ul className="ach">
           {character.achievements.map((earned) => {
             const def = ACHIEVEMENTS_BY_CODE.get(earned.code)
             return (
-              <li
-                key={earned.code}
-                className="surface"
-                style={{ padding: '10px 12px', border: `1px solid ${rarity.hex}` }}
-              >
-                <div className="serif gold" style={{ fontSize: 14 }}>
-                  {def?.label ?? earned.code}
-                </div>
-                <div className="muted" style={{ fontSize: 12 }}>
-                  {def?.description}
-                </div>
+              <li key={earned.code} className="ach-card">
+                <div className="ach-title serif">{def?.label ?? earned.code}</div>
+                <div className="ach-desc">{def?.description}</div>
               </li>
             )
           })}
@@ -188,9 +164,12 @@ export default async function CharacterSheet({ params }: Props) {
 
       {character.cofounders.length > 0 && (
         <Section title="Guild">
-          <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+          <div className="guild">
             {character.cofounders.map((mate) => (
               <Link key={mate} href={`/c/${mate}`}>
+                <span className="qsquare serif" aria-hidden="true">
+                  {mate.slice(0, 1).toUpperCase()}
+                </span>
                 @{mate}
               </Link>
             ))}
@@ -211,37 +190,28 @@ export default async function CharacterSheet({ params }: Props) {
  * The test for every derived label: would this person be happy to screenshot
  * it? If not, it's a bug.
  */
-function IlvlDelta({ ilvl, delta, claimed }: { ilvl: number; delta: number; claimed: boolean }) {
-  if (delta < 0 && !claimed) {
-    return <span className="label">iLvl {ilvl}</span>
-  }
+function IlvlDelta({ delta, claimed }: { delta: number; claimed: boolean }) {
+  if (delta === 0 || (delta < 0 && !claimed)) return null
   return (
-    <span className="label">
-      iLvl {ilvl}
-      {delta !== 0 && (
-        <span className={delta > 0 ? 'positive' : 'muted'} style={{ marginLeft: 6 }}>
-          {delta > 0 ? `+${delta}` : delta}
-        </span>
-      )}
+    <span className={delta > 0 ? 'positive' : 'muted'} style={{ fontSize: 12 }}>
+      {delta > 0 ? `+${delta}` : delta}
     </span>
-  )
-}
-
-function Stat({ label, value }: { label: string; value: string }) {
-  return (
-    <div style={{ borderBottom: '1px solid var(--ic-line)', padding: '6px 0' }}>
-      <div className="label">{label}</div>
-      <div className="serif" style={{ fontSize: 18 }}>
-        {value}
-      </div>
-    </div>
   )
 }
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <section style={{ marginTop: 28 }}>
-      <h2 className="serif" style={{ fontSize: 15, letterSpacing: '0.1em', margin: '0 0 10px' }}>
+    <section style={{ marginTop: 30 }}>
+      <h2
+        className="serif"
+        style={{
+          fontSize: 16,
+          letterSpacing: '0.14em',
+          margin: '0 0 12px',
+          paddingBottom: 8,
+          borderBottom: '1px solid var(--ic-line-2)',
+        }}
+      >
         {title.toUpperCase()}
       </h2>
       {children}

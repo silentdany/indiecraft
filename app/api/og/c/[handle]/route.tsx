@@ -34,12 +34,16 @@ const fonts = (async () => {
   ]
 })()
 
-const BG = '#0d0b09'
-const SURFACE = '#16120d'
-const GOLD = '#c8a24a'
-const GOLD_BRIGHT = '#f0c860'
-const TEXT = '#e8dcc0'
-const MUTED = '#9a8f78'
+// Kept byte-for-byte in step with the tokens in app/globals.css. The whole
+// point of the flat-rendering rule is that the thumbnail and the page look like
+// the same product; letting these two palettes drift apart defeats it.
+const BG = '#170e09'
+const SURFACE = '#1e1610'
+const FRAME = '#6b552a'
+const GOLD = '#f8b700'
+const BUTTER = '#fff468'
+const TEXT = '#ede7dc'
+const MUTED = '#9b9187'
 
 export async function GET(_request: Request, { params }: { params: Promise<{ handle: string }> }) {
   const { handle } = await params
@@ -73,7 +77,7 @@ export async function GET(_request: Request, { params }: { params: Promise<{ han
           width: 1120,
           height: 550,
           background: SURFACE,
-          border: `2px solid ${GOLD}`,
+          border: `2px solid ${FRAME}`,
           padding: '0 56px',
         }}
       >
@@ -97,7 +101,7 @@ export async function GET(_request: Request, { params }: { params: Promise<{ han
             background: BG,
           }}
         >
-          <div style={{ display: 'flex', fontSize: 190, color: GOLD_BRIGHT, lineHeight: 1 }}>
+          <div style={{ display: 'flex', fontSize: 190, color: BUTTER, lineHeight: 1 }}>
             {character.level}
           </div>
           <div style={{ display: 'flex', fontSize: 24, color: MUTED, letterSpacing: 8 }}>LEVEL</div>
@@ -112,7 +116,7 @@ export async function GET(_request: Request, { params }: { params: Promise<{ han
             style={{
               display: 'flex',
               fontSize: variant.headlineSize,
-              color: GOLD_BRIGHT,
+              color: BUTTER,
               lineHeight: 1.05,
               marginTop: 10,
             }}

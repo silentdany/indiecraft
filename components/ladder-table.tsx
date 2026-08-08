@@ -23,10 +23,7 @@ export function LadderTable({ rows }: { rows: LadderRow[] }) {
         <li key={row.handle}>
           <Link href={`/c/${row.handle}`}>
             <span className="ladder-rank serif">{row.rank}</span>
-            <span
-              className="ladder-level serif"
-              style={{ borderColor: row.rarity.hex, color: row.rarity.hex }}
-            >
+            <span className="qsquare ladder-level serif" style={{ color: row.rarity.hex }}>
               {row.level}
             </span>
             <span className="ladder-name" style={{ color: row.rarity.hex }}>

@@ -31,29 +31,17 @@ export function OptOutButton({ handle, claimed }: { handle: string; claimed: boo
   if (state === 'done') return <p className="muted">Sheet removed.</p>
 
   return (
-    <div style={{ display: 'flex', gap: 16, alignItems: 'center', flexWrap: 'wrap' }}>
+    <div className="consent">
       {!claimed && (
         <a
           href={`https://x.com/${handle}`}
           onClick={() => capture('claim_started', { handle })}
-          className="serif"
+          className="serif consent-claim"
         >
           This is me — claim this sheet
         </a>
       )}
-      <button
-        type="button"
-        onClick={optOut}
-        disabled={state === 'working'}
-        className="label"
-        style={{
-          background: 'none',
-          border: '1px solid var(--ic-line-2)',
-          color: 'var(--ic-text-muted)',
-          padding: '6px 10px',
-          cursor: 'pointer',
-        }}
-      >
+      <button type="button" onClick={optOut} disabled={state === 'working'} className="label">
         {state === 'working' ? 'Removing…' : 'Remove my sheet'}
       </button>
       {state === 'error' && <span className="muted">Failed. Try again.</span>}

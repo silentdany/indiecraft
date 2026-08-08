@@ -55,18 +55,20 @@ export default async function Home() {
         </header>
 
         {classes.length > 0 && (
-          <nav className="classbar" aria-label="Filter by class">
+          <nav className="tabs" aria-label="Filter by class">
             {classes.map((c) => (
-              <Link key={c.name} href={`/ladder?class=${encodeURIComponent(c.name)}`}>
-                {c.name} <span className="muted">{c.count}</span>
+              <Link
+                key={c.name}
+                href={`/ladder?class=${encodeURIComponent(c.name)}`}
+                className="tab"
+              >
+                {c.name} <span className="tab-count">{c.count}</span>
               </Link>
             ))}
           </nav>
         )}
 
-        <Frame style={{ padding: 10 }}>
-          <LadderTable rows={rows.slice(0, 20)} />
-        </Frame>
+        <LadderTable rows={rows.slice(0, 20)} />
       </section>
 
       <footer className="footer">
@@ -84,7 +86,7 @@ function Stat({ label, value }: { label: string; value: string }) {
   return (
     <div className="realm-cell">
       <span className="serif">{value}</span>
-      <span className="label">{label}</span>
+      <span className="stat-name">{label}</span>
     </div>
   )
 }

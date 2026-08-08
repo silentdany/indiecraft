@@ -1,14 +1,27 @@
 /*
  * Design system.
  *
- * No Blizzard assets. Recognition comes from four purely structural elements:
- * a warm black, a double gold frame with corner brackets, rarity colors on
- * borders, and a Roman serif on numbers and titles.
+ * No Blizzard assets — not a font, not an icon, not a pixel of background.
+ * What is borrowed is structure, measured off a live armory character page:
+ * the warm black it sits on, the saturated amber its interface is built from,
+ * the pale yellow it reserves for the character's own name, the tab strip
+ * whose selected tab inverts into a solid block, the square item icon carrying
+ * a 1px border in its quality colour, and the density (14px body, 12px
+ * metadata) that makes the whole thing read as a readout instead of a page.
+ *
+ * Two golds, and they are not interchangeable:
+ *   --ic-gold   saturated amber, for anything you can act on.
+ *   --ic-frame  dim bronze, for structure — frames, rules, brackets.
+ * Let either one do both jobs and neither reads.
+ *
+ * The Roman serif is ours, not the reference's: it carries titles and every
+ * number, and it is the one place this armory deliberately sounds like itself.
  *
  * One non-negotiable rendering rule: EVERYTHING IS FLAT.
  * No gradients, no shadows, no glows. This is not a compromise: Satori
  * (@vercel/og) only supports this subset, and it is what guarantees the shared
- * thumbnail and the page look like the same product.
+ * thumbnail and the page look like the same product. The palette above is
+ * duplicated by hand in app/api/og/c/[handle]/route.tsx; change one, change both.
  */
 
 /* Cinzel lives in the repo and is never fetched at runtime: slow, fragile, and
@@ -27,16 +40,24 @@
 }
 
 :root {
-  --ic-bg: #0d0b09;
-  --ic-surface: #16120d;
-  --ic-line: #241c10;
-  --ic-line-2: #352913;
+  /* Measured off the reference armory, not invented: its body sits on #170e09,
+     its UI gold is a saturated amber, and the character's own name is the one
+     thing on the page allowed a brighter, paler yellow. */
+  --ic-bg: #170e09;
+  --ic-well: #100a06;
+  --ic-surface: #1e1610;
+  --ic-line: rgba(255, 255, 255, 0.09);
+  --ic-line-2: rgba(255, 255, 255, 0.16);
   --ic-frame: #6b552a;
-  --ic-gold: #c8a24a;
-  --ic-gold-bright: #f0c860;
-  --ic-text: #e8dcc0;
-  --ic-text-muted: #9a8f78;
-  --ic-positive: #8fd14f;
+  --ic-gold: #f8b700;
+  --ic-gold-bright: #ffd451;
+  /* Reserved for two things only: the character's name and their level.
+     Spend it anywhere else and neither reads as the subject of the page. */
+  --ic-butter: #fff468;
+  --ic-text: #ede7dc;
+  --ic-text-muted: #9b9187;
+  --ic-positive: #27cc4e;
+  --ic-negative: #e01c1c;
 
   --ic-serif: "Cinzel", "Times New Roman", serif;
   --ic-sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
@@ -61,7 +82,9 @@ body {
   background: var(--ic-bg);
   color: var(--ic-text);
   font-family: var(--ic-sans);
-  font-size: 15px;
+  /* The reference runs dense: 14px body, 12px metadata. An armory is a readout,
+     not an article, and the density is most of why it reads as one. */
+  font-size: 14px;
   line-height: 1.5;
   -webkit-font-smoothing: antialiased;
 }
@@ -74,6 +97,25 @@ a:hover {
   color: var(--ic-gold-bright);
 }
 
+/* Quality floor: every interactive element keeps a visible keyboard focus ring,
+   including the ones whose hover state is only a colour change. */
+:focus-visible {
+  outline: 2px solid var(--ic-gold);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  a,
+  .tab,
+  .ladder a,
+  .gear-row {
+    transition:
+      color 120ms linear,
+      background-color 120ms linear,
+      border-color 120ms linear;
+  }
+}
+
 /* Cinzel on titles and numbers only.
    Never on body copy: unreadable at small sizes. */
 .serif {
@@ -83,16 +125,19 @@ a:hover {
 }
 
 .page {
-  max-width: 880px;
+  max-width: 960px;
   margin: 0 auto;
-  padding: 32px 20px 80px;
+  padding: 28px 20px 80px;
 }
 
 /* --- The frame: outer border, inner border at 5px, 9px corner brackets ----- */
 
+/* The frame is structure, not an accent, so it holds the dimmer of the two
+   golds. The saturated amber is reserved for things you can act on — once it
+   is doing both jobs, neither one reads. */
 .frame {
   position: relative;
-  border: 1px solid var(--ic-frame);
+  border: 1px solid #4a3a1c;
   background: var(--ic-bg);
   padding: 18px;
 }
@@ -100,7 +145,7 @@ a:hover {
   content: "";
   position: absolute;
   inset: 5px;
-  border: 1px solid var(--ic-gold);
+  border: 1px solid var(--ic-frame);
   pointer-events: none;
 }
 
@@ -160,36 +205,139 @@ a:hover {
   color: var(--ic-text-muted);
 }
 
+/* The reference names a stat in bold uppercase white and puts the value above
+   it in the stat's own colour. The label is the quiet half of the pair. */
+.stat-name {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ic-text);
+}
+
 .rule {
   height: 1px;
   background: var(--ic-line-2);
   border: 0;
-  margin: 20px 0;
+  margin: 24px 0;
+}
+
+/* --- The rarity square ----------------------------------------------------
+   The one shape the whole armory is built from: a flat well behind a 1px
+   border in the quality colour, never rounded. It appears at three sizes —
+   96px as a portrait, 56px as a piece of gear, 30px as a level on the ladder —
+   and carrying all three on one class is what makes them read as one system. */
+
+.qsquare {
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  border: 1px solid currentColor;
+  background: var(--ic-well);
+  overflow: hidden;
+}
+
+/* --- The tab strip --------------------------------------------------------
+   Straight from the reference: uppercase, bold, no border, amber on nothing.
+   The selected tab inverts into a solid amber block with dark text — the only
+   place in the interface where gold becomes a background rather than ink. */
+
+.tabs {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 2px;
+  border-bottom: 1px solid var(--ic-line-2);
+}
+
+.tab {
+  padding: 7px 10px;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ic-gold);
+  white-space: nowrap;
+}
+.tab:hover {
+  color: #fff;
+  background: rgba(255, 255, 255, 0.06);
+}
+.tab[aria-current],
+.tab.is-selected {
+  color: #211510;
+  background: var(--ic-gold);
+}
+.tab[aria-current]:hover,
+.tab.is-selected:hover {
+  color: #211510;
+  background: var(--ic-gold-bright);
+}
+/* Counts ride along inside a tab and must dim in both states. */
+.tab-count {
+  opacity: 0.6;
+  font-weight: 400;
 }
 
 .topbar {
   display: flex;
-  align-items: baseline;
+  align-items: center;
   justify-content: space-between;
   gap: 20px;
-  padding: 13px 20px;
+  padding: 0 20px;
   border-bottom: 1px solid var(--ic-line-2);
 }
-.topbar > a {
-  font-size: 17px;
+.topbar-mark {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  padding: 12px 0;
+  font-size: 16px;
   letter-spacing: 0.09em;
+  white-space: nowrap;
+  color: var(--ic-gold-bright);
 }
 .topbar-over {
   font-family: var(--ic-sans);
-  font-size: 10px;
+  font-size: 9px;
   letter-spacing: 0.24em;
   text-transform: uppercase;
+  white-space: nowrap;
   color: var(--ic-frame);
-  margin-right: 4px;
 }
-.topbar nav {
+.topbar .tabs {
+  border-bottom: 0;
+  align-self: stretch;
+}
+/* The nav tabs run the full height of the bar, so the selected block reads as
+   a tab in a strip rather than a button floating in it. */
+.topbar .tab {
   display: flex;
-  gap: 18px;
+  align-items: center;
+  padding: 0 12px;
+}
+
+/* Below this the wordmark and three tabs cannot share a line without the
+   wordmark breaking mid-word. Stack them instead, mark over strip. */
+@media (max-width: 560px) {
+  .topbar {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0;
+    padding: 0 12px;
+  }
+  .topbar-mark {
+    padding: 10px 0 8px;
+    font-size: 15px;
+  }
+  .topbar .tabs {
+    border-top: 1px solid var(--ic-line);
+    margin: 0 -12px;
+    padding: 0 12px;
+  }
+  .topbar .tab {
+    padding: 9px 10px;
+  }
 }
 
 /* --- The armory front ----------------------------------------------------- */
@@ -265,19 +413,20 @@ a:hover {
 .inspect input::placeholder {
   color: var(--ic-text-muted);
 }
+/* The one action on the front page, so it takes the one solid amber block the
+   interface allows itself — the same inversion the selected tab uses. */
 .inspect button {
-  background: none;
+  background: var(--ic-gold);
   border: 0;
-  border-left: 1px solid var(--ic-frame);
-  color: var(--ic-gold);
-  padding: 0 18px;
+  color: #211510;
+  padding: 0 20px;
   font-size: 13px;
+  font-weight: 500;
   letter-spacing: 0.14em;
   cursor: pointer;
 }
 .inspect button:hover {
-  color: var(--ic-gold-bright);
-  background: var(--ic-line);
+  background: var(--ic-gold-bright);
 }
 
 .hero-note {
@@ -285,26 +434,32 @@ a:hover {
   font-size: 13px;
 }
 
-/* Realm status: a server population readout. Every figure is countable. */
+/* Realm status: a server population readout. Every figure is countable.
+   Laid out like the reference's stat block — value in its own colour, name
+   underneath in bold uppercase — with no box around the group. */
 .realm {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
-  margin-top: 14px;
-  border: 1px solid var(--ic-line-2);
+  grid-template-columns: repeat(auto-fit, minmax(128px, 1fr));
+  gap: 1px 0;
+  margin-top: 24px;
+  padding: 18px 0;
+  border-top: 1px solid var(--ic-line-2);
+  border-bottom: 1px solid var(--ic-line-2);
 }
 .realm-cell {
   display: flex;
   flex-direction: column;
-  gap: 2px;
-  padding: 12px 14px;
-  border-right: 1px solid var(--ic-line-2);
+  gap: 3px;
+  padding: 0 18px;
+  border-right: 1px solid var(--ic-line);
 }
 .realm-cell:last-child {
   border-right: 0;
 }
 .realm-cell > .serif {
-  font-size: 20px;
-  color: var(--ic-gold-bright);
+  font-size: 26px;
+  line-height: 1.1;
+  color: var(--ic-gold);
 }
 
 .section-head {
@@ -312,31 +467,13 @@ a:hover {
   align-items: baseline;
   justify-content: space-between;
   gap: 16px;
-  margin-bottom: 10px;
+  margin-bottom: 12px;
 }
 .section-head h2 {
   margin: 0;
-  font-size: 15px;
+  font-size: 16px;
   letter-spacing: 0.16em;
-}
-
-.classbar {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  margin-bottom: 12px;
-}
-.classbar a {
-  border: 1px solid var(--ic-line-2);
-  padding: 5px 10px;
-  font-size: 11px;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  color: var(--ic-text-muted);
-}
-.classbar a:hover {
-  border-color: var(--ic-gold);
-  color: var(--ic-gold-bright);
+  color: var(--ic-text);
 }
 
 /* --- The ladder ----------------------------------------------------------- */
@@ -347,12 +484,15 @@ a:hover {
   padding: 0;
   counter-reset: rank;
 }
+/* Handle and class sit together on the left, because they describe the same
+   person; iLvl anchors the right, because it is what the list is ranked on.
+   Spreading all three across the full width left a lake of empty row. */
 .ladder a {
   display: grid;
-  grid-template-columns: 34px 40px 1fr auto auto;
+  grid-template-columns: 30px 34px auto auto 1fr;
   align-items: center;
-  gap: 12px;
-  padding: 7px 8px;
+  gap: 14px;
+  padding: 6px 10px;
   border-bottom: 1px solid var(--ic-line);
   color: var(--ic-text);
 }
@@ -360,33 +500,48 @@ a:hover {
   border-bottom: 0;
 }
 .ladder a:hover {
-  background: var(--ic-surface);
+  background: rgba(255, 255, 255, 0.05);
 }
 .ladder-rank {
   color: var(--ic-text-muted);
-  font-size: 13px;
+  font-size: 12px;
   text-align: right;
 }
-/* The level gets the same bordered, rarity-coloured treatment as a portrait. */
+/* The level is the rarity square at its smallest — same border, same well,
+   same absence of a corner radius as a piece of gear. */
 .ladder-level {
-  display: grid;
-  place-items: center;
-  height: 30px;
-  border: 1px solid;
+  height: 34px;
   font-size: 15px;
+}
+.ladder-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 .ladder-ilvl,
 .ladder-class {
   white-space: nowrap;
+  font-size: 11px;
+}
+/* iLvl is the number the ladder is actually sorted on after level, so it keeps
+   its digits in the interface's own colour rather than the muted grey. */
+.ladder-ilvl {
+  color: var(--ic-text);
+  justify-self: end;
 }
 
 @media (max-width: 560px) {
   .ladder a {
-    grid-template-columns: 26px 34px 1fr auto;
-    gap: 9px;
+    grid-template-columns: 24px 30px auto 1fr;
+    gap: 10px;
+    padding: 6px 4px;
   }
   .ladder-class {
     display: none;
+  }
+  .ladder-level {
+    height: 30px;
+    font-size: 13px;
   }
 }
 
@@ -404,11 +559,258 @@ a:hover {
 /* Progress bar: two flat fills, nothing else. */
 .bar {
   height: 6px;
-  background: var(--ic-line);
+  background: var(--ic-well);
   border: 1px solid var(--ic-line-2);
 }
 .bar > span {
   display: block;
   height: 100%;
   background: var(--ic-gold);
+}
+
+/* --- The character sheet ---------------------------------------------------
+   The reference's header grammar, in order: portrait, then a small title
+   riding above a large name, then a vertical hairline, then the two numbers
+   that define the character, then one thin line of metadata underneath. */
+
+.sheet-head {
+  display: flex;
+  gap: 20px;
+  align-items: flex-start;
+  flex-wrap: wrap;
+}
+.sheet-portrait {
+  width: 96px;
+  height: 96px;
+}
+.sheet-portrait img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.sheet-identity {
+  flex: 1 1 320px;
+  min-width: 260px;
+}
+.sheet-eyebrow {
+  margin: 0;
+  font-size: 12px;
+  color: var(--ic-text);
+}
+.sheet-name {
+  margin: 0;
+  font-size: clamp(26px, 4.6vw, 36px);
+  line-height: 1.1;
+  letter-spacing: 0.02em;
+  /* Always the butter yellow, never the rarity colour: the reference colours
+     items by quality and the person by being the person. Rarity already reads
+     from the portrait border a few pixels away. */
+  color: var(--ic-butter);
+}
+/* Name and headline numbers sit on one row, split by a vertical hairline. */
+.sheet-topline {
+  display: flex;
+  align-items: center;
+  gap: 22px;
+  flex-wrap: wrap;
+}
+.sheet-readouts {
+  display: flex;
+  align-items: baseline;
+}
+.sheet-readout {
+  display: flex;
+  align-items: baseline;
+  gap: 7px;
+  white-space: nowrap;
+}
+/* The rule lives *between* the two readouts, never before the first one.
+   Hung off the left edge of the group it dangled into the margin whenever a
+   long name pushed the readouts onto their own line. */
+.sheet-readout + .sheet-readout {
+  margin-left: 20px;
+  padding-left: 20px;
+  border-left: 1px solid var(--ic-line-2);
+}
+.sheet-readout > .serif {
+  font-size: 24px;
+  line-height: 1;
+}
+.sheet-meta {
+  margin: 10px 0 0;
+  font-size: 12px;
+  color: var(--ic-text-muted);
+}
+.sheet-meta > .gold {
+  color: var(--ic-gold);
+}
+
+/* Bar and remaining XP share one row. Stacked, they left an L of dead space
+   across the whole right half of the header. */
+.sheet-progress {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 14px;
+}
+.sheet-progress > .bar {
+  flex: 1 1 auto;
+  min-width: 80px;
+}
+.sheet-progress > .label {
+  flex: 0 0 auto;
+}
+
+@media (max-width: 560px) {
+  .sheet-head {
+    gap: 14px;
+  }
+  .sheet-progress {
+    flex-wrap: wrap;
+    gap: 6px 12px;
+  }
+  .sheet-progress > .bar {
+    flex-basis: 100%;
+  }
+}
+
+/* --- Gear -----------------------------------------------------------------
+   A row is an icon and a name in the same quality colour, with the item level
+   under the name. The icon is the rarity square at 56px. */
+
+.gear {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 10px;
+}
+.gear-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px;
+  border: 1px solid var(--ic-line);
+  background: var(--ic-surface);
+}
+.gear-row:hover {
+  border-color: var(--ic-line-2);
+}
+.gear-icon {
+  width: 56px;
+  height: 56px;
+  font-size: 22px;
+}
+.gear-icon img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.gear-body {
+  min-width: 0;
+}
+.gear-name {
+  display: block;
+  font-size: 14px;
+  overflow-wrap: anywhere;
+}
+.gear-sub {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 3px;
+}
+/* "VC" is a fact, not a verdict: it gets an outline, never a colour. */
+.gear-flag {
+  border: 1px solid var(--ic-line-2);
+  padding: 0 4px;
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  color: var(--ic-text-muted);
+}
+
+/* --- Achievements ---------------------------------------------------------
+   Deliberately the quietest block on the page. The reference gives an earned
+   achievement a plain dark panel and one amber line; colouring all fifteen in
+   the character's rarity turned the sheet into a grid of loud boxes and buried
+   the gear, which is the part that actually varies. */
+
+.ach {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(232px, 1fr));
+  gap: 8px;
+}
+.ach-card {
+  padding: 10px 12px;
+  border: 1px solid var(--ic-line);
+  background: var(--ic-surface);
+}
+.ach-title {
+  font-size: 13px;
+  color: var(--ic-gold);
+}
+.ach-desc {
+  margin-top: 2px;
+  font-size: 12px;
+  color: var(--ic-text-muted);
+}
+
+/* --- Guild ----------------------------------------------------------------- */
+
+.guild {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.guild a {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px 6px 6px;
+  border: 1px solid var(--ic-line);
+  background: var(--ic-surface);
+  font-size: 13px;
+}
+.guild a:hover {
+  border-color: var(--ic-gold);
+}
+.guild .qsquare {
+  width: 28px;
+  height: 28px;
+  font-size: 13px;
+  color: var(--ic-text-muted);
+}
+
+/* --- Consent --------------------------------------------------------------- */
+
+.consent {
+  display: flex;
+  gap: 16px;
+  align-items: center;
+  flex-wrap: wrap;
+  justify-content: space-between;
+}
+.consent-claim {
+  font-size: 14px;
+  letter-spacing: 0.04em;
+}
+.consent button {
+  background: none;
+  border: 1px solid var(--ic-line-2);
+  color: var(--ic-text-muted);
+  padding: 6px 10px;
+  cursor: pointer;
+  font-family: inherit;
+}
+.consent button:hover:not(:disabled) {
+  border-color: var(--ic-text-muted);
+  color: var(--ic-text);
+}
+.consent button:disabled {
+  cursor: default;
+  opacity: 0.6;
 }
