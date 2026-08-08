@@ -1,20 +1,24 @@
 /**
- * The brand mark: an ornate I on a hexagonal crest.
+ * The brand mark: one flared Roman I, and nothing else.
  *
- * Not the reference's logo with a different letter. That mark is registered,
- * the product already borrows its "World of ___" naming, and a close name plus
- * a close mark is exactly what turns homage into confusion. It would also break
- * the first line of the design system: no Blizzard assets, not a font, not an
- * icon, not a pixel.
+ * A ring, four cardinal spikes, and a flared Roman I at the centre. Three
+ * elements and one silhouette — an earlier version stacked a crest, an inner
+ * crest and six tick marks, which is four layers competing at 20px in a top
+ * bar.
  *
- * So the mark is assembled from vocabulary this project already owns and uses
- * on every panel — the hexagonal crest, the double frame, the four corner
- * brackets, and the flared Roman serif. It reads as an armory because the rest
- * of the interface does, not because it imitates one.
+ * The letterform is drawn as a path rather than typeset in Cinzel so its
+ * proportions hold identically at 20px and at 176px, and so the mark never
+ * depends on a font having loaded. The spikes are based just inside the ring
+ * rather than touching it, so the whole thing reads as one shape instead of
+ * four points floating around a circle.
  *
- * Flat throughout, like everything else: solid fills and 1px strokes, no
- * gradient, no bevel, no glow. That is also what keeps it renderable inside the
- * OG image later, where Satori supports nothing richer.
+ * `currentColor` throughout: the mark takes the gold of wherever it sits.
+ *
+ * What it is not is the reference's logo with the letter swapped. That mark is
+ * registered, this product already borrows the "World of ___" naming, and a
+ * close name beside a close mark is what turns homage into confusion. Flat
+ * fill, no bevel, no metal — which is the house rule anyway, and what will let
+ * this render inside the OG image where Satori supports nothing richer.
  */
 export function BrandMark({
   size = 40,
@@ -35,38 +39,23 @@ export function BrandMark({
       aria-label={title}
       aria-hidden={title ? undefined : true}
       focusable="false"
+      fill="currentColor"
     >
-      {/* Outer crest, in the frame bronze that carries structure everywhere else. */}
-      <path
-        d="M32 2.5 59 17.5v29L32 61.5 5 46.5v-29z"
-        fill="none"
-        stroke="var(--ic-frame, #6b552a)"
-        strokeWidth="2"
-        strokeLinejoin="round"
-      />
-      {/* Inner crest, in the acting gold. The same two-frame rule as .frame. */}
-      <path
-        d="M32 9 52.5 20.5v23L32 55 11.5 43.5v-23z"
-        fill="none"
-        stroke="var(--ic-gold, #f8b700)"
-        strokeWidth="1.25"
-        strokeLinejoin="round"
-      />
+      {/* The ring. */}
+      <circle cx="32" cy="32" r="19" fill="none" stroke="currentColor" strokeWidth="2.4" />
 
-      {/* The four corner brackets, shrunk from the panel frame onto the crest. */}
-      <g stroke="var(--ic-gold, #f8b700)" strokeWidth="1.75" strokeLinecap="round" fill="none">
-        <path d="M32 12.4v3.4M32 48.2v3.4M14.9 22.3l2.9 1.7M46.2 40l2.9 1.7M49.1 22.3l-2.9 1.7M17.8 40l-2.9 1.7" />
-      </g>
+      {/* Four spikes on the diagonals, short and broad. Based inside the ring so
+          the whole thing reads as one silhouette rather than four shapes
+          orbiting a circle, and set off the axes so they never collide with the
+          letter's own horizontals. */}
+      <path d="M50.7 50.7 47.6 41.0 41.0 47.6zM13.3 50.7 23.0 47.6 16.4 41.0zM13.3 13.3 16.4 23.0 23.0 16.4zM50.7 13.3 41.0 16.4 47.6 23.0z" />
 
-      {/*
-        The I. Flared serif bars top and bottom, a narrow stem between them —
-        the shape Cinzel gives the letter, drawn rather than typeset so it holds
-        at 20px in the top bar and at 96px in the hero.
-      */}
-      <g fill="var(--ic-butter, #fff468)">
-        <path d="M20.5 20.5h23v4.6h-4.4l-1.9 2.1H26.8l-1.9-2.1H20.5z" />
-        <path d="M28.9 27.2h6.2v9.6h-6.2z" />
-        <path d="M20.5 43.5h23v-4.6h-4.4l-1.9-2.1H26.8l-1.9 2.1H20.5z" />
+      {/* The letterform, deliberately small in the ring. The air around it is
+          the point: a letter that crowds its container reads as a blob at 23px
+          in the top bar. The ring and the spikes went thinner to pay for that
+          space rather than the letter growing to fill it. */}
+      <g transform="translate(32 32) scale(0.4) translate(-32 -32)">
+        <path d="M14 8h36v6.4c-6 .3-11.5 2-13 8.5v18.2c1.5 6.5 7 8.2 13 8.5V56H14v-6.4c6-.3 11.5-2 13-8.5V22.9C25.5 16.4 20 14.7 14 14.4z" />
       </g>
     </svg>
   )

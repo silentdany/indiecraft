@@ -23,7 +23,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
         <PostHogProvider>
           <header className="topbar">
             <Link href="/" className="topbar-mark serif">
-              <BrandMark size={26} className="topbar-crest" title="World of Indiecraft" />
+              <BrandMark size={23} className="topbar-crest" title="World of Indiecraft" />
               <span className="topbar-over">World of</span> INDIECRAFT
             </Link>
             <SiteNav />

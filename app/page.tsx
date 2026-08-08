@@ -27,7 +27,7 @@ export default async function Home() {
   return (
     <main className="page">
       <Frame className="hero">
-        <BrandMark size={72} className="wordmark-crest" />
+        <BrandMark size={64} className="wordmark-crest" />
         <p className="wordmark-over label">World of</p>
         <h1 className="wordmark serif">INDIECRAFT</h1>
         <p className="wordmark-under label">The founders&rsquo; armory</p>

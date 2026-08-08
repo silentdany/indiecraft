@@ -349,9 +349,12 @@ a:hover {
 
 /* The wordmark apes the shape of the WoW logo — a small "World of" riding
    above a much larger title — without borrowing a single pixel of it. */
+/* The mark carries the butter yellow the wordmark uses, so the two read as one
+   lockup rather than a badge sitting above a title. */
 .wordmark-crest {
   display: block;
-  margin: 0 auto 12px;
+  margin: 0 auto 10px;
+  color: var(--ic-butter);
 }
 
 .wordmark-over {
