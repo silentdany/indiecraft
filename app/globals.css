@@ -167,6 +167,240 @@ a:hover {
   margin: 20px 0;
 }
 
+.topbar {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 20px;
+  padding: 13px 20px;
+  border-bottom: 1px solid var(--ic-line-2);
+}
+.topbar > a {
+  font-size: 17px;
+  letter-spacing: 0.09em;
+}
+.topbar-over {
+  font-family: var(--ic-sans);
+  font-size: 10px;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  color: var(--ic-frame);
+  margin-right: 4px;
+}
+.topbar nav {
+  display: flex;
+  gap: 18px;
+}
+
+/* --- The armory front ----------------------------------------------------- */
+
+.hero {
+  text-align: center;
+  padding: 34px 20px 26px;
+}
+
+/* The wordmark apes the shape of the WoW logo — a small "World of" riding
+   above a much larger title — without borrowing a single pixel of it. */
+.wordmark-over {
+  margin: 0;
+  font-size: 12px;
+  letter-spacing: 0.42em;
+  text-indent: 0.42em; /* letter-spacing pads the right; put it back on the left */
+  color: var(--ic-frame);
+}
+.wordmark {
+  margin: 2px 0 0;
+  font-size: clamp(34px, 9vw, 62px);
+  line-height: 1;
+  letter-spacing: 0.1em;
+  text-indent: 0.1em;
+  color: var(--ic-gold-bright);
+}
+/* Thin rules flanking the subtitle, the logo's horizontal bars, flattened. */
+.wordmark-under {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  margin: 10px 0 22px;
+  color: var(--ic-text-muted);
+}
+.wordmark-under::before,
+.wordmark-under::after {
+  content: "";
+  height: 1px;
+  width: clamp(24px, 12vw, 90px);
+  background: var(--ic-frame);
+}
+
+.inspect {
+  display: flex;
+  align-items: stretch;
+  justify-content: center;
+  max-width: 440px;
+  margin: 0 auto;
+  border: 1px solid var(--ic-frame);
+  background: var(--ic-surface);
+}
+.inspect:focus-within {
+  border-color: var(--ic-gold);
+}
+.inspect-at {
+  display: grid;
+  place-items: center;
+  padding: 0 4px 0 12px;
+  color: var(--ic-text-muted);
+  font-size: 15px;
+}
+.inspect input {
+  flex: 1;
+  min-width: 0;
+  background: none;
+  border: 0;
+  outline: none;
+  color: var(--ic-text);
+  font: inherit;
+  padding: 11px 8px 11px 0;
+}
+.inspect input::placeholder {
+  color: var(--ic-text-muted);
+}
+.inspect button {
+  background: none;
+  border: 0;
+  border-left: 1px solid var(--ic-frame);
+  color: var(--ic-gold);
+  padding: 0 18px;
+  font-size: 13px;
+  letter-spacing: 0.14em;
+  cursor: pointer;
+}
+.inspect button:hover {
+  color: var(--ic-gold-bright);
+  background: var(--ic-line);
+}
+
+.hero-note {
+  margin: 18px 0 0;
+  font-size: 13px;
+}
+
+/* Realm status: a server population readout. Every figure is countable. */
+.realm {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  margin-top: 14px;
+  border: 1px solid var(--ic-line-2);
+}
+.realm-cell {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 12px 14px;
+  border-right: 1px solid var(--ic-line-2);
+}
+.realm-cell:last-child {
+  border-right: 0;
+}
+.realm-cell > .serif {
+  font-size: 20px;
+  color: var(--ic-gold-bright);
+}
+
+.section-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 10px;
+}
+.section-head h2 {
+  margin: 0;
+  font-size: 15px;
+  letter-spacing: 0.16em;
+}
+
+.classbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+.classbar a {
+  border: 1px solid var(--ic-line-2);
+  padding: 5px 10px;
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ic-text-muted);
+}
+.classbar a:hover {
+  border-color: var(--ic-gold);
+  color: var(--ic-gold-bright);
+}
+
+/* --- The ladder ----------------------------------------------------------- */
+
+.ladder {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  counter-reset: rank;
+}
+.ladder a {
+  display: grid;
+  grid-template-columns: 34px 40px 1fr auto auto;
+  align-items: center;
+  gap: 12px;
+  padding: 7px 8px;
+  border-bottom: 1px solid var(--ic-line);
+  color: var(--ic-text);
+}
+.ladder li:last-child a {
+  border-bottom: 0;
+}
+.ladder a:hover {
+  background: var(--ic-surface);
+}
+.ladder-rank {
+  color: var(--ic-text-muted);
+  font-size: 13px;
+  text-align: right;
+}
+/* The level gets the same bordered, rarity-coloured treatment as a portrait. */
+.ladder-level {
+  display: grid;
+  place-items: center;
+  height: 30px;
+  border: 1px solid;
+  font-size: 15px;
+}
+.ladder-ilvl,
+.ladder-class {
+  white-space: nowrap;
+}
+
+@media (max-width: 560px) {
+  .ladder a {
+    grid-template-columns: 26px 34px 1fr auto;
+    gap: 9px;
+  }
+  .ladder-class {
+    display: none;
+  }
+}
+
+.footer {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 34px;
+  padding-top: 16px;
+  border-top: 1px solid var(--ic-line-2);
+  font-size: 13px;
+}
+
 /* Progress bar: two flat fills, nothing else. */
 .bar {
   height: 6px;

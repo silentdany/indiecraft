@@ -69,39 +69,64 @@ export async function GET(_request: Request, { params }: { params: Promise<{ han
       <div
         style={{
           display: 'flex',
-          flexDirection: 'column',
           alignItems: 'center',
-          justifyContent: 'center',
           width: 1120,
           height: 550,
           background: SURFACE,
           border: `2px solid ${GOLD}`,
+          padding: '0 56px',
         }}
       >
-        {/* Element 1 — the hook: what changed. */}
-        <div style={{ display: 'flex', fontSize: 34, color: GOLD, letterSpacing: 6 }}>
-          {variant.kicker}
-        </div>
-
-        {/* Element 2 — the number. It has to survive being read at 300px. */}
+        {/*
+          The level badge is the anchor and never moves, whatever the variant
+          says. The spec's acceptance test is "shrink to 300px and squint — if
+          the level is not legible, redo it", and an achievement toast that
+          replaced the number failed it outright: at thumbnail size there was a
+          gold word and nothing else.
+        */}
         <div
           style={{
             display: 'flex',
-            fontSize: variant.headlineSize,
-            color: GOLD_BRIGHT,
-            lineHeight: 1,
-            marginTop: 12,
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+            width: 300,
+            height: 300,
+            flexShrink: 0,
+            border: `4px solid ${character.rarity.hex}`,
+            background: BG,
           }}
         >
-          {variant.headline}
+          <div style={{ display: 'flex', fontSize: 190, color: GOLD_BRIGHT, lineHeight: 1 }}>
+            {character.level}
+          </div>
+          <div style={{ display: 'flex', fontSize: 24, color: MUTED, letterSpacing: 8 }}>LEVEL</div>
         </div>
 
-        {/* Element 3 — who, and of what class. */}
-        <div style={{ display: 'flex', fontSize: 42, color: TEXT, marginTop: 28 }}>
-          @{character.handle}
-        </div>
-        <div style={{ display: 'flex', fontSize: 30, color: MUTED, marginTop: 8 }}>
-          {character.characterClass} · rank {character.rank}
+        <div style={{ display: 'flex', flexDirection: 'column', marginLeft: 56, flex: 1 }}>
+          {/* What changed — the only part that varies over time. */}
+          <div style={{ display: 'flex', fontSize: 30, color: GOLD, letterSpacing: 7 }}>
+            {variant.kicker}
+          </div>
+          <div
+            style={{
+              display: 'flex',
+              fontSize: variant.headlineSize,
+              color: GOLD_BRIGHT,
+              lineHeight: 1.05,
+              marginTop: 10,
+            }}
+          >
+            {variant.headline}
+          </div>
+
+          {/* Who, and of what class. */}
+          <div style={{ display: 'flex', fontSize: 38, color: TEXT, marginTop: 30 }}>
+            @{character.handle}
+          </div>
+          <div style={{ display: 'flex', fontSize: 26, color: MUTED, marginTop: 10 }}>
+            {variant.subline}
+          </div>
         </div>
       </div>
     </div>,
@@ -114,24 +139,41 @@ export async function GET(_request: Request, { params }: { params: Promise<{ han
  * stays interesting.
  */
 function pickVariant(character: Awaited<ReturnType<typeof getCharacter>> & object) {
+  const rank = `rank ${character.rank}`
   if (character.recentLevelUp) {
     return {
       kicker: 'DING!',
-      headline: `LEVEL ${character.level}`,
-      headlineSize: 130,
+      headline: 'LEVEL UP',
+      headlineSize: 88,
+      subline: `${character.characterClass} · ${rank}`,
     }
   }
   if (character.recentAchievement) {
     const def = ACHIEVEMENTS_BY_CODE.get(character.recentAchievement.code)
+    const label = (def?.label ?? character.recentAchievement.code).toUpperCase()
+    // Long labels have to shrink, or "THOUSAND CUSTOMERS" runs off the card.
     return {
       kicker: 'ACHIEVEMENT',
-      headline: (def?.label ?? character.recentAchievement.code).toUpperCase(),
-      headlineSize: 96,
+      headline: label,
+      headlineSize: label.length > 14 ? 62 : 84,
+      subline: `${character.characterClass} · ${rank}`,
     }
   }
+  const delta = character.ilvlDelta
+  if (delta > 0) {
+    return {
+      kicker: 'GEARING UP',
+      headline: `ILVL ${character.ilvl}`,
+      headlineSize: 84,
+      subline: `${character.characterClass} · ${rank}`,
+    }
+  }
+  // The headline is already the class here, so repeating it below would waste
+  // the one line left. iLvl is the number the sheet is actually about.
   return {
-    kicker: 'LEVEL',
-    headline: String(character.level),
-    headlineSize: 260,
+    kicker: 'THE ARMORY',
+    headline: character.characterClass.toUpperCase(),
+    headlineSize: 84,
+    subline: `item level ${character.ilvl} · ${rank}`,
   }
 }

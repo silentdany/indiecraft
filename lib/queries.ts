@@ -1,3 +1,4 @@
+import { cache } from 'react'
 import { itemLevelFor, levelBounds, rarityFor } from '@/engine'
 import type { CharacterClass, Rarity } from '@/engine/types'
 import { db } from '@/lib/db'
@@ -49,6 +50,7 @@ interface CharacterRow {
   display_name: string | null
   avatar_url: string | null
   claimed_at: string | null
+  first_seen_at: string
   xp: string
   level: number
   ilvl: number
@@ -60,13 +62,20 @@ interface CharacterRow {
   leveled_at: string | null
 }
 
-/** Returns null if the sheet does not exist or the founder opted out. */
-export async function getCharacter(rawHandle: string): Promise<CharacterPage | null> {
+/**
+ * Returns null if the sheet does not exist or the founder opted out.
+ *
+ * Wrapped in React's `cache` because Next renders `generateMetadata` and the
+ * page body of the same route concurrently, and both need the sheet. Without
+ * it every character page reads the database twice for one visitor.
+ */
+export const getCharacter = cache(async (rawHandle: string): Promise<CharacterPage | null> => {
   const sql = db()
   const handle = rawHandle.replace(/^@/, '').toLowerCase()
 
   const [row] = await sql<CharacterRow[]>`
-    select c.handle, f.display_name, f.avatar_url, f.claimed_at, c.xp, c.level, c.ilvl, c.class,
+    select c.handle, f.display_name, f.avatar_url, f.claimed_at, f.first_seen_at,
+           c.xp, c.level, c.ilvl, c.class,
            c.n_products, c.mrr_cents, c.revenue_total_cents,
            c.previous_level, c.leveled_at
     from characters c
@@ -124,7 +133,19 @@ export async function getCharacter(rawHandle: string): Promise<CharacterPage | n
   const sevenDaysAgo = Date.now() - 7 * 864e5
   const leveledAt = row.leveled_at
   const leveledRecently = leveledAt !== null && new Date(leveledAt).getTime() > sevenDaysAgo
-  const freshAchievement = achievements.find((a) => new Date(a.earned_on).getTime() > sevenDaysAgo)
+  /**
+   * Backfill is not news.
+   *
+   * Every achievement is retroactive, so the first compute for a founder stamps
+   * all of them with today's date. Treating those as "just earned" made every
+   * single OG image show an achievement toast on day one. An achievement only
+   * counts as an event if it landed after we already knew the founder.
+   */
+  const knownSince = new Date(row.first_seen_at).getTime()
+  const freshAchievement = achievements.find((a) => {
+    const earned = new Date(a.earned_on).getTime()
+    return earned > sevenDaysAgo && earned > knownSince
+  })
 
   return {
     handle: row.handle,
@@ -168,7 +189,7 @@ export async function getCharacter(rawHandle: string): Promise<CharacterPage | n
       ? { code: freshAchievement.code, earnedOn: freshAchievement.earned_on }
       : null,
   }
-}
+})
 
 export interface LadderRow {
   rank: number
@@ -208,6 +229,60 @@ export async function getLadder(characterClass?: string): Promise<LadderRow[]> {
     rarity: rarityFor(row.level),
     nProducts: row.n_products,
   }))
+}
+
+export interface RealmStats {
+  characters: number
+  maxLevel: number
+  trackedMrrUsd: number
+  products: number
+  achievements: number
+}
+
+/**
+ * The realm status line — a server population readout, not a marketing claim.
+ * Every number here is countable and falsifiable, which is the whole point.
+ */
+export async function getRealmStats(): Promise<RealmStats> {
+  const sql = db()
+  const [row] = await sql<
+    {
+      characters: number
+      max_level: number | null
+      mrr_cents: string | null
+      products: string | null
+      achievements: string | null
+    }[]
+  >`
+    select
+      (select count(*)::int from characters c
+        join founders f on f.handle = c.handle where f.opted_out_at is null) as characters,
+      (select max(level) from characters)                                    as max_level,
+      (select sum(mrr_cents) from characters)                                as mrr_cents,
+      (select count(*) from startups)                                        as products,
+      (select count(*) from character_achievements)                          as achievements
+  `
+  return {
+    characters: row?.characters ?? 0,
+    maxLevel: row?.max_level ?? 0,
+    trackedMrrUsd: Number(row?.mrr_cents ?? 0) / 100,
+    products: Number(row?.products ?? 0),
+    achievements: Number(row?.achievements ?? 0),
+  }
+}
+
+/** Class names, each with how many characters carry it. */
+export async function getClassCounts(): Promise<{ name: string; count: number }[]> {
+  const sql = db()
+  const rows = await sql<{ class: string; n: number }[]>`
+    select c.class, count(*)::int as n
+    from characters c
+    join founders f on f.handle = c.handle
+    where f.opted_out_at is null
+    group by c.class
+    order by n desc, c.class
+  `
+  return rows.map((r) => ({ name: r.class, count: r.n }))
 }
 
 export async function getClasses(): Promise<string[]> {

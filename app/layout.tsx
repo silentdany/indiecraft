@@ -7,10 +7,11 @@ import './globals.css'
 export const metadata: Metadata = {
   metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000'),
   title: {
-    default: 'Indiecraft',
-    template: '%s — Indiecraft',
+    default: 'World of Indiecraft — the founders’ armory',
+    template: '%s — World of Indiecraft',
   },
-  description: 'Character sheets for indie founders.',
+  description:
+    'Lifetime revenue is XP, MRR is item level, products are gear. A public armory for indie founders.',
 }
 
 export default function RootLayout({ children }: { children: ReactNode }) {
@@ -18,21 +19,18 @@ export default function RootLayout({ children }: { children: ReactNode }) {
     <html lang="en">
       <body>
         <PostHogProvider>
-          <header
-            style={{
-              borderBottom: '1px solid var(--ic-line-2)',
-              padding: '14px 20px',
-              display: 'flex',
-              gap: 24,
-              alignItems: 'baseline',
-            }}
-          >
-            <Link href="/" className="serif gold" style={{ fontSize: 18 }}>
-              INDIECRAFT
+          <header className="topbar">
+            <Link href="/" className="serif gold">
+              <span className="topbar-over">World of</span> INDIECRAFT
             </Link>
-            <Link href="/ladder" className="label">
-              Ladder
-            </Link>
+            <nav>
+              <Link href="/ladder" className="label">
+                Ladder
+              </Link>
+              <a href="https://github.com/silentdany/indiecraft" className="label">
+                Source
+              </a>
+            </nav>
           </header>
           {children}
         </PostHogProvider>
