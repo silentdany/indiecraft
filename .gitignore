@@ -17,3 +17,5 @@ next-env.d.ts
 
 # Internal strategy doc, kept out of the public repo.
 SPEC-v1.md
+.vercel
+.env*

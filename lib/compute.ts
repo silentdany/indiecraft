@@ -145,27 +145,33 @@ export async function computeAll(sql: postgres.Sql): Promise<ComputeReport> {
 
       // Append-only: an earned achievement is never lost, even if the condition
       // becomes false again. Hence do nothing — never a delete.
-      for (const code of sheet.achievements) {
+      //
+      // One multi-row insert rather than one per code. A founder carries a
+      // dozen achievements, so the loop was ~1,700 round trips across the
+      // corpus — survivable on a local socket, ruinous over a network hop.
+      if (sheet.achievements.length > 0) {
+        const rows = sheet.achievements.map((code) => ({ handle: sheet.handle, code }))
         const result = await tx`
-          insert into character_achievements (handle, code)
-          values (${sheet.handle}, ${code})
+          insert into character_achievements ${tx(rows, 'handle', 'code')}
           on conflict (handle, code) do nothing
         `
         achievementsGranted += result.count
       }
     }
 
-    for (const { handle, slug, role } of ownership) {
+    // Both of these are one statement each, for the same reason as above.
+    if (ownership.length > 0) {
+      const rows = ownership.map((o) => ({ handle: o.handle, startup_slug: o.slug, role: o.role }))
       await tx`
-        insert into founder_startups (handle, startup_slug, role)
-        values (${handle}, ${slug}, ${role})
+        insert into founder_startups ${tx(rows, 'handle', 'startup_slug', 'role')}
         on conflict (handle, startup_slug) do update set role = excluded.role
       `
     }
 
-    for (const [a, b] of edges.values()) {
+    if (edges.size > 0) {
+      const rows = [...edges.values()].map(([a, b]) => ({ a_handle: a, b_handle: b }))
       await tx`
-        insert into cofounder_edges (a_handle, b_handle) values (${a}, ${b})
+        insert into cofounder_edges ${tx(rows, 'a_handle', 'b_handle')}
         on conflict do nothing
       `
     }
