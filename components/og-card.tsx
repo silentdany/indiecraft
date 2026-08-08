@@ -34,9 +34,12 @@ export const OG_SIZE = { width: 1200, height: 630 }
  */
 export function OgCard({
   accent = OG.gold,
+  signature = true,
   children,
 }: {
   accent?: string
+  /** Off when the wordmark IS the content, so it is not printed twice. */
+  signature?: boolean
   children: React.ReactNode
 }) {
   return (
@@ -64,7 +67,7 @@ export function OgCard({
         }}
       >
         {children}
-        <OgSignature />
+        {signature && <OgSignature />}
       </div>
     </div>
   )

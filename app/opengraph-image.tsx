@@ -19,7 +19,8 @@ export default async function Image() {
   const stats = await getRealmStats().catch(() => null)
 
   return new ImageResponse(
-    <OgCard>
+    // The wordmark is the headline here, so the foot does not repeat it.
+    <OgCard signature={false}>
       <div style={{ display: 'flex', flexDirection: 'column', flex: 1, justifyContent: 'center' }}>
         <div style={{ display: 'flex', fontSize: 26, color: OG.gold, letterSpacing: 10 }}>
           WORLD OF
