@@ -1,6 +1,6 @@
 import { cache } from 'react'
 import { itemLevelFor, levelBounds, rarityFor } from '@/engine'
-import type { CharacterClass, Rarity } from '@/engine/types'
+import type { AchievementProgressInput, CharacterClass, Rarity } from '@/engine/types'
 import { db } from '@/lib/db'
 
 /**
@@ -20,6 +20,48 @@ export interface EquipmentPiece {
   itemLevel: number | null
   rarity: Rarity
   vcFunded: boolean
+  /** Everything below exists only to fill the item tooltip. */
+  description: string | null
+  category: string | null
+  country: string | null
+  pricingModel: string | null
+  foundedDate: string | null
+  last30dUsd: number
+  customers: number | null
+  domainRating: number | null
+  /** techStack slugs, shown as an item's enchantments. */
+  stack: string[]
+}
+
+/** The eight-stat panel, the shape the reference armory reads as. */
+export interface SheetStats {
+  last30dUsd: number
+  arpu: number | null
+  growthMrr30d: number | null
+  domainRating: number | null
+  followers: number | null
+  /** Years since the earliest product launch. */
+  age: number | null
+  customers: number | null
+  retention: number | null
+}
+
+/** What the ladder position actually means, rather than a bare ordinal. */
+export interface RankContext {
+  rank: number
+  total: number
+  percentile: number
+  classRank: number
+  classTotal: number
+  above: { handle: string; level: number; mrrUsd: number } | null
+  below: { handle: string; level: number; mrrUsd: number } | null
+}
+
+/** One point per day, for the sparkline and the "since" line. */
+export interface HistoryPoint {
+  day: string
+  mrrUsd: number
+  revenueTotalUsd: number
 }
 
 export interface CharacterPage {
@@ -37,10 +79,15 @@ export interface CharacterPage {
   mrrUsd: number
   revenueTotalUsd: number
   rank: number
+  rankContext: RankContext | null
+  stats: SheetStats
+  history: HistoryPoint[]
   progress: { current: number; next: number | null; ratio: number }
   achievements: { code: string; earnedOn: string }[]
   equipment: EquipmentPiece[]
   cofounders: string[]
+  /** The live numbers every locked achievement measures itself against. */
+  progressInput: AchievementProgressInput
   /** Drives the OG image variant. */
   recentLevelUp: { level: number; at: string } | null
   recentAchievement: { code: string; earnedOn: string } | null
@@ -59,6 +106,9 @@ interface CharacterRow {
   n_products: number
   mrr_cents: string
   revenue_total_cents: string
+  customers: number
+  active_subscriptions: number
+  growth_mrr_30d: string | null
   previous_level: number | null
   leveled_at: string | null
 }
@@ -78,6 +128,7 @@ export const getCharacter = cache(async (rawHandle: string): Promise<CharacterPa
     select c.handle, f.display_name, f.avatar_url, f.claimed_at, f.first_seen_at,
            c.xp, c.level, c.ilvl, c.class,
            c.n_products, c.mrr_cents, c.revenue_total_cents,
+           c.customers, c.active_subscriptions, c.growth_mrr_30d,
            c.previous_level, c.leveled_at
     from characters c
     join founders f on f.handle = c.handle
@@ -86,7 +137,7 @@ export const getCharacter = cache(async (rawHandle: string): Promise<CharacterPa
   `
   if (!row) return null
 
-  const [achievements, products, rankRow, edges] = await Promise.all([
+  const [achievements, products, rankRow, edges, historyRows, followerRow] = await Promise.all([
     sql<{ code: string; earned_on: string }[]>`
       select code, earned_on from character_achievements
       where handle = ${handle}
@@ -100,35 +151,132 @@ export const getCharacter = cache(async (rawHandle: string): Promise<CharacterPa
         icon_url: string | null
         funding_status: string | null
         mrr_cents: string | null
+        last30d_cents: string | null
+        customers: number | null
+        domain_rating: number | null
+        // postgres.js hands back a Date for a `date` column, not a string.
+        founded_date: Date | string | null
+        raw: Record<string, unknown> | null
       }[]
     >`
       -- Through founder_startups, not startups.founder_handle: a cofounded
       -- product counts in n_products and must therefore show up as gear.
-      select s.slug, s.name, s.website, s.icon_url, s.funding_status, snap.mrr_cents
+      --
+      -- The raw payload comes along because the tooltip is built from fields
+      -- nothing extracts into a column: description, category, country,
+      -- pricing model, tech stack.
+      select s.slug, s.name, s.website, s.icon_url, s.funding_status,
+             snap.mrr_cents, snap.last30d_cents, snap.customers,
+             snap.domain_rating, snap.founded_date, snap.raw
       from founder_startups fs
       join startups s on s.slug = fs.startup_slug
       left join lateral (
-        select mrr_cents from snapshots
+        select mrr_cents, last30d_cents, customers, domain_rating, founded_date, raw
+        from snapshots
         where startup_slug = s.slug
         order by captured_on desc limit 1
       ) snap on true
       where fs.handle = ${handle}
       order by snap.mrr_cents desc nulls last
     `,
-    sql<{ rank: string }[]>`
-      select count(*) + 1 as rank from characters
-      where level > ${row.level}
-         or (level = ${row.level} and coalesce(ilvl, 0) > ${row.ilvl ?? 0})
+    /*
+     * Rank, class rank, total, and the two neighbours — one pass.
+     *
+     * "#14" on its own is inert. "3rd of 18 Paladins" is a position somebody
+     * can actually hold, and the founder immediately above is a target rather
+     * than a statistic.
+     */
+    sql<
+      {
+        rank: string
+        total: string
+        class_rank: string
+        class_total: string
+        above_handle: string | null
+        above_level: number | null
+        above_mrr: string | null
+        below_handle: string | null
+        below_level: number | null
+        below_mrr: string | null
+      }[]
+    >`
+      with ranked as (
+        select c.handle, c.class, c.level, c.mrr_cents,
+               row_number() over w                                as rank,
+               row_number() over (partition by c.class order by
+                 c.level desc, c.ilvl desc nulls last, c.handle)  as class_rank,
+               lag(c.handle)     over w as above_handle,
+               lag(c.level)      over w as above_level,
+               lag(c.mrr_cents)  over w as above_mrr,
+               lead(c.handle)    over w as below_handle,
+               lead(c.level)     over w as below_level,
+               lead(c.mrr_cents) over w as below_mrr
+        from characters c
+        join founders f on f.handle = c.handle
+        where f.opted_out_at is null
+        window w as (order by c.level desc, c.ilvl desc nulls last, c.handle)
+      )
+      select r.rank, r.class_rank,
+             (select count(*) from ranked)                          as total,
+             (select count(*) from ranked x where x.class = r.class) as class_total,
+             r.above_handle, r.above_level, r.above_mrr,
+             r.below_handle, r.below_level, r.below_mrr
+      from ranked r
+      where r.handle = ${handle}
     `,
     sql<{ other: string }[]>`
       select case when a_handle = ${handle} then b_handle else a_handle end as other
       from cofounder_edges
       where a_handle = ${handle} or b_handle = ${handle}
     `,
+    /*
+     * The daily series, summed across the founder's products.
+     *
+     * This is the one thing on the sheet a clone cannot copy: the snapshots
+     * accumulate and nobody can backfill them. Today it is two days deep and
+     * shows almost nothing, which is exactly why the read path exists now —
+     * every day it does not is a day of history lost for good.
+     */
+    sql<{ day: string; mrr: string | null; total: string | null }[]>`
+      select sn.captured_on::text as day,
+             sum(sn.mrr_cents)           as mrr,
+             sum(sn.revenue_total_cents) as total
+      from founder_startups fs
+      join snapshots sn on sn.startup_slug = fs.startup_slug
+      where fs.handle = ${handle}
+      group by sn.captured_on
+      order by sn.captured_on
+    `,
+    sql<{ followers: number | null }[]>`
+      select max((sn.raw ->> 'xFollowerCount')::int) as followers
+      from founder_startups fs
+      join lateral (
+        select raw from snapshots where startup_slug = fs.startup_slug
+        order by captured_on desc limit 1
+      ) sn on true
+      where fs.handle = ${handle}
+    `,
   ])
 
   const level = row.level
   const mrrUsd = Number(row.mrr_cents) / 100
+  const revenueTotalUsd = Number(row.revenue_total_cents) / 100
+  const customers = row.customers
+  const activeSubscriptions = row.active_subscriptions
+  const growthMrr30d = row.growth_mrr_30d === null ? null : Number(row.growth_mrr_30d)
+  const hasRetentionSignal = customers > 0
+  const retention = hasRetentionSignal ? Math.min(activeSubscriptions / customers, 1) : 0
+  const domainRating = maxOf(products.map((p) => p.domain_rating))
+  const last30dUsd = products.reduce((sum, p) => sum + Number(p.last30d_cents ?? 0) / 100, 0)
+  const earliest = products
+    .map((p) => asDay(p.founded_date))
+    .filter(isText)
+    .sort()[0]
+  // Size the business off subscriptions when `customers` is missing, exactly as
+  // the engine does — otherwise ARPU divides by a zero TrustMRR reports on most
+  // listings.
+  const effectiveCustomers = customers > 0 ? customers : activeSubscriptions
+  const rankRowOne = rankRow[0]
   const { current, next } = levelBounds(level)
   const xp = Number(row.xp)
 
@@ -163,8 +311,62 @@ export const getCharacter = cache(async (rawHandle: string): Promise<CharacterPa
     xp,
     nProducts: row.n_products,
     mrrUsd,
-    revenueTotalUsd: Number(row.revenue_total_cents) / 100,
-    rank: Number(rankRow[0]?.rank ?? 0),
+    revenueTotalUsd,
+    rank: Number(rankRowOne?.rank ?? 0),
+    rankContext: rankRowOne
+      ? {
+          rank: Number(rankRowOne.rank),
+          total: Number(rankRowOne.total),
+          percentile: Math.max(
+            1,
+            Math.round((Number(rankRowOne.rank) / Number(rankRowOne.total)) * 100),
+          ),
+          classRank: Number(rankRowOne.class_rank),
+          classTotal: Number(rankRowOne.class_total),
+          above: rankRowOne.above_handle
+            ? {
+                handle: rankRowOne.above_handle,
+                level: rankRowOne.above_level ?? 0,
+                mrrUsd: Number(rankRowOne.above_mrr ?? 0) / 100,
+              }
+            : null,
+          below: rankRowOne.below_handle
+            ? {
+                handle: rankRowOne.below_handle,
+                level: rankRowOne.below_level ?? 0,
+                mrrUsd: Number(rankRowOne.below_mrr ?? 0) / 100,
+              }
+            : null,
+        }
+      : null,
+    stats: {
+      last30dUsd,
+      arpu: effectiveCustomers > 0 ? mrrUsd / effectiveCustomers : null,
+      growthMrr30d,
+      domainRating,
+      followers: followerRow[0]?.followers ?? null,
+      age: earliest ? (Date.now() - new Date(earliest).getTime()) / (365.25 * 864e5) : null,
+      customers: customers > 0 ? customers : null,
+      retention: hasRetentionSignal ? retention : null,
+    },
+    history: historyRows.map((h) => ({
+      day: h.day,
+      mrrUsd: Number(h.mrr ?? 0) / 100,
+      revenueTotalUsd: Number(h.total ?? 0) / 100,
+    })),
+    progressInput: {
+      revenueTotalUsd,
+      mrrUsd,
+      customers,
+      activeSubscriptions,
+      nProducts: row.n_products,
+      retention,
+      hasRetentionSignal,
+      growthMrr30d: growthMrr30d ?? 0,
+      domainRating,
+      level,
+      cofounders: edges.length,
+    },
     progress: {
       current,
       next,
@@ -174,6 +376,8 @@ export const getCharacter = cache(async (rawHandle: string): Promise<CharacterPa
     equipment: products.map((p) => {
       const productMrr = Number(p.mrr_cents ?? 0) / 100
       const itemLevel = itemLevelFor(productMrr)
+      const raw = (p.raw ?? {}) as Record<string, unknown>
+      const insights = (raw.startupInsights ?? {}) as Record<string, unknown>
       return {
         slug: p.slug,
         name: p.name ?? p.slug,
@@ -183,6 +387,17 @@ export const getCharacter = cache(async (rawHandle: string): Promise<CharacterPa
         itemLevel,
         rarity: rarityFor(itemLevel ?? 1),
         vcFunded: p.funding_status === 'vc-funded',
+        description: asText(raw.description),
+        category: asText(raw.category),
+        country: asText(raw.country),
+        pricingModel: asText(insights.pricingModel),
+        foundedDate: asDay(p.founded_date),
+        last30dUsd: Number(p.last30d_cents ?? 0) / 100,
+        customers: p.customers,
+        domainRating: p.domain_rating,
+        stack: Array.isArray(raw.techStack)
+          ? (raw.techStack as { slug?: string }[]).map((t) => t?.slug).filter(isText)
+          : [],
       }
     }),
     cofounders: edges.map((e) => e.other),
@@ -340,4 +555,17 @@ export async function getClasses(): Promise<string[]> {
     select distinct class from characters order by class
   `
   return rows.map((r) => r.class)
+}
+
+const isText = (v: unknown): v is string => typeof v === 'string' && v.trim().length > 0
+
+/** `date` columns arrive as Date objects; everything downstream wants a day. */
+const asDay = (v: Date | string | null): string | null => {
+  if (v instanceof Date) return v.toISOString().slice(0, 10)
+  return isText(v) ? v.slice(0, 10) : null
+}
+const asText = (v: unknown): string | null => (isText(v) ? v : null)
+const maxOf = (values: (number | null)[]): number | null => {
+  const present = values.filter((v): v is number => v !== null)
+  return present.length ? Math.max(...present) : null
 }

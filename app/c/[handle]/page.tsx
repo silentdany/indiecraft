@@ -2,9 +2,11 @@ import type { Metadata } from 'next'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { Frame } from '@/components/frame'
+import { GearItem } from '@/components/gear-item'
 import { ACHIEVEMENT_ICONS, Icon } from '@/components/icon'
 import { JsonLd } from '@/components/json-ld'
 import { OptOutButton } from '@/components/opt-out-button'
+import { HistoryPanel, LockedAchievements, RankPanel, StatsPanel } from '@/components/sheet-panels'
 import { ViewTracker } from '@/components/view-tracker'
 import { ACHIEVEMENTS, ACHIEVEMENTS_BY_CODE, CLASS_REASONS } from '@/engine'
 import { CONSENT_ACTIONS_ENABLED } from '@/lib/consent'
@@ -48,7 +50,6 @@ export default async function CharacterSheet({ params }: Props) {
 
   const { rarity, claimed } = character
   const earnedCodes = new Set(character.achievements.map((a) => a.code))
-  const locked = ACHIEVEMENTS.filter((def) => !earnedCodes.has(def.code))
 
   return (
     <main className="page">
@@ -152,65 +153,26 @@ export default async function CharacterSheet({ params }: Props) {
         </div>
       </Frame>
 
+      {character.rankContext && (
+        <RankPanel
+          context={character.rankContext}
+          characterClass={character.characterClass}
+          mrrUsd={character.mrrUsd}
+        />
+      )}
+
+      <Section title="Stats">
+        <StatsPanel stats={character.stats} />
+        <HistoryPanel history={character.history} />
+      </Section>
+
       <Section title="Gear">
         {character.equipment.length === 0 ? (
           <p className="muted">No products linked yet.</p>
         ) : (
           <ul className="gear">
             {character.equipment.map((piece) => (
-              <li key={piece.slug} className="gear-row">
-                {/* Icon and name carry the same quality colour, as on a real
-                    item: the border is the whole label. */}
-                <div className="qsquare gear-icon" style={{ color: piece.rarity.hex }}>
-                  {piece.iconUrl ? (
-                    // biome-ignore lint/performance/noImgElement: Satori and next/image share no pipeline; visual consistency wins.
-                    <img src={piece.iconUrl} alt="" width={56} height={56} />
-                  ) : (
-                    <span className="serif">{piece.name.slice(0, 1).toUpperCase()}</span>
-                  )}
-                </div>
-
-                <div className="gear-body">
-                  {/*
-                    The link is always there — a visitor should be able to reach
-                    the product either way — but only a claimed sheet passes
-                    rank. That keeps the spec's bargain intact: claiming buys
-                    indexation and a dofollow backlink, and it is the same
-                    gesture as consenting.
-
-                    It also bounds the risk that made plain dofollow a bad idea.
-                    An armory pointing at hundreds of unvetted sites is how a
-                    directory gets read as a link farm; here the only links that
-                    carry weight belong to people who put their hand up.
-
-                    The referrer is deliberately kept — no noreferrer — so
-                    founders see the traffic arrive from here, which is the part
-                    they actually notice.
-                  */}
-                  {piece.website ? (
-                    <a
-                      href={piece.website}
-                      rel={claimed ? undefined : 'nofollow'}
-                      className="gear-name"
-                      style={{ color: piece.rarity.hex }}
-                    >
-                      {piece.name}
-                    </a>
-                  ) : (
-                    <span className="gear-name" style={{ color: piece.rarity.hex }}>
-                      {piece.name}
-                    </span>
-                  )}
-                  <div className="gear-sub">
-                    <span className="label">
-                      {piece.itemLevel === null
-                        ? 'no monthly score'
-                        : `item level ${piece.itemLevel}`}
-                    </span>
-                    {piece.vcFunded && <span className="gear-flag">VC</span>}
-                  </div>
-                </div>
-              </li>
+              <GearItem key={piece.slug} piece={piece} linked={claimed} />
             ))}
           </ul>
         )}
@@ -234,31 +196,7 @@ export default async function CharacterSheet({ params }: Props) {
           })}
         </ul>
 
-        {/*
-          What is left to earn, dimmed. Every achievement is phrased as
-          something gained, so listing the unearned ones reads as a set of goals
-          rather than a verdict — which is the same reason the game shows them.
-          It also gives the sheet a second half: without it the page ended a
-          third of the way down for anyone with a handful of achievements.
-        */}
-        {locked.length > 0 && (
-          <>
-            <p className="ach-locked-head label">Still to earn</p>
-            <ul className="ach ach-locked">
-              {locked.map((def) => (
-                <li key={def.code} className="ach-card">
-                  <span className="qsquare ach-icon">
-                    <Icon name={ACHIEVEMENT_ICONS[def.code] ?? 'achievement'} size={17} />
-                  </span>
-                  <span className="ach-body">
-                    <span className="ach-title serif">{def.label}</span>
-                    <span className="ach-desc">{def.description}</span>
-                  </span>
-                </li>
-              ))}
-            </ul>
-          </>
-        )}
+        <LockedAchievements earned={earnedCodes} input={character.progressInput} />
       </Section>
 
       {character.cofounders.length > 0 && (

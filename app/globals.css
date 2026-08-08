@@ -1257,3 +1257,244 @@ a:hover {
     gap: 24px;
   }
 }
+
+/* --- Item tooltips --------------------------------------------------------
+   The most WoW-native gesture on the site, and no JavaScript: :hover opens it
+   for a mouse, :focus-within for a keyboard or a tap, which is why the row
+   wraps a real link. */
+
+.gear-row {
+  position: relative;
+}
+
+.tooltip {
+  position: absolute;
+  z-index: 20;
+  left: 62px;
+  top: calc(100% + 6px);
+  width: min(360px, calc(100vw - 48px));
+  padding: 12px 14px;
+  background: var(--ic-well);
+  border: 1px solid var(--ic-frame);
+  /* The one shadow in the interface, and it is not decoration: a tooltip that
+     floats over other rows has to be told apart from them. */
+  box-shadow: 0 6px 22px rgba(0, 0, 0, 0.75);
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+}
+.gear-row:hover .tooltip,
+.gear-row:focus-within .tooltip {
+  opacity: 1;
+  visibility: visible;
+}
+
+.tooltip-name {
+  font-size: 15px;
+}
+.tooltip-sub {
+  margin-top: 2px;
+  font-size: 12px;
+  color: var(--ic-text-muted);
+}
+
+.tooltip-stats {
+  margin-top: 9px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+.tooltip-stat {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  font-size: 12.5px;
+  color: var(--ic-text);
+}
+/* Green, the way an item's bonuses are. */
+.tooltip-stat-v {
+  color: var(--ic-positive);
+}
+
+.tooltip-req,
+.tooltip-price {
+  margin-top: 8px;
+  font-size: 12px;
+  color: var(--ic-text-muted);
+}
+
+.tooltip-ench {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 8px;
+  font-size: 12px;
+  /* Enchantments are green in the game, and the stack is exactly that: a thing
+     bolted onto the item after it was made. */
+  color: var(--ic-positive);
+}
+
+.tooltip-flavour {
+  margin-top: 9px;
+  padding-top: 8px;
+  border-top: 1px solid var(--ic-line);
+  font-size: 12px;
+  font-style: italic;
+  color: var(--ic-gold);
+}
+
+.gear-cat {
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ic-frame);
+}
+
+@media (max-width: 560px) {
+  .tooltip {
+    left: 0;
+  }
+}
+
+/* --- What the rank means -------------------------------------------------- */
+
+.rankpanel {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: center;
+  gap: 18px;
+  margin-top: 18px;
+  padding: 14px 18px;
+  border: 1px solid var(--ic-line);
+  background: var(--ic-surface);
+}
+
+.rankpanel-figures {
+  display: flex;
+  gap: 30px;
+}
+.rankfig {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.rankfig > .serif {
+  font-size: 22px;
+  color: var(--ic-gold);
+  line-height: 1.1;
+}
+
+.rivals {
+  display: flex;
+  gap: 10px;
+}
+.rival {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 7px 12px;
+  border: 1px solid var(--ic-line-2);
+  color: var(--ic-text);
+}
+.rival:hover {
+  border-color: var(--ic-gold);
+}
+.rival-name {
+  font-size: 13px;
+  color: var(--ic-gold);
+}
+.rival-gap {
+  font-size: 11px;
+  color: var(--ic-text-muted);
+}
+
+/* --- The stat grid -------------------------------------------------------- */
+
+/* The gaps sit on the page colour, not on a lighter separator colour: the last
+   row is rarely full, and a lighter grid background showed the empty slots as holes. */
+.statgrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(168px, 1fr));
+  gap: 1px;
+  background: var(--ic-bg);
+}
+.statcell {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  padding: 11px 13px;
+  background: var(--ic-surface);
+  border: 1px solid var(--ic-line);
+}
+.statcell-icon {
+  width: 32px;
+  height: 32px;
+  color: var(--ic-gold);
+}
+.statcell-body {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+}
+.statcell-body > .serif {
+  font-size: 19px;
+  color: var(--ic-gold);
+  line-height: 1.1;
+}
+
+/* --- Achievement progress ------------------------------------------------- */
+
+.ach-progress {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  margin-top: 7px;
+}
+.ach-progress .bar {
+  flex: 1;
+  min-width: 0;
+}
+.ach-locked .ach-progress .bar > span {
+  background: var(--ic-frame);
+}
+
+/* --- History -------------------------------------------------------------- */
+
+.history {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 20px;
+  margin-top: 12px;
+  padding: 11px 14px;
+  border: 1px solid var(--ic-line);
+  background: var(--ic-surface);
+  font-size: 13px;
+}
+.history-line {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--ic-text-muted);
+}
+.history-line strong {
+  color: var(--ic-text);
+  font-weight: 500;
+}
+.history-delta {
+  display: flex;
+  align-items: baseline;
+  gap: 7px;
+}
+.history-delta > span:first-child {
+  font-family: var(--ic-serif);
+  font-size: 17px;
+}
+.spark {
+  flex: 1;
+  min-width: 120px;
+  height: 28px;
+  color: var(--ic-gold);
+}

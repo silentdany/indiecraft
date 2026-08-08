@@ -324,60 +324,79 @@ export const ACHIEVEMENTS: readonly AchievementDef[] = [
     label: 'First Blood',
     description: 'The first dollar earned.',
     test: (a) => a.revenueTotalUsd >= 1,
+    progress: (p) => ({ current: p.revenueTotalUsd, target: 1 }),
   },
   {
     code: 'the_thousand',
     label: 'The Thousand',
     description: '$1,000 in lifetime revenue.',
     test: (a) => a.revenueTotalUsd >= 1_000,
+    progress: (p) => ({ current: p.revenueTotalUsd, target: 1_000 }),
   },
   {
     code: 'ramen',
     label: 'Ramen Profitable',
     description: '$1,000 in MRR.',
     test: (a) => a.mrrUsd >= 1_000,
+    progress: (p) => ({ current: p.mrrUsd, target: 1_000 }),
   },
   {
     code: 'raid_boss',
     label: 'Raid Boss Slayer',
     description: '$10,000 in MRR.',
     test: (a) => a.mrrUsd >= 10_000,
+    progress: (p) => ({ current: p.mrrUsd, target: 10_000 }),
   },
   {
     code: 'hundred_customers',
     label: 'Centurion',
     description: '100 customers.',
     test: (a) => a.customers >= 100,
+    progress: (p) => ({ current: p.customers, target: 100 }),
   },
   {
     code: 'thousand_customers',
     label: 'Legion',
     description: '1,000 customers.',
     test: (a) => a.customers >= 1_000,
+    progress: (p) => ({ current: p.customers, target: 1_000 }),
   },
   {
     code: 'multiboxer',
     label: 'Multiboxer',
     description: 'Three products shipped.',
     test: (a) => a.nProducts >= 3,
+    progress: (p) => ({ current: p.nProducts, target: 3 }),
   },
   {
     code: 'alt_king',
     label: 'Alt King',
     description: 'Five products shipped.',
     test: (a) => a.nProducts >= 5,
+    progress: (p) => ({ current: p.nProducts, target: 5 }),
   },
   {
     code: 'unkillable',
     label: 'Unkillable',
     description: '80% retention across at least 50 customers.',
     test: (a) => a.retention >= 0.8 && a.customers >= 50,
+    /*
+     * Two conditions, so the bar has to track whichever one is actually
+     * blocking. Reporting 5,784 customers against a floor of 50 read as "done"
+     * for a founder sitting at 11% retention, which is the opposite of true.
+     */
+    progress: (p) => {
+      if (!p.hasRetentionSignal) return null
+      if (p.customers < 50) return { current: p.customers, target: 50 }
+      return { current: Math.round(p.retention * 100), target: 80 }
+    },
   },
   {
     code: 'ascension',
     label: 'Ascension',
     description: '+20% MRR over thirty days.',
     test: (a) => a.growthMrr30d >= 20,
+    progress: (p) => ({ current: Math.max(p.growthMrr30d, 0), target: 20 }),
   },
   {
     code: 'veteran',
@@ -402,12 +421,14 @@ export const ACHIEVEMENTS: readonly AchievementDef[] = [
     label: 'Authority',
     description: 'Domain rating of 50 or above.',
     test: (a) => (a.domainRating ?? 0) >= 50,
+    progress: (p) => ({ current: p.domainRating ?? 0, target: 50 }),
   },
   {
     code: 'ding_sixty',
     label: 'Ding 60',
     description: 'Max level.',
     test: (_a, level) => level >= MAX_LEVEL,
+    progress: (p) => ({ current: p.level, target: MAX_LEVEL }),
   },
 ]
 

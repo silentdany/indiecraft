@@ -73,12 +73,41 @@ export type CharacterClass =
   | 'Monk'
   | 'Mage'
 
+/**
+ * The live numbers a locked achievement measures itself against.
+ *
+ * Deliberately a smaller object than FounderAggregate: the sheet reads it from
+ * the database rather than re-deriving an aggregate, and a narrow shape makes
+ * plain which fields a progress bar is allowed to depend on.
+ */
+export interface AchievementProgressInput {
+  revenueTotalUsd: number
+  mrrUsd: number
+  customers: number
+  activeSubscriptions: number
+  nProducts: number
+  retention: number
+  hasRetentionSignal: boolean
+  growthMrr30d: number
+  domainRating: number | null
+  level: number
+  cofounders: number
+}
+
 export interface AchievementDef {
   code: string
   label: string
   /** Always phrased positively. Test: would this person be happy to screenshot it? */
   description: string
   test: (a: FounderAggregate, level: number) => boolean
+  /**
+   * How close they are, when that is a fair thing to show.
+   *
+   * Null for achievements where a bar would lie: nobody is "60% of the way" to
+   * having a cofounder, and a Veteran bar would tick regardless of anything
+   * they do. A missing progress function is the honest answer, not a gap.
+   */
+  progress?: (p: AchievementProgressInput) => { current: number; target: number } | null
 }
 
 export interface Rarity {
