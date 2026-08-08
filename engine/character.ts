@@ -44,8 +44,16 @@ export function levelBounds(level: number): { current: number; next: number | nu
  * iLvl: the level this founder would hold if they sustained their current MRR
  * for twelve months. One function for both numbers, and the semantics fall out
  * on their own.
+ *
+ * Returns null when there is no recurring revenue at all, because the question
+ * iLvl asks has no answer then. Scoring a one-time-sales business at iLvl 1 is
+ * the same mistake as the retention penalty the spec already forbids: it reads
+ * as "worst possible gear" when the truth is "this metric does not apply to
+ * how they sell". 32 of 141 founders are in that position, and 21 of them sat
+ * in the top 100 displaying a flat 1.
  */
-export function ilvlFrom(aggregate: FounderAggregate): number {
+export function ilvlFrom(aggregate: FounderAggregate): number | null {
+  if (aggregate.mrrUsd === 0) return null
   const base = levelFromXp(aggregate.mrrUsd * 12)
   return clamp(base + growthBonus(aggregate) - retentionMalus(aggregate), 1, MAX_LEVEL)
 }
@@ -111,7 +119,7 @@ export function computeCharacter(aggregate: FounderAggregate): CharacterSheet {
     xp,
     level,
     ilvl,
-    ilvlDelta: ilvl - level,
+    ilvlDelta: ilvl === null ? null : ilvl - level,
     class: classFrom(aggregate, level),
     rarity: rarityFor(level),
     nProducts: aggregate.nProducts,
@@ -127,8 +135,12 @@ export function computeCharacter(aggregate: FounderAggregate): CharacterSheet {
 /**
  * A product is a piece of gear: its item level is the level it would be worth
  * on its own, over twelve months of its MRR.
+ *
+ * Null for the same reason as iLvl: a product that does not bill monthly has
+ * no monthly score, and printing "item level 1" beside it says the opposite.
  */
-export function itemLevelFor(productMrrUsd: number): number {
+export function itemLevelFor(productMrrUsd: number): number | null {
+  if (productMrrUsd === 0) return null
   return levelFromXp(productMrrUsd * 12)
 }
 

@@ -96,7 +96,9 @@ create table if not exists characters (
   handle              text primary key references founders(handle) on delete cascade,
   xp                  bigint not null,
   level               int    not null,
-  ilvl                int    not null,
+  -- Nullable on purpose: a founder with no recurring revenue has no monthly
+  -- score, and storing 1 would mean "worst gear" instead of "not applicable".
+  ilvl                int,
   class               text   not null,
   n_products          int    not null,
   mrr_cents           bigint not null,

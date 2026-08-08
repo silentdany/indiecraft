@@ -96,6 +96,46 @@ export async function computeAll(sql: postgres.Sql): Promise<ComputeReport> {
   let achievementsGranted = 0
 
   await sql.begin(async (tx) => {
+    // Rebuild `startups` from the snapshots.
+    //
+    // The schema calls this table "rebuildable from snapshots", and until now
+    // that was aspiration rather than fact: only the crawler ever wrote to it,
+    // so a `schema:apply --reset` emptied it and nothing put it back until the
+    // next nightly run. Every gear list went blank while the sheets kept
+    // claiming "1 product" beside them — the exact self-contradiction
+    // founder_startups exists to prevent.
+    //
+    // first_seen_at and last_seen_at are deliberately left alone on conflict:
+    // when a slug was first and last seen is the crawler's business, not this
+    // step's.
+    const startupRows = usable.map((row) => ({
+      slug: row.startup_slug,
+      name: row.raw?.name ?? null,
+      website: row.raw?.website ?? null,
+      icon_url: row.raw?.icon ?? null,
+      founder_handle: normalizeHandle(row.founder_handle ?? row.raw?.xHandle),
+      funding_status: row.funding_status,
+    }))
+    if (startupRows.length > 0) {
+      await tx`
+        insert into startups ${tx(
+          startupRows,
+          'slug',
+          'name',
+          'website',
+          'icon_url',
+          'founder_handle',
+          'funding_status',
+        )}
+        on conflict (slug) do update set
+          name           = excluded.name,
+          website        = excluded.website,
+          icon_url       = excluded.icon_url,
+          founder_handle = excluded.founder_handle,
+          funding_status = excluded.funding_status
+      `
+    }
+
     for (const sheet of sheets) {
       const products = byFounder.get(sheet.handle) ?? []
       const aggregate = aggregateFounder(sheet.handle, products)

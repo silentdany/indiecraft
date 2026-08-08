@@ -164,7 +164,7 @@ function pickVariant(character: Awaited<ReturnType<typeof getCharacter>> & objec
     }
   }
   const delta = character.ilvlDelta
-  if (delta > 0) {
+  if (delta !== null && delta > 0 && character.ilvl !== null) {
     return {
       kicker: 'GEARING UP',
       headline: `ILVL ${character.ilvl}`,
@@ -178,6 +178,6 @@ function pickVariant(character: Awaited<ReturnType<typeof getCharacter>> & objec
     kicker: 'THE ARMORY',
     headline: character.characterClass.toUpperCase(),
     headlineSize: 84,
-    subline: `item level ${character.ilvl} · ${rank}`,
+    subline: character.ilvl === null ? rank : `item level ${character.ilvl} · ${rank}`,
   }
 }

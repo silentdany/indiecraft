@@ -30,7 +30,27 @@ export function LadderTable({ rows }: { rows: LadderRow[] }) {
               @{row.handle}
             </span>
             <span className="ladder-class label">{row.characterClass}</span>
-            <span className="ladder-ilvl label">iLvl {row.ilvl}</span>
+            {/*
+              The iLvl carries its own quality colour, and it is the one that
+              works here. Level rarity paints the entire top 20 orange and the
+              whole top 100 in two colours, so the system that exists to give
+              instant hierarchy gives none exactly where the ladder is read.
+              iLvl spreads the same five colours across the same rows.
+            */}
+            <span className="ladder-ilvl label">
+              {row.ilvl === null ? (
+                <span className="ladder-ilvl-none" title="No recurring revenue to score">
+                  —
+                </span>
+              ) : (
+                <>
+                  iLvl{' '}
+                  <span className="ladder-ilvl-value" style={{ color: row.ilvlRarity?.hex }}>
+                    {row.ilvl}
+                  </span>
+                </>
+              )}
+            </span>
           </Link>
         </li>
       ))}

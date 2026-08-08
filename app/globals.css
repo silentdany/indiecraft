@@ -530,6 +530,23 @@ a:hover {
   justify-self: end;
 }
 
+/* The iLvl number carries the quality colour, and it is the one that works
+   here: level rarity paints the whole top 20 orange and the entire top 100 in
+   just two colours, so the system meant to give instant hierarchy gives none
+   exactly where the ladder is read. iLvl spreads the same five across the same
+   rows. The word "iLvl" beside it stays a quiet label. */
+.ladder-ilvl-value {
+  font-family: var(--ic-serif);
+  font-size: 13px;
+  letter-spacing: 0.02em;
+}
+
+/* Absence, not a bad score. Anything shaped like a number would be a lie. */
+.ladder-ilvl-none {
+  color: var(--ic-text-muted);
+  opacity: 0.55;
+}
+
 @media (max-width: 560px) {
   .ladder a {
     grid-template-columns: 24px 30px auto 1fr;

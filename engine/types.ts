@@ -91,9 +91,10 @@ export interface CharacterSheet {
   handle: string
   xp: number
   level: number
-  ilvl: number
-  /** ilvl - level. The one number actually worth showing. */
-  ilvlDelta: number
+  /** Null when the founder has no recurring revenue: the metric does not apply. */
+  ilvl: number | null
+  /** ilvl - level. The one number actually worth showing, when there is one. */
+  ilvlDelta: number | null
   class: CharacterClass
   rarity: Rarity
   nProducts: number

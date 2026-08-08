@@ -16,7 +16,8 @@ export interface EquipmentPiece {
   website: string | null
   iconUrl: string | null
   mrrUsd: number
-  itemLevel: number
+  /** Null when the product has no recurring revenue. */
+  itemLevel: number | null
   rarity: Rarity
   vcFunded: boolean
 }
@@ -27,8 +28,8 @@ export interface CharacterPage {
   avatarUrl: string | null
   claimed: boolean
   level: number
-  ilvl: number
-  ilvlDelta: number
+  ilvl: number | null
+  ilvlDelta: number | null
   characterClass: CharacterClass
   rarity: Rarity
   xp: number
@@ -53,7 +54,7 @@ interface CharacterRow {
   first_seen_at: string
   xp: string
   level: number
-  ilvl: number
+  ilvl: number | null
   class: string
   n_products: number
   mrr_cents: string
@@ -116,7 +117,8 @@ export const getCharacter = cache(async (rawHandle: string): Promise<CharacterPa
     `,
     sql<{ rank: string }[]>`
       select count(*) + 1 as rank from characters
-      where (level, ilvl) > (${row.level}, ${row.ilvl})
+      where level > ${row.level}
+         or (level = ${row.level} and coalesce(ilvl, 0) > ${row.ilvl ?? 0})
     `,
     sql<{ other: string }[]>`
       select case when a_handle = ${handle} then b_handle else a_handle end as other
@@ -155,7 +157,7 @@ export const getCharacter = cache(async (rawHandle: string): Promise<CharacterPa
     claimed: row.claimed_at !== null,
     level,
     ilvl: row.ilvl,
-    ilvlDelta: row.ilvl - level,
+    ilvlDelta: row.ilvl === null ? null : row.ilvl - level,
     characterClass: row.class as CharacterClass,
     rarity: rarityFor(level),
     xp,
@@ -179,7 +181,7 @@ export const getCharacter = cache(async (rawHandle: string): Promise<CharacterPa
         iconUrl: p.icon_url,
         mrrUsd: productMrr,
         itemLevel,
-        rarity: rarityFor(itemLevel),
+        rarity: rarityFor(itemLevel ?? 1),
         vcFunded: p.funding_status === 'vc-funded',
       }
     }),
@@ -195,9 +197,17 @@ export interface LadderRow {
   rank: number
   handle: string
   level: number
-  ilvl: number
+  ilvl: number | null
   characterClass: CharacterClass
+  /** Quality colour of the level — nearly constant near the top of the ladder. */
   rarity: Rarity
+  /**
+   * Quality colour of the iLvl, which is the one that actually varies here.
+   * Level rarity paints the whole top 100 in two colours and the top 20 in one;
+   * iLvl rarity spreads it across five. Gear score is what an armory ladder
+   * compares anyway.
+   */
+  ilvlRarity: Rarity | null
   nProducts: number
 }
 
@@ -210,14 +220,15 @@ export interface LadderRow {
 export async function getLadder(characterClass?: string): Promise<LadderRow[]> {
   const sql = db()
   const rows = await sql<
-    { handle: string; level: number; ilvl: number; class: string; n_products: number }[]
+    { handle: string; level: number; ilvl: number | null; class: string; n_products: number }[]
   >`
     select c.handle, c.level, c.ilvl, c.class, c.n_products
     from characters c
     join founders f on f.handle = c.handle
     where f.opted_out_at is null
       ${characterClass ? sql`and c.class = ${characterClass}` : sql``}
-    order by c.level desc, c.ilvl desc, c.handle
+    -- nulls last: no recurring revenue is "not measured", never "worst".
+    order by c.level desc, c.ilvl desc nulls last, c.handle
     limit 100
   `
   return rows.map((row, index) => ({
@@ -227,6 +238,7 @@ export async function getLadder(characterClass?: string): Promise<LadderRow[]> {
     ilvl: row.ilvl,
     characterClass: row.class as CharacterClass,
     rarity: rarityFor(row.level),
+    ilvlRarity: row.ilvl === null ? null : rarityFor(row.ilvl),
     nProducts: row.n_products,
   }))
 }

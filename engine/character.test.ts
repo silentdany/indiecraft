@@ -152,8 +152,22 @@ describe('ilvl', () => {
   })
 
   it('stays clamped to [1, 60]', () => {
-    expect(ilvlFrom(founder({ mrrUsd: 0 }))).toBe(1)
     expect(ilvlFrom(founder({ mrrUsd: 5_000_000, growthMrr30d: 90 }))).toBe(60)
+  })
+
+  it('is null without recurring revenue, never 1', () => {
+    // iLvl asks what twelve months of current MRR would be worth. With no MRR
+    // the question has no answer, and 1 reads as "worst possible gear" when the
+    // truth is "this does not apply to how they sell". Same mistake the
+    // retention penalty already guards against.
+    expect(ilvlFrom(founder({ mrrUsd: 0, revenueTotalUsd: 878_595_860 }))).toBeNull()
+    expect(computeCharacter(founder({ mrrUsd: 0, nProducts: 1 })).ilvlDelta).toBeNull()
+  })
+
+  it('still scores a founder earning almost nothing', () => {
+    // The rule is "no recurring revenue", not "not much": $5/mo is $60 a year,
+    // which is a real answer and must stay a number.
+    expect(ilvlFrom(founder({ mrrUsd: 5 }))).toBe(9)
   })
 })
 
@@ -364,8 +378,11 @@ describe('full sheet', () => {
 
 describe('gear', () => {
   it('gives each product its own item level', () => {
-    expect(itemLevelFor(0)).toBe(1)
     expect(itemLevelFor(1_000)).toBe(30)
     expect(itemLevelFor(10_000)).toBe(40)
+  })
+
+  it('gives no item level to a product that does not bill monthly', () => {
+    expect(itemLevelFor(0)).toBeNull()
   })
 })

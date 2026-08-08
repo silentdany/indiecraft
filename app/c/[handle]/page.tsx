@@ -75,8 +75,16 @@ export default async function CharacterSheet({ params }: Props) {
                   <span className="stat-name">Level</span>
                 </span>
                 <span className="sheet-readout">
-                  <span className="serif" style={{ color: rarity.hex }}>
-                    {character.ilvl}
+                  <span
+                    className="serif"
+                    style={{ color: character.ilvl === null ? 'var(--ic-text-muted)' : rarity.hex }}
+                    title={
+                      character.ilvl === null
+                        ? 'No recurring revenue, so there is no monthly score to give.'
+                        : undefined
+                    }
+                  >
+                    {character.ilvl ?? '—'}
                   </span>
                   <span className="stat-name">iLvl</span>
                   <IlvlDelta delta={character.ilvlDelta} claimed={claimed} />
@@ -138,7 +146,11 @@ export default async function CharacterSheet({ params }: Props) {
                     </span>
                   )}
                   <div className="gear-sub">
-                    <span className="label">item level {piece.itemLevel}</span>
+                    <span className="label">
+                      {piece.itemLevel === null
+                        ? 'no monthly score'
+                        : `item level ${piece.itemLevel}`}
+                    </span>
                     {piece.vcFunded && <span className="gear-flag">VC</span>}
                   </div>
                 </div>
@@ -190,7 +202,8 @@ export default async function CharacterSheet({ params }: Props) {
  * The test for every derived label: would this person be happy to screenshot
  * it? If not, it's a bug.
  */
-function IlvlDelta({ delta, claimed }: { delta: number; claimed: boolean }) {
+function IlvlDelta({ delta, claimed }: { delta: number | null; claimed: boolean }) {
+  if (delta === null) return null
   if (delta === 0 || (delta < 0 && !claimed)) return null
   return (
     <span className={delta > 0 ? 'positive' : 'muted'} style={{ fontSize: 12 }}>
