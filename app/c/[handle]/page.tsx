@@ -6,7 +6,16 @@ import { GearItem } from '@/components/gear-item'
 import { ACHIEVEMENT_ICONS, Icon } from '@/components/icon'
 import { JsonLd } from '@/components/json-ld'
 import { OptOutButton } from '@/components/opt-out-button'
-import { HistoryPanel, LockedAchievements, RankPanel, StatsPanel } from '@/components/sheet-panels'
+import { ShareSheet } from '@/components/share-sheet'
+import {
+  HistoryPanel,
+  LockedAchievements,
+  ProfileChips,
+  RankPanel,
+  StatsPanel,
+  Timeline,
+  type TimelineEvent,
+} from '@/components/sheet-panels'
 import { ViewTracker } from '@/components/view-tracker'
 import { ACHIEVEMENTS, ACHIEVEMENTS_BY_CODE, CLASS_REASONS } from '@/engine'
 import { CONSENT_ACTIONS_ENABLED } from '@/lib/consent'
@@ -50,6 +59,36 @@ export default async function CharacterSheet({ params }: Props) {
 
   const { rarity, claimed } = character
   const earnedCodes = new Set(character.achievements.map((a) => a.code))
+
+  /*
+   * Every achievement is retroactive, so the first compute stamps them all with
+   * the day we first saw the founder. Those are not events — listing fifteen
+   * identical timestamps would say nothing happened. They fold into the entry
+   * line, and only what has happened since earns a row.
+   */
+  const seenDay = character.firstSeenAt.slice(0, 10)
+  const since = character.achievements.filter((a) => a.earnedOn.slice(0, 10) > seenDay)
+  const backfilled = character.achievements.length - since.length
+
+  const timeline: TimelineEvent[] = [
+    ...since.map((a) => ({
+      at: a.earnedOn,
+      kind: 'achievement' as const,
+      label: `Earned ${ACHIEVEMENTS_BY_CODE.get(a.code)?.label ?? a.code}`,
+    })),
+    ...(character.leveledAt
+      ? [
+          {
+            at: character.leveledAt,
+            kind: 'level' as const,
+            label: character.previousLevel
+              ? `Reached level ${character.level}, up from ${character.previousLevel}`
+              : `Reached level ${character.level}`,
+          },
+        ]
+      : []),
+    { at: character.firstSeenAt, kind: 'joined' as const, label: 'Entered the armory' },
+  ].sort((a, b) => b.at.localeCompare(a.at))
 
   return (
     <main className="page">
@@ -134,9 +173,10 @@ export default async function CharacterSheet({ params }: Props) {
             </div>
 
             <p className="sheet-meta">
-              @{character.handle} · rank <span className="gold">#{character.rank}</span> ·{' '}
-              {character.nProducts} product{character.nProducts === 1 ? '' : 's'} ·{' '}
-              {formatUsd(character.mrrUsd)} MRR · {formatUsd(character.revenueTotalUsd)} lifetime
+              @{character.handle} <ProfileChips profile={character.profile} /> · rank{' '}
+              <span className="gold">#{character.rank}</span> · {character.nProducts} product
+              {character.nProducts === 1 ? '' : 's'} · {formatUsd(character.mrrUsd)} MRR ·{' '}
+              {formatUsd(character.revenueTotalUsd)} lifetime
             </p>
 
             <div className="sheet-progress">
@@ -152,6 +192,14 @@ export default async function CharacterSheet({ params }: Props) {
           </div>
         </div>
       </Frame>
+
+      <ShareSheet
+        handle={character.handle}
+        level={character.level}
+        ilvl={character.ilvl}
+        characterClass={character.characterClass}
+        rank={character.rank}
+      />
 
       {character.rankContext && (
         <RankPanel
@@ -211,6 +259,12 @@ export default async function CharacterSheet({ params }: Props) {
               </Link>
             ))}
           </div>
+        </Section>
+      )}
+
+      {timeline.length > 0 && (
+        <Section title="History">
+          <Timeline events={timeline} backfilled={backfilled} />
         </Section>
       )}
 

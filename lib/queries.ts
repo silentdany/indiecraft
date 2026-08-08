@@ -57,6 +57,13 @@ export interface RankContext {
   below: { handle: string; level: number; mrrUsd: number } | null
 }
 
+/** What kind of founder this is, beyond their class. */
+export interface SheetProfile {
+  country: string | null
+  businessType: string | null
+  targetAudience: string | null
+}
+
 /** One point per day, for the sparkline and the "since" line. */
 export interface HistoryPoint {
   day: string
@@ -80,6 +87,11 @@ export interface CharacterPage {
   revenueTotalUsd: number
   rank: number
   rankContext: RankContext | null
+  profile: SheetProfile
+  /** For the timeline: when we first saw them, and their last level-up. */
+  firstSeenAt: string
+  leveledAt: string | null
+  previousLevel: number | null
   stats: SheetStats
   history: HistoryPoint[]
   progress: { current: number; next: number | null; ratio: number }
@@ -97,8 +109,9 @@ interface CharacterRow {
   handle: string
   display_name: string | null
   avatar_url: string | null
-  claimed_at: string | null
-  first_seen_at: string
+  claimed_at: Date | string | null
+  // timestamptz comes back as a Date, exactly like the date columns do.
+  first_seen_at: Date | string
   xp: string
   level: number
   ilvl: number | null
@@ -110,7 +123,7 @@ interface CharacterRow {
   active_subscriptions: number
   growth_mrr_30d: string | null
   previous_level: number | null
-  leveled_at: string | null
+  leveled_at: Date | string | null
 }
 
 /**
@@ -137,8 +150,11 @@ export const getCharacter = cache(async (rawHandle: string): Promise<CharacterPa
   `
   if (!row) return null
 
-  const [achievements, products, rankRow, edges, historyRows, followerRow] = await Promise.all([
-    sql<{ code: string; earned_on: string }[]>`
+  const [achievements, products, rankRow, edges, historyRows] = await Promise.all([
+    // `earned_on` is a date column, so it arrives as a Date. Third time this
+    // has bitten: every date and timestamp out of postgres.js is an object, and
+    // everything downstream of this file expects a string.
+    sql<{ code: string; earned_on: Date | string }[]>`
       select code, earned_on from character_achievements
       where handle = ${handle}
       order by earned_on desc, code
@@ -247,15 +263,6 @@ export const getCharacter = cache(async (rawHandle: string): Promise<CharacterPa
       group by sn.captured_on
       order by sn.captured_on
     `,
-    sql<{ followers: number | null }[]>`
-      select max((sn.raw ->> 'xFollowerCount')::int) as followers
-      from founder_startups fs
-      join lateral (
-        select raw from snapshots where startup_slug = fs.startup_slug
-        order by captured_on desc limit 1
-      ) sn on true
-      where fs.handle = ${handle}
-    `,
   ])
 
   const level = row.level
@@ -281,7 +288,7 @@ export const getCharacter = cache(async (rawHandle: string): Promise<CharacterPa
   const xp = Number(row.xp)
 
   const sevenDaysAgo = Date.now() - 7 * 864e5
-  const leveledAt = row.leveled_at
+  const leveledAt = asIso(row.leveled_at)
   const leveledRecently = leveledAt !== null && new Date(leveledAt).getTime() > sevenDaysAgo
   /**
    * Backfill is not news.
@@ -291,10 +298,13 @@ export const getCharacter = cache(async (rawHandle: string): Promise<CharacterPa
    * single OG image show an achievement toast on day one. An achievement only
    * counts as an event if it landed after we already knew the founder.
    */
-  const knownSince = new Date(row.first_seen_at).getTime()
-  const freshAchievement = achievements.find((a) => {
-    const earned = new Date(a.earned_on).getTime()
-    return earned > sevenDaysAgo && earned > knownSince
+  const knownSince = new Date(asIso(row.first_seen_at) ?? 0).getTime()
+  // Normalised once, here, so no caller ever has to know what postgres.js
+  // hands back.
+  const earned = achievements.map((a) => ({ code: a.code, earnedOn: asDay(a.earned_on) ?? '' }))
+  const freshAchievement = earned.find((a) => {
+    const at = new Date(a.earnedOn).getTime()
+    return at > sevenDaysAgo && at > knownSince
   })
 
   return {
@@ -339,12 +349,30 @@ export const getCharacter = cache(async (rawHandle: string): Promise<CharacterPa
             : null,
         }
       : null,
+    profile: {
+      // The most common answer across their products, because a founder with
+      // three SaaS tools and one marketplace is a SaaS founder.
+      country: commonest(products.map((p) => asText(p.raw?.country))),
+      businessType: commonest(
+        products.map((p) => {
+          const v = asText((p.raw?.startupInsights as Record<string, unknown>)?.businessType)
+          return v === 'Unknown' ? null : v
+        }),
+      ),
+      targetAudience: commonest(products.map((p) => asText(p.raw?.targetAudience))),
+    },
+    firstSeenAt: asIso(row.first_seen_at) ?? new Date().toISOString(),
+    leveledAt: asIso(row.leveled_at),
+    previousLevel: row.previous_level,
     stats: {
       last30dUsd,
       arpu: effectiveCustomers > 0 ? mrrUsd / effectiveCustomers : null,
       growthMrr30d,
       domainRating,
-      followers: followerRow[0]?.followers ?? null,
+      // Derived from the products payload rather than asked for separately:
+      // every extra parallel query pushes the peak concurrency this file has to
+      // stay under, and xFollowerCount was already in the raw we fetch.
+      followers: maxOf(products.map((p) => asInt(p.raw?.xFollowerCount))),
       age: earliest ? (Date.now() - new Date(earliest).getTime()) / (365.25 * 864e5) : null,
       customers: customers > 0 ? customers : null,
       retention: hasRetentionSignal ? retention : null,
@@ -372,7 +400,7 @@ export const getCharacter = cache(async (rawHandle: string): Promise<CharacterPa
       next,
       ratio: next === null ? 1 : Math.min(Math.max((xp - current) / (next - current), 0), 1),
     },
-    achievements: achievements.map((a) => ({ code: a.code, earnedOn: a.earned_on })),
+    achievements: earned,
     equipment: products.map((p) => {
       const productMrr = Number(p.mrr_cents ?? 0) / 100
       const itemLevel = itemLevelFor(productMrr)
@@ -402,9 +430,7 @@ export const getCharacter = cache(async (rawHandle: string): Promise<CharacterPa
     }),
     cofounders: edges.map((e) => e.other),
     recentLevelUp: leveledRecently ? { level, at: leveledAt } : null,
-    recentAchievement: freshAchievement
-      ? { code: freshAchievement.code, earnedOn: freshAchievement.earned_on }
-      : null,
+    recentAchievement: freshAchievement ?? null,
   }
 })
 
@@ -559,13 +585,32 @@ export async function getClasses(): Promise<string[]> {
 
 const isText = (v: unknown): v is string => typeof v === 'string' && v.trim().length > 0
 
+/** timestamptz columns arrive as Date objects; the sheet wants a string. */
+const asIso = (v: Date | string | null): string | null => {
+  if (v instanceof Date) return v.toISOString()
+  return isText(v) ? v : null
+}
+
 /** `date` columns arrive as Date objects; everything downstream wants a day. */
 const asDay = (v: Date | string | null): string | null => {
   if (v instanceof Date) return v.toISOString().slice(0, 10)
   return isText(v) ? v.slice(0, 10) : null
 }
 const asText = (v: unknown): string | null => (isText(v) ? v : null)
+const asInt = (v: unknown): number | null =>
+  typeof v === 'number' && Number.isFinite(v) ? Math.round(v) : null
+
 const maxOf = (values: (number | null)[]): number | null => {
   const present = values.filter((v): v is number => v !== null)
   return present.length ? Math.max(...present) : null
+}
+
+/** The value that appears most often, ignoring the gaps. */
+const commonest = (values: (string | null)[]): string | null => {
+  const counts = new Map<string, number>()
+  for (const v of values) if (v) counts.set(v, (counts.get(v) ?? 0) + 1)
+  let best: string | null = null
+  let top = 0
+  for (const [v, n] of counts) if (n > top) [best, top] = [v, n]
+  return best
 }

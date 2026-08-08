@@ -34,7 +34,7 @@ const globalForDb = globalThis as { __indiecraftDb?: postgres.Sql }
  * diagnose than a page that errors.
  *
  * ---------------------------------------------------------------------------
- * `max: 8`, and not the `max: 1` the spec calls for. Do not lower it back.
+ * `max: 20`, and not the `max: 1` the spec calls for. Do not lower it back.
  *
  * With `max: 1`, any two queries awaited concurrently inside the Next server
  * runtime deadlock permanently. Measured, not guessed: the same `Promise.all`
@@ -49,15 +49,21 @@ const globalForDb = globalThis as { __indiecraftDb?: postgres.Sql }
  * the same route at the same time, and both read the character sheet.
  *
  * The number has to stay above the peak count of queries awaited concurrently
- * in a single render, and that peak is not obvious from any one file. It was 3
- * until a footer was added to the root layout: the armory front already ran
- * three in a Promise.all, the footer's freshness query made four, and the build
- * stopped dead at a 60-second timeout on a page that had rendered in
- * milliseconds the day before. Eight leaves room for the next component that
- * needs a number without anyone having to rediscover this.
+ * in a single render, and that peak is not obvious from any one file. It has
+ * now caught us twice. First at 3, when a footer was added to the root layout
+ * and took the armory front from three concurrent to four. Then at 8, when the
+ * character sheet grew to six parallel reads: Next renders `generateMetadata`
+ * and the page body at the same time, so the true peak is roughly double what
+ * the source suggests.
  *
- * Eight connections per instance is still small enough for the serverless shape
- * the spec was protecting.
+ * Both times the symptom was identical and misleading — requests hanging for
+ * minutes on a page that had been instant, looking exactly like a saturated
+ * database while the database sat at eleven connections out of sixty.
+ *
+ * So: 20, with real headroom, and the rule stated rather than the number
+ * defended. Add a parallel query to a page and this ceiling is the thing to
+ * check. Twenty per instance is still small for the serverless shape the spec
+ * was protecting.
  * ---------------------------------------------------------------------------
  */
 export function db(): postgres.Sql {
@@ -66,7 +72,7 @@ export function db(): postgres.Sql {
     if (!url) throw new Error('DATABASE_URL is not set')
     globalForDb.__indiecraftDb = postgres(url, {
       prepare: false,
-      max: 8,
+      max: 20,
       idle_timeout: 20,
       connect_timeout: 10,
     })

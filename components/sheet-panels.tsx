@@ -2,7 +2,7 @@ import Link from 'next/link'
 import { ACHIEVEMENT_ICONS, Icon, type IconName } from '@/components/icon'
 import { ACHIEVEMENTS } from '@/engine'
 import type { AchievementProgressInput } from '@/engine/types'
-import type { HistoryPoint, RankContext, SheetStats } from '@/lib/queries'
+import type { HistoryPoint, RankContext, SheetProfile, SheetStats } from '@/lib/queries'
 
 /**
  * The three panels that turned the sheet from a readout into something with
@@ -270,3 +270,72 @@ const formatDay = (day: string) =>
     year: 'numeric',
     timeZone: 'UTC',
   })
+
+/**
+ * What kind of founder this is, beyond their class.
+ *
+ * Country sits on 87% of listings, business type on 73%, audience on 72% —
+ * three facts that place somebody instantly and that the sheet never said.
+ * Business type and audience are frequently the same word, so the duplicate is
+ * dropped rather than printed twice.
+ */
+export function ProfileChips({ profile }: { profile: SheetProfile }) {
+  const chips = [
+    profile.businessType,
+    profile.targetAudience === profile.businessType ? null : profile.targetAudience,
+    profile.country,
+  ].filter((v): v is string => Boolean(v))
+
+  if (chips.length === 0) return null
+
+  return (
+    <span className="chips">
+      {chips.map((c) => (
+        <span key={c} className="chip">
+          {c}
+        </span>
+      ))}
+    </span>
+  )
+}
+
+export interface TimelineEvent {
+  at: string
+  kind: 'joined' | 'level' | 'achievement'
+  label: string
+}
+
+/**
+ * The career so far.
+ *
+ * Achievements are all retroactive, so the first compute stamps every one of
+ * them with the same day. Listing those as events would produce a wall of
+ * identical timestamps that says nothing happened — they collapse into the
+ * entry line instead, and only what has genuinely happened since gets a row of
+ * its own. Thin today by construction, and it fills in on its own.
+ */
+export function Timeline({ events, backfilled }: { events: TimelineEvent[]; backfilled: number }) {
+  if (events.length === 0) return null
+
+  return (
+    <ol className="timeline">
+      {events.map((e) => (
+        <li key={`${e.kind}-${e.at}-${e.label}`} className="timeline-row">
+          <span className="qsquare timeline-dot">
+            <Icon
+              name={e.kind === 'level' ? 'level' : e.kind === 'joined' ? 'crest' : 'achievement'}
+              size={13}
+            />
+          </span>
+          <span className="timeline-label">
+            {e.label}
+            {e.kind === 'joined' && backfilled > 0 && (
+              <span className="muted"> with {backfilled} achievements already earned</span>
+            )}
+          </span>
+          <span className="timeline-when label">{formatDay(e.at.slice(0, 10))}</span>
+        </li>
+      ))}
+    </ol>
+  )
+}

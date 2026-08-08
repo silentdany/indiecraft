@@ -1498,3 +1498,90 @@ a:hover {
   height: 28px;
   color: var(--ic-gold);
 }
+
+/* --- Share ----------------------------------------------------------------
+   The one action the whole product is measured on, so it gets the solid amber
+   block and sits directly under the identity block rather than in a footer. */
+
+.share {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-top: 16px;
+}
+
+.share-x {
+  padding: 9px 18px;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #211510;
+  background: var(--ic-gold);
+}
+.share-x:hover {
+  color: #211510;
+  background: var(--ic-gold-bright);
+}
+
+.share-copy {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 8px 0;
+  background: none;
+  border: 0;
+  color: var(--ic-text-muted);
+  cursor: pointer;
+  font-family: inherit;
+}
+.share-copy:hover {
+  color: var(--ic-gold);
+}
+
+/* --- Profile chips --------------------------------------------------------- */
+
+.chips {
+  display: inline-flex;
+  gap: 6px;
+  margin: 0 4px;
+}
+.chip {
+  padding: 1px 7px;
+  border: 1px solid var(--ic-line-2);
+  font-size: 10.5px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ic-text-muted);
+}
+
+/* --- Timeline -------------------------------------------------------------- */
+
+.timeline {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 1px;
+}
+.timeline-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 9px 12px;
+  background: var(--ic-surface);
+  border: 1px solid var(--ic-line);
+}
+.timeline-dot {
+  width: 26px;
+  height: 26px;
+  color: var(--ic-frame);
+}
+.timeline-label {
+  flex: 1;
+  min-width: 0;
+  font-size: 13px;
+}
+.timeline-when {
+  white-space: nowrap;
+}
