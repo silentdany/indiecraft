@@ -18,6 +18,28 @@ import { realmLabel } from '@/lib/realm'
  * The OG image — technically the most important part of the product: this is
  * what travels, not the page.
  *
+ * ---------------------------------------------------------------------------
+ * It lives here, as `opengraph-image`, and NOT at /api/og/c/[handle], which is
+ * where it used to live and where it silently did not work.
+ *
+ * robots.txt carries `Disallow: /api/`, and the crawlers that render cards —
+ * Twitterbot, facebookexternalhit, LinkedInBot, Slackbot — all obey robots.txt
+ * before fetching an image named in a meta tag. The old file said they fetch it
+ * "regardless of robots rules". They do not. The URL returned 200 to curl, to a
+ * browser, and to every check that did not involve an actual crawler, which is
+ * the worst possible failure shape: nothing to see anywhere except in the one
+ * place it mattered.
+ *
+ * Keeping it under a route segment rather than under /api is what makes that
+ * unrepeatable. It cannot drift back into a disallowed path without somebody
+ * moving the file.
+ * ---------------------------------------------------------------------------
+ *
+ * The file convention also earns three things the hand-rolled route had to do
+ * without: Next emits og:image:width, height and type beside the URL, the
+ * generated image is cached instead of re-rendered on every single scrape, and
+ * the sheet's `generateMetadata` no longer has to name its own image.
+ *
  * Acceptance constraint: 1200 × 630, but consumed at ~500px in a timeline and
  * usually on a phone. Shrink it to 300px and squint. Three things have to
  * survive that — the face, the name, the level — and they get the whole top
@@ -39,6 +61,31 @@ import { realmLabel } from '@/lib/realm'
  * opens a TCP socket unavailable at the edge.
  */
 export const runtime = 'nodejs'
+export const alt = 'Indiecraft character sheet'
+export const size = { width: 1200, height: 630 }
+export const contentType = 'image/png'
+
+/**
+ * The image URL carries the two numbers that change, because X caches a card
+ * image against its URL and will not re-fetch one it has already seen. Without
+ * this, a founder who dings 57 keeps sharing a picture of level 56 forever.
+ *
+ * This replaces a hand-appended `?v=` query on the meta tag: the id becomes
+ * part of the path, which is both cacheable and impossible to strip.
+ */
+export async function generateImageMetadata({ params }: { params: { handle: string } }) {
+  const character = await getCharacter(params.handle).catch(() => null)
+  return [
+    {
+      id: character ? `${character.level}-${character.ilvl ?? 'na'}` : 'card',
+      alt: character
+        ? `${character.displayName} — level ${character.level} ${character.characterClass}`
+        : alt,
+      size,
+      contentType,
+    },
+  ]
+}
 
 // Loaded once, as an ArrayBuffer, from the repo. Never fetch Google Fonts at
 // runtime: slow, fragile, and it breaks on edge.
@@ -64,7 +111,7 @@ const TEXT = '#ede7dc'
 const MUTED = '#9b9187'
 const FRAME = '#6b552a'
 
-export async function GET(_request: Request, { params }: { params: Promise<{ handle: string }> }) {
+export default async function Image({ params }: { params: Promise<{ handle: string }> }) {
   const { handle } = await params
   const character = await getCharacter(handle)
 
@@ -318,7 +365,7 @@ export async function GET(_request: Request, { params }: { params: Promise<{ han
         </div>
       </div>
     </div>,
-    { width: 1200, height: 630, fonts: await fonts },
+    { ...size, fonts: await fonts },
   )
 }
 

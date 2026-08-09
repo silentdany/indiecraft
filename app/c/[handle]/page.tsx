@@ -39,12 +39,15 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     // indexing. Consent and the growth loop are the same gesture.
     robots: character.claimed ? undefined : { index: false, follow: false },
     alternates: { canonical: `/c/${character.handle}` },
+    // No `images` here on purpose. opengraph-image.tsx in this same segment
+    // supplies the URL along with its width, height and type, and naming one
+    // here would override that with a bare URL missing all three. Its
+    // `generateImageMetadata` handles the cache-busting the `?v=` query used to
+    // do — X caches a card against its URL and never re-fetches it.
     openGraph: {
       type: 'profile',
       title,
       url: `/c/${character.handle}`,
-      // X caches OG images hard, so the URL carries the numbers that change.
-      images: [`/api/og/c/${character.handle}?v=${character.level}-${character.ilvl ?? 'na'}`],
     },
     twitter: { card: 'summary_large_image' },
   }
