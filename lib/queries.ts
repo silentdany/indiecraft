@@ -1,7 +1,8 @@
 import { cache } from 'react'
 import { itemLevelFor, levelBounds, rarityFor } from '@/engine'
-import type { AchievementProgressInput, CharacterClass, Rarity } from '@/engine/types'
+import type { AchievementProgressInput, CharacterClass, Faction, Rarity } from '@/engine/types'
 import { db } from '@/lib/db'
+import { normalizeRealm } from '@/lib/realm'
 
 /**
  * Every public read goes through here, and therefore through the server.
@@ -53,15 +54,31 @@ export interface RankContext {
   percentile: number
   classRank: number
   classTotal: number
+  /**
+   * Standing on their own realm, when they have one.
+   *
+   * The global rank of a French founder is #97 and always will be; being 2nd of
+   * 14 in France is a position worth defending. Null when TrustMRR never said
+   * where they are, which is a third of the corpus — and an invented realm
+   * would be worse than none.
+   */
+  realmRank: { realm: string; rank: number; total: number } | null
   above: { handle: string; level: number; mrrUsd: number } | null
   below: { handle: string; level: number; mrrUsd: number } | null
 }
 
-/** What kind of founder this is, beyond their class. */
+/**
+ * Where this character stands, beyond their class: realm and faction.
+ *
+ * Both come off the `characters` row rather than being re-derived from the raw
+ * payloads here. They used to be re-derived, which meant the sheet and the
+ * ladder could disagree about the same founder — the sheet counted every
+ * product's country, the ladder had no opinion at all. The engine decides once,
+ * compute writes it down, everything reads the same answer.
+ */
 export interface SheetProfile {
-  country: string | null
-  businessType: string | null
-  targetAudience: string | null
+  realm: string | null
+  faction: Faction | null
 }
 
 /** One point per day, for the sparkline and the "since" line. */
@@ -116,6 +133,8 @@ interface CharacterRow {
   level: number
   ilvl: number | null
   class: string
+  realm: string | null
+  faction: string | null
   n_products: number
   mrr_cents: string
   revenue_total_cents: string
@@ -139,7 +158,7 @@ export const getCharacter = cache(async (rawHandle: string): Promise<CharacterPa
 
   const [row] = await sql<CharacterRow[]>`
     select c.handle, f.display_name, f.avatar_url, f.claimed_at, f.first_seen_at,
-           c.xp, c.level, c.ilvl, c.class,
+           c.xp, c.level, c.ilvl, c.class, c.realm, c.faction,
            c.n_products, c.mrr_cents, c.revenue_total_cents,
            c.customers, c.active_subscriptions, c.growth_mrr_30d,
            c.previous_level, c.leveled_at
@@ -208,6 +227,9 @@ export const getCharacter = cache(async (rawHandle: string): Promise<CharacterPa
         total: string
         class_rank: string
         class_total: string
+        realm: string | null
+        realm_rank: string | null
+        realm_total: string | null
         above_handle: string | null
         above_level: number | null
         above_mrr: string | null
@@ -217,10 +239,15 @@ export const getCharacter = cache(async (rawHandle: string): Promise<CharacterPa
       }[]
     >`
       with ranked as (
-        select c.handle, c.class, c.level, c.mrr_cents,
+        select c.handle, c.class, c.realm, c.level, c.mrr_cents,
                row_number() over w                                as rank,
                row_number() over (partition by c.class order by
                  c.level desc, c.ilvl desc nulls last, c.handle)  as class_rank,
+               -- Partitioning by a nullable column groups every realm-less
+               -- founder into one bucket, so the rank is only read out below
+               -- when the realm is actually set.
+               row_number() over (partition by c.realm order by
+                 c.level desc, c.ilvl desc nulls last, c.handle)  as realm_rank,
                lag(c.handle)     over w as above_handle,
                lag(c.level)      over w as above_level,
                lag(c.mrr_cents)  over w as above_mrr,
@@ -232,9 +259,10 @@ export const getCharacter = cache(async (rawHandle: string): Promise<CharacterPa
         where f.opted_out_at is null
         window w as (order by c.level desc, c.ilvl desc nulls last, c.handle)
       )
-      select r.rank, r.class_rank,
+      select r.rank, r.class_rank, r.realm, r.realm_rank,
              (select count(*) from ranked)                          as total,
              (select count(*) from ranked x where x.class = r.class) as class_total,
+             (select count(*) from ranked x where x.realm = r.realm) as realm_total,
              r.above_handle, r.above_level, r.above_mrr,
              r.below_handle, r.below_level, r.below_mrr
       from ranked r
@@ -333,6 +361,7 @@ export const getCharacter = cache(async (rawHandle: string): Promise<CharacterPa
           ),
           classRank: Number(rankRowOne.class_rank),
           classTotal: Number(rankRowOne.class_total),
+          realmRank: realmRankOf(rankRowOne),
           above: rankRowOne.above_handle
             ? {
                 handle: rankRowOne.above_handle,
@@ -350,16 +379,8 @@ export const getCharacter = cache(async (rawHandle: string): Promise<CharacterPa
         }
       : null,
     profile: {
-      // The most common answer across their products, because a founder with
-      // three SaaS tools and one marketplace is a SaaS founder.
-      country: commonest(products.map((p) => asText(p.raw?.country))),
-      businessType: commonest(
-        products.map((p) => {
-          const v = asText((p.raw?.startupInsights as Record<string, unknown>)?.businessType)
-          return v === 'Unknown' ? null : v
-        }),
-      ),
-      targetAudience: commonest(products.map((p) => asText(p.raw?.targetAudience))),
+      realm: normalizeRealm(row.realm),
+      faction: asFaction(row.faction),
     },
     firstSeenAt: asIso(row.first_seen_at) ?? new Date().toISOString(),
     leveledAt: asIso(row.leveled_at),
@@ -450,24 +471,52 @@ export interface LadderRow {
    */
   ilvlRarity: Rarity | null
   nProducts: number
+  realm: string | null
+  faction: Faction | null
+}
+
+/**
+ * What a visitor may narrow the ladder by.
+ *
+ * Three axes, and they compose: "Hunters on FR selling B2B" is four founders
+ * and a far more useful page than the global top hundred, which a French
+ * founder will never appear on and therefore has no reason to read twice.
+ */
+export interface LadderFilter {
+  characterClass?: string | null
+  realm?: string | null
+  faction?: string | null
 }
 
 /**
  * Top 100 by level, then by iLvl on a tie.
  *
  * No bottom rankings, ever: we show a top, never the floor. WoW never showed a
- * leaderboard of the worst players.
+ * leaderboard of the worst players. Filtering does not change that — a realm
+ * ladder is still a top, just of a smaller world.
  */
-export async function getLadder(characterClass?: string): Promise<LadderRow[]> {
+export async function getLadder(filter: LadderFilter = {}): Promise<LadderRow[]> {
   const sql = db()
+  const realm = normalizeRealm(filter.realm)
+  const faction = asFaction(filter.faction ?? null)
   const rows = await sql<
-    { handle: string; level: number; ilvl: number | null; class: string; n_products: number }[]
+    {
+      handle: string
+      level: number
+      ilvl: number | null
+      class: string
+      n_products: number
+      realm: string | null
+      faction: string | null
+    }[]
   >`
-    select c.handle, c.level, c.ilvl, c.class, c.n_products
+    select c.handle, c.level, c.ilvl, c.class, c.n_products, c.realm, c.faction
     from characters c
     join founders f on f.handle = c.handle
     where f.opted_out_at is null
-      ${characterClass ? sql`and c.class = ${characterClass}` : sql``}
+      ${filter.characterClass ? sql`and c.class = ${filter.characterClass}` : sql``}
+      ${realm ? sql`and c.realm = ${realm}` : sql``}
+      ${faction ? sql`and c.faction = ${faction}` : sql``}
     -- nulls last: no recurring revenue is "not measured", never "worst".
     order by c.level desc, c.ilvl desc nulls last, c.handle
     limit 100
@@ -481,7 +530,53 @@ export async function getLadder(characterClass?: string): Promise<LadderRow[]> {
     rarity: rarityFor(row.level),
     ilvlRarity: row.ilvl === null ? null : rarityFor(row.ilvl),
     nProducts: row.n_products,
+    realm: normalizeRealm(row.realm),
+    faction: asFaction(row.faction),
   }))
+}
+
+export interface FacetCount<T extends string = string> {
+  value: T
+  count: number
+}
+
+/**
+ * The realms with anybody on them, largest first.
+ *
+ * Unlike classes, this list is long and lopsided — 80 of 139 characters sit on
+ * US and the tail is a dozen realms of one. Callers cap it; the query does not,
+ * because a realm of one is still a page that founder will visit.
+ */
+export async function getRealmCounts(): Promise<FacetCount[]> {
+  const sql = db()
+  const rows = await sql<{ realm: string; n: number }[]>`
+    select c.realm, count(*)::int as n
+    from characters c
+    join founders f on f.handle = c.handle
+    where f.opted_out_at is null and c.realm is not null
+    group by c.realm
+    order by n desc, c.realm
+  `
+  return rows.flatMap((r) => {
+    const realm = normalizeRealm(r.realm)
+    return realm ? [{ value: realm, count: r.n }] : []
+  })
+}
+
+export async function getFactionCounts(): Promise<FacetCount<Faction>[]> {
+  const sql = db()
+  const rows = await sql<{ faction: string; n: number }[]>`
+    select c.faction, count(*)::int as n
+    from characters c
+    join founders f on f.handle = c.handle
+    where f.opted_out_at is null and c.faction is not null
+    group by c.faction
+    order by n desc, c.faction
+  `
+  return rows.flatMap((r) => {
+    const faction = asFaction(r.faction)
+    return faction ? [{ value: faction, count: r.n }] : []
+  })
 }
 
 /**
@@ -605,12 +700,28 @@ const maxOf = (values: (number | null)[]): number | null => {
   return present.length ? Math.max(...present) : null
 }
 
-/** The value that appears most often, ignoring the gaps. */
-const commonest = (values: (string | null)[]): string | null => {
-  const counts = new Map<string, number>()
-  for (const v of values) if (v) counts.set(v, (counts.get(v) ?? 0) + 1)
-  let best: string | null = null
-  let top = 0
-  for (const [v, n] of counts) if (n > top) [best, top] = [v, n]
-  return best
+/**
+ * A stored faction, narrowed back to the union.
+ *
+ * The column is plain text and the engine is the only writer, but a value that
+ * predates a rename would otherwise flow into the UI as a faction nobody has a
+ * colour or a tagline for.
+ */
+const asFaction = (v: string | null): Faction | null =>
+  v === 'B2B' || v === 'B2C' || v === 'Both' ? v : null
+
+/**
+ * A realm standing is only worth printing when there is a realm and more than
+ * one person on it. "1st of 1 in Slovenia" is a joke at that founder's expense,
+ * and there are four realms in the corpus with exactly one character on them.
+ */
+const realmRankOf = (row: {
+  realm: string | null
+  realm_rank: string | null
+  realm_total: string | null
+}): { realm: string; rank: number; total: number } | null => {
+  const realm = normalizeRealm(row.realm)
+  const total = Number(row.realm_total ?? 0)
+  if (!realm || total < 2) return null
+  return { realm, rank: Number(row.realm_rank ?? 0), total }
 }

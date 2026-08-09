@@ -3,8 +3,9 @@ import { join } from 'node:path'
 import { ImageResponse } from '@vercel/og'
 import { BrandMark } from '@/components/brand-mark'
 import { ACHIEVEMENT_ICONS, Icon } from '@/components/icon'
-import { ACHIEVEMENTS_BY_CODE } from '@/engine'
+import { ACHIEVEMENTS_BY_CODE, CLASS_COLORS } from '@/engine'
 import { getCharacter } from '@/lib/queries'
+import { realmLabel } from '@/lib/realm'
 
 /**
  * The OG image — technically the most important part of the product: this is
@@ -116,13 +117,13 @@ export async function GET(_request: Request, { params }: { params: Promise<{ han
           <div style={{ display: 'flex', flexDirection: 'column', marginLeft: 44, flex: 1 }}>
             {/* What changed — the only line that varies over time. */}
             <div style={{ display: 'flex', alignItems: 'center' }}>
-              <Icon name={variant.icon} size={30} color={GOLD} />
+              <Icon name={variant.icon} size={30} color={variant.kickerColor} />
               <div
                 style={{
                   display: 'flex',
                   marginLeft: 12,
                   fontSize: 27,
-                  color: GOLD,
+                  color: variant.kickerColor,
                   letterSpacing: 5,
                 }}
               >
@@ -182,14 +183,25 @@ function pickVariant(character: NonNullable<Awaited<ReturnType<typeof getCharact
   const nameSize = name.length > 18 ? 44 : name.length > 13 ? 56 : 66
   const rank = `rank #${character.rank}`
   const gear = character.ilvl === null ? 'no monthly score' : `item level ${character.ilvl}`
+  // Realm and faction ride the subline when they exist. They are the two facts
+  // on the card that place a founder rather than score them, and a shared image
+  // that says "France · B2B" gets read by people the global rank means nothing
+  // to.
+  const standing = [
+    character.profile.realm ? realmLabel(character.profile.realm) : null,
+    character.profile.faction,
+  ].filter(Boolean)
 
+  // An event kicker keeps the interface gold: DING! is the site shouting, not
+  // the character introducing themselves.
   if (character.recentLevelUp) {
     return {
       icon: 'level' as const,
       kicker: 'DING!',
+      kickerColor: GOLD,
       headline: name,
       nameSize,
-      subline: `${character.characterClass} · ${rank}`,
+      subline: [character.characterClass, ...standing, rank].join(' · '),
     }
   }
   if (character.recentAchievement) {
@@ -197,16 +209,21 @@ function pickVariant(character: NonNullable<Awaited<ReturnType<typeof getCharact
     return {
       icon: ACHIEVEMENT_ICONS[character.recentAchievement.code] ?? ('achievement' as const),
       kicker: (def?.label ?? character.recentAchievement.code).toUpperCase(),
+      kickerColor: GOLD,
       headline: name,
       nameSize,
-      subline: `${character.characterClass} · ${rank}`,
+      subline: [character.characterClass, ...standing, rank].join(' · '),
     }
   }
   return {
     icon: character.characterClass,
     kicker: character.characterClass.toUpperCase(),
+    // The class kicker wears the class colour: the shared image and the page
+    // have to agree, or the colour system stops meaning anything the moment it
+    // leaves the site.
+    kickerColor: CLASS_COLORS[character.characterClass],
     headline: name,
     nameSize,
-    subline: `${gear} · ${rank}`,
+    subline: [gear, ...standing, rank].join(' · '),
   }
 }

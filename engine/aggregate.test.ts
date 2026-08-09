@@ -20,6 +20,8 @@ function product(overrides: Partial<ProductInput> = {}): ProductInput {
     channels: [],
     stack: [],
     cofounders: [],
+    country: null,
+    businessType: null,
     ...overrides,
   }
 }
@@ -124,5 +126,41 @@ describe('founder aggregation', () => {
     expect(a.nProducts).toBe(0)
     expect(a.growthMrr30d).toBe(0)
     expect(a.foundedFirst).toBeNull()
+    expect(a.realm).toBeNull()
+    expect(a.faction).toBeNull()
+  })
+
+  describe('realm and faction', () => {
+    it('takes the commonest answer, not the first', () => {
+      const a = aggregateFounder('x', [
+        product({ slug: 'a', country: 'US', businessType: 'B2C' }),
+        product({ slug: 'b', country: 'FR', businessType: 'B2B' }),
+        product({ slug: 'c', country: 'FR', businessType: 'B2B' }),
+      ])
+      expect(a.realm).toBe('FR')
+      expect(a.faction).toBe('B2B')
+    })
+
+    it('ignores the gaps rather than letting them win', () => {
+      const a = aggregateFounder('x', [
+        product({ slug: 'a', country: null, businessType: null }),
+        product({ slug: 'b', country: null, businessType: null }),
+        product({ slug: 'c', country: 'PL', businessType: 'Both' }),
+      ])
+      expect(a.realm).toBe('PL')
+      expect(a.faction).toBe('Both')
+    })
+
+    it('rejects a business type outside the three known answers', () => {
+      // 'Unknown' is a real value in the payload and it is not an answer.
+      const a = aggregateFounder('x', [product({ businessType: 'Unknown' })])
+      expect(a.faction).toBeNull()
+    })
+
+    it('leaves both null when nothing was ever reported', () => {
+      const a = aggregateFounder('x', [product(), product({ slug: 'b' })])
+      expect(a.realm).toBeNull()
+      expect(a.faction).toBeNull()
+    })
   })
 })

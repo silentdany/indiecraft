@@ -22,7 +22,23 @@ export interface ProductInput {
   stack: string[]
   /** cofounders[].xHandle */
   cofounders: string[]
+  /** ISO 3166-1 alpha-2, the realm this product is registered on. */
+  country: string | null
+  /** startupInsights.businessType, falling back to targetAudience. */
+  businessType: string | null
 }
+
+/**
+ * Who a founder sells to.
+ *
+ * TrustMRR answers this on roughly two thirds of listings, in exactly three
+ * values, and it is the one dimension that splits the corpus close to evenly —
+ * 59 B2B against 56 B2C. That makes it the armory's faction: not flavour, the
+ * single most load-bearing fact about a business that a level cannot express.
+ * 'Unknown' is normalised away at the edge, because a faction nobody belongs to
+ * is not a faction.
+ */
+export type Faction = 'B2B' | 'B2C' | 'Both'
 
 /**
  * The founder aggregate: the engine's input.
@@ -59,6 +75,18 @@ export interface FounderAggregate {
   stack: string[]
   cofounders: string[]
   fundingStatuses: string[]
+  /**
+   * Realm and faction: where they build, and who they sell to.
+   *
+   * Both are the commonest answer across the founder's products rather than the
+   * first, because a founder with three B2B tools and one consumer app is a B2B
+   * founder. Null is a real answer here and has to survive to the sheet — a
+   * missing country is not "unknown realm", it is a field TrustMRR never
+   * filled, and inventing a default would put people somewhere they never said
+   * they were.
+   */
+  realm: string | null
+  faction: Faction | null
 }
 
 export type CharacterClass =
@@ -127,6 +155,8 @@ export interface CharacterSheet {
   class: CharacterClass
   rarity: Rarity
   nProducts: number
+  realm: string | null
+  faction: Faction | null
   achievements: string[]
   /** Remaining XP and [0,1] progress toward the next level. */
   progress: { current: number; next: number | null; ratio: number }

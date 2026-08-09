@@ -2,9 +2,17 @@ import type { Metadata } from 'next'
 import Link from 'next/link'
 import { Frame } from '@/components/frame'
 import { ACHIEVEMENT_ICONS, Icon } from '@/components/icon'
-import { ACHIEVEMENTS, LEVEL_THRESHOLDS, MAX_LEVEL, RARITY_BANDS } from '@/engine'
+import {
+  ACHIEVEMENTS,
+  CLASS_COLORS,
+  FACTIONS,
+  LEVEL_THRESHOLDS,
+  MAX_LEVEL,
+  RARITY_BANDS,
+} from '@/engine'
 import { CLASS_RULES, XP_PER_PRODUCT } from '@/engine/tuning'
-import { getClassCounts } from '@/lib/queries'
+import { getClassCounts, getFactionCounts, getRealmCounts } from '@/lib/queries'
+import { realmLabel } from '@/lib/realm'
 
 export const revalidate = 300
 
@@ -25,9 +33,15 @@ export const metadata: Metadata = {
  * a rebalance ships the explanation with it or not at all.
  */
 export default async function Rules() {
-  const counts = await getClassCounts().catch(() => [])
+  const [counts, factionCounts, realmCounts] = await Promise.all([
+    getClassCounts().catch(() => []),
+    getFactionCounts().catch(() => []),
+    getRealmCounts().catch(() => []),
+  ])
   const share = new Map(counts.map((c) => [c.name, c.count]))
   const total = counts.reduce((sum, c) => sum + c.count, 0)
+  const factionShare = new Map(factionCounts.map((f) => [f.value, f.count]))
+  const placed = realmCounts.reduce((sum, r) => sum + r.count, 0)
 
   return (
     <main className="page">
@@ -117,12 +131,17 @@ export default async function Rules() {
             return (
               <li key={rule.class} className="rules-class">
                 <span className="rules-class-n label">{i + 1}</span>
-                <span className="qsquare rules-class-icon">
+                <span
+                  className="qsquare rules-class-icon"
+                  style={{ color: CLASS_COLORS[rule.class] }}
+                >
                   <Icon name={rule.class} size={19} />
                 </span>
                 <span className="rules-class-body">
                   <span className="rules-class-head">
-                    <span className="serif gold">{rule.class}</span>
+                    <span className="serif" style={{ color: CLASS_COLORS[rule.class] }}>
+                      {rule.class}
+                    </span>
                     {n !== undefined && total > 0 && (
                       <span className="label">
                         {n} · {Math.round((n / total) * 100)}%
@@ -138,8 +157,67 @@ export default async function Rules() {
         </ol>
         <p className="muted rules-note">
           Anyone the rules cannot describe is an Adventurer. It is the class of insufficient data,
-          it is never a verdict, and at one percent of the ladder it is doing its job.
+          it is never a verdict, and at one percent of the ladder it is doing its job. The colours
+          are ours and they are load-bearing: a class is a colour before it is a word, which is what
+          lets a hundred-row ladder be read without being parsed.
         </p>
+      </Section>
+
+      <Section title="Factions and realms">
+        <p className="muted rules-note">
+          Neither is computed. Both are read straight off the listing — who a founder sells to, and
+          where the business is registered — and both are the commonest answer across their
+          products, because somebody with three B2B tools and one consumer app is a B2B founder.
+          Where TrustMRR never said, the sheet says nothing rather than guessing.
+        </p>
+
+        <ul className="bands">
+          {FACTIONS.map((f) => {
+            const n = factionShare.get(f.key)
+            return (
+              <li key={f.key} className="band">
+                <span className="qsquare band-chip" style={{ color: f.color }}>
+                  <Icon name={f.key} size={16} />
+                </span>
+                <span className="band-name" style={{ color: f.color }}>
+                  {f.key}
+                </span>
+                <span className="label">
+                  {f.tagline}
+                  {n === undefined ? '' : ` · ${n}`}
+                </span>
+              </li>
+            )
+          })}
+        </ul>
+
+        <p className="muted rules-note">
+          Business type is the only field in the whole payload that splits the corpus down the
+          middle, which is why it became a faction rather than another line of metadata. It is also
+          the fact that changes how every other number reads: $200 a month is a bargain from one
+          side of that line and a fortune from the other.
+        </p>
+
+        {realmCounts.length > 0 && (
+          <>
+            <p className="muted rules-note">
+              {realmCounts.length} realms hold {placed} characters. The global ladder is, in
+              practice, the American one — so the realm you stand on is the ladder most founders can
+              actually place in.
+            </p>
+            <ul className="realm-grid">
+              {realmCounts.map((r) => (
+                <li key={r.value}>
+                  <Link href={`/ladder?realm=${r.value}`} className="realm-chip">
+                    <span className="serif">{r.value}</span>
+                    <span className="realm-chip-name">{realmLabel(r.value)}</span>
+                    <span className="label">{r.count}</span>
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </>
+        )}
       </Section>
 
       <Section title={`Achievements — ${ACHIEVEMENTS.length}`}>

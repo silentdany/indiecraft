@@ -10,14 +10,14 @@ import { ShareSheet } from '@/components/share-sheet'
 import {
   HistoryPanel,
   LockedAchievements,
-  ProfileChips,
   RankPanel,
+  Standing,
   StatsPanel,
   Timeline,
   type TimelineEvent,
 } from '@/components/sheet-panels'
 import { ViewTracker } from '@/components/view-tracker'
-import { ACHIEVEMENTS, ACHIEVEMENTS_BY_CODE, CLASS_REASONS } from '@/engine'
+import { ACHIEVEMENTS, ACHIEVEMENTS_BY_CODE, CLASS_COLORS, CLASS_REASONS } from '@/engine'
 import { CONSENT_ACTIONS_ENABLED } from '@/lib/consent'
 import { getCharacter } from '@/lib/queries'
 
@@ -135,10 +135,17 @@ export default async function CharacterSheet({ params }: Props) {
           <div className="sheet-identity">
             <div className="sheet-topline">
               <div>
-                <p className="sheet-eyebrow">
+                {/* The class in its own colour, and the only place on the sheet
+                    where it is spelled out — everywhere else the colour does
+                    the work on its own. */}
+                <Link
+                  href={`/ladder?class=${character.characterClass}`}
+                  className="sheet-eyebrow"
+                  style={{ color: CLASS_COLORS[character.characterClass] }}
+                >
                   <Icon name={character.characterClass} size={15} />
                   {character.characterClass}
-                </p>
+                </Link>
                 {/* The reason was written alongside the rule and never shown,
                     which is backwards for a product whose answer to "why did
                     you call me that" is "the formula is public, go read it". */}
@@ -173,8 +180,8 @@ export default async function CharacterSheet({ params }: Props) {
             </div>
 
             <p className="sheet-meta">
-              @{character.handle} <ProfileChips profile={character.profile} /> · rank{' '}
-              <span className="gold">#{character.rank}</span> · {character.nProducts} product
+              @{character.handle} · rank <span className="gold">#{character.rank}</span> ·{' '}
+              {character.nProducts} product
               {character.nProducts === 1 ? '' : 's'} · {formatUsd(character.mrrUsd)} MRR ·{' '}
               {formatUsd(character.revenueTotalUsd)} lifetime
             </p>
@@ -189,6 +196,8 @@ export default async function CharacterSheet({ params }: Props) {
                   : `${formatUsd(character.progress.next - character.xp)} of XP to level ${character.level + 1}`}
               </span>
             </div>
+
+            <Standing profile={character.profile} />
           </div>
         </div>
       </Frame>

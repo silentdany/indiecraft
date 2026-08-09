@@ -34,6 +34,8 @@ function founder(overrides: Partial<FounderAggregate> = {}): FounderAggregate {
     stack: [],
     cofounders: [],
     fundingStatuses: [],
+    realm: null,
+    faction: null,
     ...overrides,
   }
   return {

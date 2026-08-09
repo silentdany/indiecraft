@@ -75,7 +75,15 @@ export interface TrustmrrStartup {
   techStack?: { slug: string }[] | null
   marketingChannels?: { slug: string; category?: string }[] | null
   cofounders?: { xHandle?: string | null }[] | null
-  startupInsights?: { fundingStatus?: string | null } | null
+  /** ISO 3166-1 alpha-2, on 62% of listings. The character's realm. */
+  country?: string | null
+  /** 'B2B' | 'B2C' | 'Both', on 55%. Fallback for the insight below. */
+  targetAudience?: string | null
+  startupInsights?: {
+    fundingStatus?: string | null
+    /** Same three answers as targetAudience, on 65%. The character's faction. */
+    businessType?: string | null
+  } | null
 }
 
 export class TrustmrrClient {

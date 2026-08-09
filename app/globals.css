@@ -250,19 +250,31 @@ a:hover {
   border-bottom: 1px solid var(--ic-line-2);
 }
 
+/* A class or faction tab carries its own colour, and it arrives as
+   `--tab-color` rather than as `color`. That one indirection is what lets hover
+   and selection below win with ordinary specificity: an inline `color` would
+   outrank every rule in this file and the tab you are pointing at would be the
+   only one that never reacts. */
 .tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
   padding: 7px 10px;
   font-size: 12px;
   font-weight: 700;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: var(--ic-gold);
+  color: var(--tab-color, var(--ic-gold));
   white-space: nowrap;
 }
 .tab:hover {
   color: #fff;
   background: rgba(255, 255, 255, 0.06);
 }
+/* The selected tab inverts into a solid block, and it stays amber even for a
+   class that has a colour of its own: selection is an interface state, and a
+   state that changed hue with the thing selected would stop reading as "this
+   one is on". */
 .tab[aria-current],
 .tab.is-selected {
   color: #211510;
@@ -272,6 +284,43 @@ a:hover {
 .tab.is-selected:hover {
   color: #211510;
   background: var(--ic-gold-bright);
+}
+
+/* Three stacked filter rows need their axis named, or the second and third read
+   as a continuation of the first. */
+.facets {
+  display: grid;
+  gap: 2px;
+  margin-bottom: 14px;
+}
+.facet {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+}
+.facet-label {
+  flex: 0 0 58px;
+  padding-top: 8px;
+  text-align: right;
+}
+.facet .tabs {
+  flex: 1;
+  min-width: 0;
+  border-bottom: 0;
+}
+.facet:last-child .tabs {
+  border-bottom: 1px solid var(--ic-line-2);
+}
+@media (max-width: 560px) {
+  .facet {
+    flex-direction: column;
+    gap: 0;
+  }
+  .facet-label {
+    flex: none;
+    text-align: left;
+    padding-top: 10px;
+  }
 }
 /* Counts ride along inside a tab and must dim in both states. */
 .tab-count {
@@ -542,6 +591,138 @@ a:hover {
   color: var(--ic-gold);
 }
 
+/* --- Factions and realms, on the front ------------------------------------
+   Two ways into the ladder that are not "be in the global top hundred". Side by
+   side because they answer the same question — where do I fit — and stacked
+   below the width where two columns would each be too narrow to hold a country
+   name on one line. */
+
+.worlds {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 26px 34px;
+  margin-top: 32px;
+}
+.worlds-col {
+  min-width: 0;
+}
+
+.faction-list,
+.realm-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 6px;
+}
+
+.faction-card {
+  --faction-color: var(--ic-gold);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 14px 10px 10px;
+  border: 1px solid var(--ic-line);
+  background: var(--ic-surface);
+  color: var(--ic-text);
+}
+.faction-card:hover {
+  border-color: var(--faction-color);
+  color: var(--ic-text);
+}
+.faction-icon {
+  width: 36px;
+  height: 36px;
+  color: var(--faction-color);
+}
+.faction-body {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1;
+  min-width: 0;
+}
+.faction-name {
+  font-size: 16px;
+  line-height: 1.1;
+  color: var(--faction-color);
+}
+.faction-count {
+  font-size: 20px;
+  color: var(--ic-gold);
+}
+
+.realm-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 4px 12px 4px 0;
+  color: var(--ic-text);
+}
+.realm-row:hover {
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--ic-text);
+}
+/* The same bordered square as the level and the gear icons, at the size where
+   two letters still read. Carrying one shape at every scale is most of why the
+   interface holds together. */
+.realm-code {
+  width: 30px;
+  height: 26px;
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  color: var(--ic-gold);
+}
+.realm-name {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 13px;
+}
+.realm-count {
+  color: var(--ic-text-muted);
+}
+
+/* Every realm, on /rules, where the long tail of ones and twos is the point
+   rather than clutter. */
+.realm-grid {
+  list-style: none;
+  margin: 10px 0 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(178px, 1fr));
+  gap: 6px;
+}
+.realm-chip {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  padding: 6px 10px;
+  border: 1px solid var(--ic-line);
+  background: var(--ic-surface);
+  color: var(--ic-text);
+}
+.realm-chip:hover {
+  border-color: var(--ic-gold);
+  color: var(--ic-text);
+}
+.realm-chip > .serif {
+  color: var(--ic-gold);
+  font-size: 13px;
+  letter-spacing: 0.06em;
+}
+.realm-chip-name {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 12px;
+  color: var(--ic-text-muted);
+}
+
 .section-head {
   display: flex;
   align-items: baseline;
@@ -569,7 +750,7 @@ a:hover {
    Spreading all three across the full width left a lake of empty row. */
 .ladder a {
   display: grid;
-  grid-template-columns: 30px 34px auto auto 1fr;
+  grid-template-columns: 30px 34px auto auto auto 1fr;
   align-items: center;
   gap: 14px;
   padding: 6px 10px;
@@ -605,15 +786,51 @@ a:hover {
 }
 
 /* The glyph is the fast half of this pair: at a glance you read the shape, and
-   only slow down for the word when two classes look alike. */
+   only slow down for the word when two classes look alike. The colour is the
+   faster half still — it is set inline, per class, so this rule must not
+   declare one or it would win over every row. */
 .ladder-class {
   display: flex;
   align-items: center;
   gap: 7px;
+}
+
+/* Realm and faction as marks, not words. At a hundred rows, "United States" on
+   eighty of them is noise; a two-letter code and a sigil are read without being
+   read. Fixed widths so the column holds its line even where both are missing —
+   a third of the corpus has neither, and a ragged column is worse than a gap. */
+.ladder-standing {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.ladder-realm {
+  width: 26px;
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  text-align: center;
   color: var(--ic-text-muted);
 }
-.ladder a:hover .ladder-class {
-  color: var(--ic-gold);
+.ladder-faction {
+  display: flex;
+  width: 14px;
+  opacity: 0.85;
+}
+.ladder-blank {
+  height: 14px;
+}
+
+@media (max-width: 620px) {
+  /* First to go on a narrow row: the class word and the standing marks are
+     both secondary to the three numbers the ladder is sorted on. */
+  .ladder a {
+    grid-template-columns: 26px 30px 1fr auto;
+    gap: 10px;
+  }
+  .ladder-class,
+  .ladder-standing {
+    display: none;
+  }
 }
 /* iLvl is the number the ladder is actually sorted on after level, so it keeps
    its digits in the interface's own colour rather than the muted grey. */
@@ -1130,6 +1347,12 @@ a:hover {
   width: 18px;
   height: 18px;
 }
+/* Rarity bands fill the square with a bare colour; faction bands put a sigil in
+   it, so that one needs room to breathe. */
+.band-chip:has(svg) {
+  width: 26px;
+  height: 26px;
+}
 .band-name {
   font-size: 12px;
   text-transform: capitalize;
@@ -1380,12 +1603,25 @@ a:hover {
 
 .rankpanel-figures {
   display: flex;
-  gap: 30px;
+  flex-wrap: wrap;
+  gap: 14px 30px;
 }
 .rankfig {
   display: flex;
   flex-direction: column;
   gap: 2px;
+}
+/* Two of the four figures name a ladder you can go and read. Underlining them
+   would put three underlines in a row of numbers; the hover state is enough,
+   and the cursor already says it. */
+.rankfig-link {
+  color: var(--ic-text);
+}
+.rankfig-link:hover {
+  color: var(--ic-text);
+}
+.rankfig-link:hover > .label {
+  color: var(--ic-gold);
 }
 .rankfig > .serif {
   font-size: 22px;
@@ -1553,20 +1789,72 @@ a:hover {
   color: var(--ic-gold);
 }
 
-/* --- Profile chips --------------------------------------------------------- */
+/* --- Standing: realm and faction -------------------------------------------
+   These were two grey chips buried in the metadata line, which is where facts
+   go to be ignored. They are now the only bordered block inside the header
+   frame, because they are the two things on the sheet that place a founder
+   among other founders rather than on a number line — and both are doors. */
 
-.chips {
-  display: inline-flex;
-  gap: 6px;
-  margin: 0 4px;
+.standing {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 14px;
 }
-.chip {
-  padding: 1px 7px;
+.standing-cell {
+  --standing-color: var(--ic-gold);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 7px 12px 7px 8px;
   border: 1px solid var(--ic-line-2);
-  font-size: 10.5px;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
+  background: var(--ic-well);
+  color: var(--ic-text);
+}
+.standing-cell:hover {
+  border-color: var(--standing-color);
+  color: var(--ic-text);
+}
+.standing-icon {
+  width: 28px;
+  height: 28px;
+  color: var(--ic-gold);
+}
+.standing-icon-faction {
+  color: var(--standing-color);
+}
+.standing-body {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+}
+.standing-value {
+  font-size: 14px;
+  line-height: 1.2;
+  color: var(--standing-color);
+}
+/* The realm code repeats the square-in-a-border idiom the level and the gear
+   icons already use, at the smallest size it still reads. */
+.standing-code {
+  padding: 2px 6px;
+  border: 1px solid var(--ic-frame);
+  font-size: 11px;
+  letter-spacing: 0.08em;
   color: var(--ic-text-muted);
+}
+.standing-tagline {
+  white-space: nowrap;
+}
+@media (max-width: 480px) {
+  /* The tagline is the first thing to go: the faction name and its colour
+     already carry the whole meaning at this width. */
+  .standing-tagline {
+    display: none;
+  }
+  .standing-cell {
+    flex: 1;
+  }
 }
 
 /* --- Timeline -------------------------------------------------------------- */

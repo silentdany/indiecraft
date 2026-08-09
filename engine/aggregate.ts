@@ -1,4 +1,6 @@
-import type { FounderAggregate, ProductInput } from './types'
+import type { Faction, FounderAggregate, ProductInput } from './types'
+
+const FACTIONS: readonly Faction[] = ['B2B', 'B2C', 'Both']
 
 /**
  * Founder aggregation.
@@ -38,7 +40,40 @@ export function aggregateFounder(handle: string, products: ProductInput[]): Foun
     fundingStatuses: distinct(
       products.map((p) => p.fundingStatus).filter((s): s is string => s !== null),
     ),
+    realm: commonest(products.map((p) => p.country)),
+    faction: asFaction(commonest(products.map((p) => p.businessType))),
   }
+}
+
+/**
+ * The value that appears most often, ignoring the gaps.
+ *
+ * Ties break on the first product, which is stable because the caller hands
+ * products in a fixed order. A tie is also genuinely ambiguous — a founder with
+ * one US product and one French one is not more one than the other — so the
+ * important property is that the answer never flickers between nightly runs,
+ * not that it is somehow more correct.
+ */
+function commonest(values: (string | null)[]): string | null {
+  const counts = new Map<string, number>()
+  for (const value of values) {
+    if (value === null || value.length === 0) continue
+    counts.set(value, (counts.get(value) ?? 0) + 1)
+  }
+  let best: string | null = null
+  let bestCount = 0
+  for (const [value, count] of counts) {
+    if (count > bestCount) {
+      best = value
+      bestCount = count
+    }
+  }
+  return best
+}
+
+/** Anything outside the three known answers — 'Unknown' included — is no answer. */
+function asFaction(value: string | null): Faction | null {
+  return FACTIONS.find((f) => f === value) ?? null
 }
 
 /** MRR-weighted average of growthMRR30d: a $0 product carries no weight. */

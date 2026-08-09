@@ -1,8 +1,9 @@
 import Link from 'next/link'
 import { ACHIEVEMENT_ICONS, Icon, type IconName } from '@/components/icon'
-import { ACHIEVEMENTS } from '@/engine'
-import type { AchievementProgressInput } from '@/engine/types'
+import { ACHIEVEMENTS, CLASS_COLORS, FACTIONS_BY_KEY } from '@/engine'
+import type { AchievementProgressInput, CharacterClass } from '@/engine/types'
 import type { HistoryPoint, RankContext, SheetProfile, SheetStats } from '@/lib/queries'
+import { realmLabel } from '@/lib/realm'
 
 /**
  * The three panels that turned the sheet from a readout into something with
@@ -20,10 +21,11 @@ export function RankPanel({
   mrrUsd,
 }: {
   context: RankContext
-  characterClass: string
+  characterClass: CharacterClass
   mrrUsd: number
 }) {
   const gap = context.above ? context.above.mrrUsd - mrrUsd : 0
+  const realm = context.realmRank
 
   return (
     <div className="rankpanel">
@@ -32,7 +34,21 @@ export function RankPanel({
         <Figure
           value={`#${context.classRank}`}
           label={`of ${context.classTotal} ${characterClass}`}
+          href={`/ladder?class=${characterClass}`}
+          color={CLASS_COLORS[characterClass]}
         />
+        {/* The one figure most founders can actually move. A French founder is
+            #97 globally forever and 2nd of 14 at home. */}
+        {realm && (
+          <Figure
+            value={`#${realm.rank}`}
+            // A middle dot rather than a preposition: "on France" reads and "on
+            // United States" does not, and the label has no room to say "on the
+            // United States realm".
+            label={`of ${realm.total} · ${realmLabel(realm.realm)}`}
+            href={`/ladder?realm=${realm.realm}`}
+          />
+        )}
         <Figure value={`top ${context.percentile}%`} label="overall" />
       </div>
 
@@ -57,12 +73,32 @@ export function RankPanel({
   )
 }
 
-function Figure({ value, label }: { value: string; label: string }) {
-  return (
-    <div className="rankfig">
-      <span className="serif">{value}</span>
+/** A link when the figure names a ladder you can go and read, a div otherwise. */
+function Figure({
+  value,
+  label,
+  href,
+  color,
+}: {
+  value: string
+  label: string
+  href?: string
+  color?: string
+}) {
+  const body = (
+    <>
+      <span className="serif" style={color ? { color } : undefined}>
+        {value}
+      </span>
       <span className="label">{label}</span>
-    </div>
+    </>
+  )
+  return href ? (
+    <Link href={href} className="rankfig rankfig-link">
+      {body}
+    </Link>
+  ) : (
+    <div className="rankfig">{body}</div>
   )
 }
 
@@ -272,30 +308,53 @@ const formatDay = (day: string) =>
   })
 
 /**
- * What kind of founder this is, beyond their class.
+ * Realm and faction: where they build, and who they sell to.
  *
- * Country sits on 87% of listings, business type on 73%, audience on 72% —
- * three facts that place somebody instantly and that the sheet never said.
- * Business type and audience are frequently the same word, so the duplicate is
- * dropped rather than printed twice.
+ * These were two grey chips in a metadata line, which is where facts go to be
+ * ignored. They are the two things on the sheet that place a founder among
+ * other founders rather than on a number line — and both are links, because a
+ * fact you can walk into is worth more than a fact you can read.
+ *
+ * Absent rather than "Unknown": a third of the corpus has no country and a
+ * third no business type, and a row of grey question marks would make the sheet
+ * look broken on a third of its pages for no information gained.
  */
-export function ProfileChips({ profile }: { profile: SheetProfile }) {
-  const chips = [
-    profile.businessType,
-    profile.targetAudience === profile.businessType ? null : profile.targetAudience,
-    profile.country,
-  ].filter((v): v is string => Boolean(v))
-
-  if (chips.length === 0) return null
+export function Standing({ profile }: { profile: SheetProfile }) {
+  const faction = profile.faction ? FACTIONS_BY_KEY.get(profile.faction) : undefined
+  if (!profile.realm && !faction) return null
 
   return (
-    <span className="chips">
-      {chips.map((c) => (
-        <span key={c} className="chip">
-          {c}
-        </span>
-      ))}
-    </span>
+    <div className="standing">
+      {profile.realm && (
+        <Link href={`/ladder?realm=${profile.realm}`} className="standing-cell">
+          <span className="qsquare standing-icon">
+            <Icon name="realm" size={16} />
+          </span>
+          <span className="standing-body">
+            <span className="label">Realm</span>
+            <span className="standing-value serif">{realmLabel(profile.realm)}</span>
+          </span>
+          <span className="standing-code serif">{profile.realm}</span>
+        </Link>
+      )}
+
+      {faction && (
+        <Link
+          href={`/ladder?faction=${faction.key}`}
+          className="standing-cell"
+          style={{ '--standing-color': faction.color } as React.CSSProperties}
+        >
+          <span className="qsquare standing-icon standing-icon-faction">
+            <Icon name={faction.key} size={16} />
+          </span>
+          <span className="standing-body">
+            <span className="label">Faction</span>
+            <span className="standing-value serif">{faction.key}</span>
+          </span>
+          <span className="standing-tagline label">{faction.tagline}</span>
+        </Link>
+      )}
+    </div>
   )
 }
 

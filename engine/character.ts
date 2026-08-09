@@ -123,6 +123,8 @@ export function computeCharacter(aggregate: FounderAggregate): CharacterSheet {
     class: classFrom(aggregate, level),
     rarity: rarityFor(level),
     nProducts: aggregate.nProducts,
+    realm: aggregate.realm,
+    faction: aggregate.faction,
     achievements: achievementsFrom(aggregate, level),
     progress: {
       current,

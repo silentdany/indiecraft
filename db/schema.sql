@@ -100,6 +100,11 @@ create table if not exists characters (
   -- score, and storing 1 would mean "worst gear" instead of "not applicable".
   ilvl                int,
   class               text   not null,
+  -- Realm and faction: ISO 3166-1 alpha-2, and B2B | B2C | Both. Both nullable,
+  -- and the null means "TrustMRR never said" rather than "neither" — a third of
+  -- listings carry no country and a third no business type.
+  realm               text,
+  faction             text,
   n_products          int    not null,
   mrr_cents           bigint not null,
   revenue_total_cents bigint not null,
@@ -113,6 +118,15 @@ create table if not exists characters (
 );
 create index if not exists characters_ladder_idx on characters (level desc, ilvl desc);
 create index if not exists characters_class_idx  on characters (class);
+
+-- `create table if not exists` above does nothing to a table that already
+-- exists, so every column added after the first deploy needs a line here or it
+-- only appears on a fresh database. Cheap, idempotent, and the alternative is a
+-- migration tool this project does not need yet.
+alter table characters add column if not exists realm   text;
+alter table characters add column if not exists faction text;
+create index if not exists characters_realm_idx   on characters (realm);
+create index if not exists characters_faction_idx on characters (faction);
 
 -- Which founders a product belongs to. A product belongs to its owner AND to
 -- every cofounder, so `startups.founder_handle` alone is not enough: without

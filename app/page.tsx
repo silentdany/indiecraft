@@ -5,7 +5,16 @@ import { Icon, type IconName } from '@/components/icon'
 import { InspectSearch } from '@/components/inspect-search'
 import { JsonLd } from '@/components/json-ld'
 import { LadderTable } from '@/components/ladder-table'
-import { getClassCounts, getLadder, getRealmStats } from '@/lib/queries'
+import { CLASS_COLORS, FACTIONS_BY_KEY } from '@/engine'
+import type { CharacterClass } from '@/engine/types'
+import {
+  getClassCounts,
+  getFactionCounts,
+  getLadder,
+  getRealmCounts,
+  getRealmStats,
+} from '@/lib/queries'
+import { realmLabel } from '@/lib/realm'
 
 export const revalidate = 300
 
@@ -19,10 +28,12 @@ export const revalidate = 300
  * explained.
  */
 export default async function Home() {
-  const [rows, stats, classes] = await Promise.all([
+  const [rows, stats, classes, factions, realms] = await Promise.all([
     getLadder().catch(() => []),
     getRealmStats().catch(() => null),
     getClassCounts().catch(() => []),
+    getFactionCounts().catch(() => []),
+    getRealmCounts().catch(() => []),
   ])
 
   const site = process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000'
@@ -92,7 +103,11 @@ export default async function Home() {
                 key={c.name}
                 href={`/ladder?class=${encodeURIComponent(c.name)}`}
                 className="tab"
+                style={
+                  { '--tab-color': CLASS_COLORS[c.name as CharacterClass] } as React.CSSProperties
+                }
               >
+                <Icon name={c.name as CharacterClass} size={13} />
                 {c.name} <span className="tab-count">{c.count}</span>
               </Link>
             ))}
@@ -101,6 +116,72 @@ export default async function Home() {
 
         <LadderTable rows={rows.slice(0, 20)} />
       </section>
+
+      {/*
+        Two ways into the ladder that are not "be in the global top hundred".
+        Eighty of a hundred and thirty-nine characters sit on one realm, so the
+        global list is, in practice, the American list — and a French founder
+        who will never appear on it has no reason to come back. A realm of
+        fourteen is a ladder they can actually place in.
+      */}
+      {(factions.length > 0 || realms.length > 0) && (
+        <section className="worlds">
+          {factions.length > 0 && (
+            <div className="worlds-col">
+              <header className="section-head">
+                <h2 className="serif">FACTIONS</h2>
+                <span className="label">Who they sell to</span>
+              </header>
+              <ul className="faction-list">
+                {factions.map((f) => {
+                  const def = FACTIONS_BY_KEY.get(f.value)
+                  if (!def) return null
+                  return (
+                    <li key={f.value}>
+                      <Link
+                        href={`/ladder?faction=${f.value}`}
+                        className="faction-card"
+                        style={{ '--faction-color': def.color } as React.CSSProperties}
+                      >
+                        <span className="qsquare faction-icon">
+                          <Icon name={def.key} size={20} />
+                        </span>
+                        <span className="faction-body">
+                          <span className="serif faction-name">{def.key}</span>
+                          <span className="label">{def.tagline}</span>
+                        </span>
+                        <span className="serif faction-count">{f.count}</span>
+                      </Link>
+                    </li>
+                  )
+                })}
+              </ul>
+            </div>
+          )}
+
+          {realms.length > 0 && (
+            <div className="worlds-col">
+              <header className="section-head">
+                <h2 className="serif">REALMS</h2>
+                <Link href="/ladder" className="label">
+                  All realms →
+                </Link>
+              </header>
+              <ul className="realm-list">
+                {realms.slice(0, 10).map((r) => (
+                  <li key={r.value}>
+                    <Link href={`/ladder?realm=${r.value}`} className="realm-row">
+                      <span className="qsquare realm-code serif">{r.value}</span>
+                      <span className="realm-name">{realmLabel(r.value)}</span>
+                      <span className="realm-count label">{r.count}</span>
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+        </section>
+      )}
     </main>
   )
 }

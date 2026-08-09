@@ -10,10 +10,14 @@ export {
   rarityFor,
   xpFrom,
 } from './character'
+export type { FactionDef } from './tuning'
 export {
   ACHIEVEMENTS,
   ACHIEVEMENTS_BY_CODE,
+  CLASS_COLORS,
   CLASS_REASONS,
+  FACTIONS,
+  FACTIONS_BY_KEY,
   FUNDING_POLICY,
   LEVEL_THRESHOLDS,
   MAX_LEVEL,
@@ -23,6 +27,7 @@ export type {
   AchievementDef,
   CharacterClass,
   CharacterSheet,
+  Faction,
   FounderAggregate,
   ProductInput,
   Rarity,

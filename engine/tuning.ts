@@ -14,7 +14,7 @@
  * bug.
  */
 
-import type { AchievementDef, CharacterClass, FounderAggregate, Rarity } from './types'
+import type { AchievementDef, CharacterClass, Faction, FounderAggregate, Rarity } from './types'
 
 // ---------------------------------------------------------------------------
 // 1. XP
@@ -289,8 +289,99 @@ export const CLASS_RULES: readonly ClassRule[] = [
   },
 ]
 
+/**
+ * One colour per class.
+ *
+ * Drawn here, not sampled: the reference's class colours are its own, and this
+ * palette is built for a warm black background it never had to sit on. What is
+ * borrowed is the idea — that a class is a colour before it is a word, so a
+ * ladder of a hundred rows can be read by hue alone.
+ *
+ * The rule that keeps this from fighting the rarity palette, which is also
+ * colour and also everywhere: rarity is saturated, classes are soft. Both
+ * appear in the same ladder row, a level square beside a class name, and the
+ * eye separates them by intensity before it separates them by hue. Break that
+ * and epic purple becomes indistinguishable from a Warlock.
+ *
+ * Amber (roughly 40–60°) is missing on purpose. It belongs to the interface and
+ * to the character's own name, and a class wearing it would read as a button.
+ * Paladin, the most ordinary class on the ladder and the one that would have
+ * claimed it, gets plate silver instead.
+ */
+export const CLASS_COLORS: Record<CharacterClass, string> = {
+  /** Dim bronze: deliberately the least saturated. It is the class of no answer yet. */
+  Adventurer: '#8f8069',
+  /** Arcane blue, the oldest colour in the genre for the one who builds with new things. */
+  Mage: '#63a8f2',
+  /** Green: found without looking, the colour of things that grow on their own. */
+  Hunter: '#84c65a',
+  /** Orchid, pushed pinker than epic purple so the two never trade places. */
+  Warlock: '#bb7cf0',
+  /** Stage magenta. Their audience is the channel. */
+  Bard: '#df7fd0',
+  /** Ice: calm, and the class whose customers stay. */
+  Priest: '#79cfd8',
+  /** Jade. Takes no rent. */
+  Monk: '#4ccfa0',
+  /** Blood rose: few marks, big scores. */
+  Rogue: '#e06a80',
+  /** Rust: volume, earned a dollar at a time. */
+  Warrior: '#dd8b5e',
+  /** Plate silver. Holds the line, and never mistakes itself for gold. */
+  Paladin: '#b6c0cb',
+}
+
 /** Safety net: never demeaning, always reachable. */
 export const DEFAULT_CLASS: CharacterClass = 'Adventurer'
+
+// ---------------------------------------------------------------------------
+// 6b. Factions and realms — who you sell to, and where you build
+// ---------------------------------------------------------------------------
+
+/**
+ * The two factions, and the third that refuses to pick.
+ *
+ * TrustMRR's `businessType` splits the corpus almost exactly in half — 59 B2B
+ * against 56 B2C — which is the rarest thing a field can do and the reason this
+ * became a faction rather than another chip. It is also the fact that changes
+ * how you read every other number: $200 a month is a bargain from one side of
+ * the line and a fortune from the other, so ARPU and retention mean opposite
+ * things depending on which side a founder stands.
+ *
+ * The label stays "B2B", not a fantasy name. The armory can be a game about
+ * real businesses without making people translate it back.
+ */
+export interface FactionDef {
+  key: Faction
+  /** Two words on what standing here actually means. */
+  tagline: string
+  color: string
+}
+
+/*
+ * Cool, warm, and the one in between — a deliberately smaller idea than the
+ * class wheel, because there are only three of them and the pair is the whole
+ * message.
+ *
+ * None of the three may sit near amber. The first pass put B2C at #e0954f and
+ * it landed a few degrees off the interface gold, so a faction name read as a
+ * button next to its own count. Sharing a hue *family* with a class is fine and
+ * unavoidable at ten classes — B2B is a cousin of Mage's blue — because the two
+ * never occupy the same slot: a class is a word in one column, a faction is a
+ * sigil in another. Sitting near the interface colour is not fine, because that
+ * one does share slots with everything.
+ */
+export const FACTIONS: readonly FactionDef[] = [
+  { key: 'B2B', tagline: 'Sells to businesses', color: '#4f9ae8' },
+  { key: 'B2C', tagline: 'Sells to people', color: '#ef7f5c' },
+  // Not a hedge: serving both is a genuinely harder position to hold, and the
+  // ten founders who do it should not be filed under "unknown".
+  { key: 'Both', tagline: 'Sells to both', color: '#38c8b4' },
+]
+
+export const FACTIONS_BY_KEY: ReadonlyMap<Faction, FactionDef> = new Map(
+  FACTIONS.map((f) => [f.key, f] as const),
+)
 
 /**
  * One sentence per class, for the sheet to say why it landed there.

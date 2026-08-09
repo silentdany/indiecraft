@@ -50,6 +50,10 @@ type IconName =
   | 'linked'
   | 'beacon'
   | 'ring'
+  | 'realm'
+  | 'B2B'
+  | 'B2C'
+  | 'Both'
 
 const PATHS: Record<IconName, React.ReactNode> = {
   // --- Classes -------------------------------------------------------------
@@ -214,6 +218,46 @@ const PATHS: Record<IconName, React.ReactNode> = {
     <g>
       <circle cx="12" cy="12" r="8.5" />
       <circle cx="12" cy="12" r="3.5" />
+    </g>
+  ),
+
+  // --- Realm and faction ---------------------------------------------------
+  /** A realm: a world with a meridian, not a map of any particular country. */
+  realm: (
+    <g>
+      <circle cx="12" cy="12" r="8.5" />
+      <path d="M3.5 12h17" />
+      <path d="M12 3.5c2.4 2.3 3.6 5.2 3.6 8.5s-1.2 6.2-3.6 8.5c-2.4-2.3-3.6-5.2-3.6-8.5S9.6 5.8 12 3.5z" />
+    </g>
+  ),
+  /**
+   * The faction sigils, and the drawing carries the actual difference: B2B is a
+   * few tall blocks, B2C is a crowd of small ones. Anyone who has seen the two
+   * side by side can then read a single one on its own.
+   */
+  B2B: (
+    <g>
+      <path d="M3.5 20.5h17" />
+      <path d="M5.5 20.5V9l6-3.5V20.5" />
+      <path d="M11.5 20.5V11l7 2.2v7.3" />
+      <path d="M8 9.5v.01M8 13v.01M14.5 15v.01" />
+    </g>
+  ),
+  B2C: (
+    <g>
+      <circle cx="7" cy="7.5" r="2.8" />
+      <circle cx="16.5" cy="8.5" r="2.2" />
+      <path d="M2.5 19.5c0-3 2-5 4.5-5s4.5 2 4.5 5" />
+      <path d="M14 19.5c0-2.4 1.3-4 3.2-4s3.3 1.6 3.3 4" />
+    </g>
+  ),
+  /** Both: the two sigils reduced to their shapes, sharing a base. */
+  Both: (
+    <g>
+      <path d="M3.5 20.5h17" />
+      <path d="M4.5 20.5V10l5-3v13.5" />
+      <circle cx="16" cy="8" r="2.6" />
+      <path d="M12 20.5c0-3 1.8-5 4-5s4 2 4 5" />
     </g>
   ),
 

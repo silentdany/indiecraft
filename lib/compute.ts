@@ -2,6 +2,7 @@ import type postgres from 'postgres'
 import { aggregateFounder, computeCharacter } from '@/engine'
 import { FUNDING_POLICY } from '@/engine/tuning'
 import type { ProductInput } from '@/engine/types'
+import { normalizeRealm } from '@/lib/realm'
 import { centsToUsd, normalizeHandle, type TrustmrrStartup } from '@/lib/trustmrr'
 
 /**
@@ -155,10 +156,11 @@ export async function computeAll(sql: postgres.Sql): Promise<ComputeReport> {
       // drives the "DING!" variant of the OG image.
       await tx`
         insert into characters (
-          handle, xp, level, ilvl, class, n_products, mrr_cents,
+          handle, xp, level, ilvl, class, realm, faction, n_products, mrr_cents,
           revenue_total_cents, customers, active_subscriptions, growth_mrr_30d
         ) values (
           ${sheet.handle}, ${sheet.xp}, ${sheet.level}, ${sheet.ilvl}, ${sheet.class},
+          ${sheet.realm}, ${sheet.faction},
           ${sheet.nProducts}, ${Math.round(aggregate.mrrUsd * 100)},
           ${Math.round(aggregate.revenueTotalUsd * 100)}, ${aggregate.customers},
           ${aggregate.activeSubscriptions}, ${aggregate.growthMrr30d}
@@ -168,6 +170,8 @@ export async function computeAll(sql: postgres.Sql): Promise<ComputeReport> {
           level = excluded.level,
           ilvl = excluded.ilvl,
           class = excluded.class,
+          realm = excluded.realm,
+          faction = excluded.faction,
           n_products = excluded.n_products,
           mrr_cents = excluded.mrr_cents,
           revenue_total_cents = excluded.revenue_total_cents,
@@ -265,7 +269,21 @@ function toProduct(row: SnapshotRow): ProductInput {
     channels: (raw.marketingChannels ?? []).map((c) => c?.slug).filter(isString),
     stack: (raw.techStack ?? []).map((t) => t?.slug).filter(isString),
     cofounders: (raw.cofounders ?? []).map((c) => normalizeHandle(c?.xHandle)).filter(isHandle),
+    country: normalizeRealm(raw.country),
+    // startupInsights.businessType first, targetAudience as the fallback: they
+    // answer the same question with the same three words, and the insight is
+    // present on 65% of listings against the audience field's 55%. Taking
+    // either one alone throws away founders the other would have placed.
+    businessType: businessTypeOf(raw),
   }
+}
+
+function businessTypeOf(raw: TrustmrrStartup): string | null {
+  const insight = raw.startupInsights?.businessType
+  const audience = raw.targetAudience
+  const value = isString(insight) ? insight : isString(audience) ? audience : null
+  // 'Unknown' is a real value in the payload and it is not an answer.
+  return value === 'Unknown' ? null : value
 }
 
 /** Every normalized pair a < b, for an undirected graph without duplicates. */
