@@ -876,9 +876,17 @@ a:hover {
   color: var(--ic-gold);
 }
 
+/* `flex: 1` is what makes the progress bars mean anything. Without it the body
+   is shrink-to-fit, so its width is whatever the longest line of text happens
+   to be — and the bar, sized as a fraction of that, ends up four pixels wide on
+   a card whose description is "Max level." while a card with a sentence that
+   wraps gets a bar four times longer. Same percentage, wildly different
+   picture. Filling the card makes every track the same length, which is the
+   only way two bars can be compared at a glance. */
 .ach-body {
   display: flex;
   flex-direction: column;
+  flex: 1;
   min-width: 0;
 }
 .ach-title {
@@ -1492,11 +1500,17 @@ a:hover {
   font-family: var(--ic-serif);
   font-size: 17px;
 }
+/* Capped rather than greedy: stretched across a wide panel, three points draw a
+   dramatic zigzag out of a rounding error. A fixed frame keeps the slope
+   honest, and `margin-left: auto` parks it at the right edge without letting it
+   eat the space between it and the text. */
 .spark {
-  flex: 1;
-  min-width: 120px;
-  height: 28px;
+  width: 100%;
+  max-width: 200px;
+  margin-left: auto;
+  height: 26px;
   color: var(--ic-gold);
+  opacity: 0.85;
 }
 
 /* --- Share ----------------------------------------------------------------
