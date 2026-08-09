@@ -1922,26 +1922,45 @@ a:hover {
   margin-top: 16px;
 }
 
-/* Takes the whole row so the snippet is never squeezed into a column too
-   narrow to read — a Markdown line somebody has to copy by hand is a Markdown
-   line nobody copies. */
-.share-badge {
-  flex: 1 0 100%;
+/* --- The badge block ------------------------------------------------------
+   The rendered badge and two buttons. The Markdown snippet is deliberately not
+   shown: a one-line string in a horizontally scrolling code box is an ugly
+   object that also asks to be read, and nobody reads it — they press the
+   button. */
+
+.badgeblock {
   display: flex;
   align-items: center;
   flex-wrap: wrap;
-  gap: 12px;
-  padding: 12px 14px;
+  gap: 18px;
+  margin-top: 12px;
+  padding: 16px 18px;
   border: 1px solid var(--ic-line);
-  background: var(--ic-well);
+  background: var(--ic-surface);
 }
-.share-badge code {
-  flex: 1;
-  min-width: 220px;
-  overflow-x: auto;
-  white-space: nowrap;
-  font-size: 11.5px;
-  color: var(--ic-text-muted);
+/* The badge is drawn at its own intrinsic size — it is a preview of an object
+   that will sit at exactly this size in somebody's README, so scaling it here
+   would be showing them the wrong thing. */
+.badgeblock-preview {
+  flex: 0 0 auto;
+  max-width: 100%;
+}
+.badgeblock-body {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  flex: 1 1 260px;
+  min-width: 0;
+}
+.badgeblock-body p {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.5;
+}
+.badgeblock-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
 }
 
 .share-x {

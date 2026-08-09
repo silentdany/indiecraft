@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
+import { BadgeBlock } from '@/components/badge-block'
 import { ConsentActions } from '@/components/consent-actions'
 import { Frame } from '@/components/frame'
 import { GearItem } from '@/components/gear-item'
@@ -281,6 +282,17 @@ export default async function CharacterSheet({ params }: Props) {
           <Timeline events={timeline} backfilled={backfilled} />
         </Section>
       )}
+
+      {/* Down here rather than in the share row under the header: this is a
+          thing a founder sets up once, and everybody else came to read a
+          sheet. */}
+      <Section title="Badge">
+        <BadgeBlock
+          handle={character.handle}
+          level={character.level}
+          characterClass={character.characterClass}
+        />
+      </Section>
 
       {consentActionsEnabled() && (
         <>
