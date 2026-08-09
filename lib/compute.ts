@@ -220,6 +220,36 @@ export async function computeAll(sql: postgres.Sql): Promise<ComputeReport> {
       `
     }
 
+    /*
+     * Today's standing, one row per founder.
+     *
+     * This runs last among the writes because it reads `characters` after every
+     * sheet in this batch has landed — the rank is computed over the finished
+     * ladder, not over a half-written one.
+     *
+     * `on conflict do update` rather than `do nothing`: a second compute on the
+     * same day should correct the day's row, not preserve whatever the first
+     * partial run happened to write. The day is the unit, not the run.
+     *
+     * Opted-out founders are excluded from the ranking AND from the table. A
+     * daily record of somebody who asked to be gone is exactly the kind of
+     * quiet retention this project exists not to do.
+     */
+    await tx`
+      insert into character_days (handle, captured_on, rank, level, ilvl, mrr_cents)
+      select c.handle, current_date,
+             row_number() over (order by c.level desc, c.ilvl desc nulls last, c.handle),
+             c.level, c.ilvl, c.mrr_cents
+      from characters c
+      join founders f on f.handle = c.handle
+      where f.opted_out_at is null
+      on conflict (handle, captured_on) do update set
+        rank      = excluded.rank,
+        level     = excluded.level,
+        ilvl      = excluded.ilvl,
+        mrr_cents = excluded.mrr_cents
+    `
+
     // Last, and load-bearing: replay what people asked for on top of what we
     // crawled. opted_out_at and claimed_at are the only two values here that no
     // amount of crawling can reconstruct, and the insert above resets neither —

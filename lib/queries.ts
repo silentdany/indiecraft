@@ -65,6 +65,18 @@ export interface RankContext {
   realmRank: { realm: string; rank: number; total: number } | null
   above: { handle: string; level: number; mrrUsd: number } | null
   below: { handle: string; level: number; mrrUsd: number } | null
+  /**
+   * The best rank ever recorded, and the day it was held.
+   *
+   * Rank is the one number here that falls through no fault of the founder:
+   * somebody else ships and everybody below them moves down. A peak that is
+   * never taken away is the honest counterweight, and it is the same instinct
+   * as the achievements — earned once, never revoked.
+   *
+   * Null until there is more than one day on record, because "best ever: today"
+   * is not a fact, it is a restatement.
+   */
+  best: { rank: number; day: string } | null
 }
 
 /**
@@ -169,7 +181,7 @@ export const getCharacter = cache(async (rawHandle: string): Promise<CharacterPa
   `
   if (!row) return null
 
-  const [achievements, products, rankRow, edges, historyRows] = await Promise.all([
+  const [achievements, products, rankRow, edges, historyRows, bestRow] = await Promise.all([
     // `earned_on` is a date column, so it arrives as a Date. Third time this
     // has bitten: every date and timestamp out of postgres.js is an object, and
     // everything downstream of this file expects a string.
@@ -291,6 +303,23 @@ export const getCharacter = cache(async (rawHandle: string): Promise<CharacterPa
       group by sn.captured_on
       order by sn.captured_on
     `,
+    /*
+     * Best rank ever held.
+     *
+     * Read from character_days rather than cached on `characters`, because
+     * `characters` is dropped by a reset and this must not be: the ladder as it
+     * stood last Tuesday cannot be recomputed from anything. `days` comes back
+     * so the caller can refuse to print "best ever" on the first day, when it
+     * would only be restating today's rank.
+     */
+    sql<{ rank: number | null; day: Date | string | null; days: number }[]>`
+      select min(rank)::int as rank,
+             (select captured_on from character_days
+               where handle = ${handle} order by rank, captured_on limit 1) as day,
+             count(*)::int as days
+      from character_days
+      where handle = ${handle}
+    `,
   ])
 
   const level = row.level
@@ -362,6 +391,7 @@ export const getCharacter = cache(async (rawHandle: string): Promise<CharacterPa
           classRank: Number(rankRowOne.class_rank),
           classTotal: Number(rankRowOne.class_total),
           realmRank: realmRankOf(rankRowOne),
+          best: bestOf(bestRow[0]),
           above: rankRowOne.above_handle
             ? {
                 handle: rankRowOne.above_handle,
@@ -715,6 +745,21 @@ const asFaction = (v: string | null): Faction | null =>
  * one person on it. "1st of 1 in Slovenia" is a joke at that founder's expense,
  * and there are four realms in the corpus with exactly one character on them.
  */
+/**
+ * "Best ever" needs at least two days on record.
+ *
+ * On day one the peak IS today's rank, and printing it would be a restatement
+ * dressed as an achievement — the sort of empty flourish that teaches people to
+ * stop reading the panel.
+ */
+const bestOf = (
+  row: { rank: number | null; day: Date | string | null; days: number } | undefined,
+): { rank: number; day: string } | null => {
+  if (!row || row.rank === null || row.days < 2) return null
+  const day = asDay(row.day)
+  return day ? { rank: row.rank, day } : null
+}
+
 const realmRankOf = (row: {
   realm: string | null
   realm_rank: string | null

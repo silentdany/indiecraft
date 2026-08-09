@@ -128,6 +128,35 @@ alter table characters add column if not exists faction text;
 create index if not exists characters_realm_idx   on characters (realm);
 create index if not exists characters_faction_idx on characters (faction);
 
+-- ---------------------------------------------------------------------------
+-- One row per founder per day. The third table nothing can rebuild.
+-- ---------------------------------------------------------------------------
+--
+-- `snapshots` records what each PRODUCT was worth on a given day, and the sheet
+-- sums those into an MRR line. What it cannot reconstruct is where a founder
+-- STOOD: rank depends on everybody else's numbers on that same day, so
+-- recomputing last Tuesday's ladder from today's data would quietly invent it.
+--
+-- Small enough to be free — one short row per founder per day, so a year of the
+-- current corpus is roughly 50k rows.
+--
+-- No foreign key to `founders`, and that is deliberate rather than sloppy.
+-- reset-derived.sql drops `founders`, and a dependent table would either block
+-- that drop or be cascaded away with it. `snapshots` and `consent_events` store
+-- their identifiers as bare text for exactly this reason: an irreplaceable
+-- table may not be reachable from a droppable one. scripts/apply-schema.ts
+-- enforces the other half by refusing a reset that mentions this table.
+create table if not exists character_days (
+  handle       text   not null,
+  captured_on  date   not null default current_date,
+  rank         int    not null,
+  level        int    not null,
+  ilvl         int,
+  mrr_cents    bigint not null,
+  primary key (handle, captured_on)
+);
+create index if not exists character_days_day_idx on character_days (captured_on desc);
+
 -- Which founders a product belongs to. A product belongs to its owner AND to
 -- every cofounder, so `startups.founder_handle` alone is not enough: without
 -- this table a cofounder's sheet counts a product in n_products but shows no

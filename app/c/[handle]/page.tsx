@@ -1,11 +1,11 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
+import { ConsentActions } from '@/components/consent-actions'
 import { Frame } from '@/components/frame'
 import { GearItem } from '@/components/gear-item'
 import { ACHIEVEMENT_ICONS, Icon } from '@/components/icon'
 import { JsonLd } from '@/components/json-ld'
-import { OptOutButton } from '@/components/opt-out-button'
 import { ShareSheet } from '@/components/share-sheet'
 import {
   HistoryPanel,
@@ -18,7 +18,8 @@ import {
 } from '@/components/sheet-panels'
 import { ViewTracker } from '@/components/view-tracker'
 import { ACHIEVEMENTS, ACHIEVEMENTS_BY_CODE, CLASS_COLORS, CLASS_REASONS } from '@/engine'
-import { CONSENT_ACTIONS_ENABLED } from '@/lib/consent'
+import { sessionHandle } from '@/lib/auth'
+import { consentActionsEnabled } from '@/lib/consent'
 import { getCharacter } from '@/lib/queries'
 
 export const revalidate = 300
@@ -218,6 +219,7 @@ export default async function CharacterSheet({ params }: Props) {
           context={character.rankContext}
           characterClass={character.characterClass}
           mrrUsd={character.mrrUsd}
+          handle={character.handle}
         />
       )}
 
@@ -280,10 +282,15 @@ export default async function CharacterSheet({ params }: Props) {
         </Section>
       )}
 
-      {CONSENT_ACTIONS_ENABLED && (
+      {consentActionsEnabled() && (
         <>
           <hr className="rule" />
-          <OptOutButton handle={character.handle} claimed={claimed} />
+          <ConsentActions
+            handle={character.handle}
+            claimed={claimed}
+            viewer={await sessionHandle()}
+            enabled
+          />
         </>
       )}
     </main>

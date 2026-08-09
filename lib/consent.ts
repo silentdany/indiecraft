@@ -13,22 +13,23 @@ import { createHmac } from 'node:crypto'
  */
 
 /**
- * Both consent actions are off for now.
+ * The consent actions are on exactly when X sign-in is configured.
  *
- * Removal was one unauthenticated click, which means anyone could remove
- * anyone: a competitor, or a bored passer-by working down /ladder. The rate
- * limit slows a script, it does not stop a person. Rather than ship a control
- * that invites abuse, the actions are disabled until the ownership check is
- * settled.
+ * This used to be a hardcoded `false`, set because removal was one
+ * unauthenticated click and "anyone can remove their own sheet" was therefore
+ * also "anyone can remove anyone's". That is now answered properly — the handle
+ * acted upon comes from an X access token, never from the request — so the flag
+ * follows the thing that made it safe rather than being a switch somebody has
+ * to remember to flip.
  *
- * This flag gates the button AND the route. Hiding the button alone would be
- * theatre — the endpoint would still be there for anyone reading the source,
- * which on a public repo is everyone.
+ * It gates the interface AND every route. Hiding a button in front of a live
+ * endpoint is theatre on a public repo.
  *
- * Note what does NOT change: an existing opted_out_at is still honoured, so
- * anyone already removed stays removed.
+ * Note what does NOT change while it is off: an existing opted_out_at is still
+ * honoured, so anyone already removed stays removed.
  */
-export const CONSENT_ACTIONS_ENABLED = false
+export const consentActionsEnabled = (): boolean =>
+  Boolean(process.env.X_CLIENT_ID && process.env.X_CLIENT_SECRET)
 
 /**
  * Requests allowed per IP per hour.

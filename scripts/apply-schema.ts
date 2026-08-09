@@ -16,7 +16,7 @@ import { directDb } from '../lib/db'
  * current state; `consent_events` because it records what people asked for.
  * A `--reset` that touches either is a bug, not a choice.
  */
-const IRREPLACEABLE = ['snapshots', 'consent_events'] as const
+const IRREPLACEABLE = ['snapshots', 'consent_events', 'character_days'] as const
 
 async function main() {
   const reset = process.argv.includes('--reset')

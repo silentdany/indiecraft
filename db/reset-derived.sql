@@ -8,6 +8,9 @@
 --                   history never comes back.
 --   consent_events  it records what people asked for. Dropping it republishes
 --                   every sheet somebody asked to remove.
+--   character_days  where each founder STOOD on a given day. Rank depends on
+--                   everybody else's numbers that same day, so it cannot be
+--                   recomputed from snapshots — only re-invented.
 --
 -- Dropping `founders` below is only safe BECAUSE consent_events exists: the
 -- compute step replays opted_out_at and claimed_at from it. Remove that replay

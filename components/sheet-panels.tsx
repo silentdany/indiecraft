@@ -19,10 +19,12 @@ export function RankPanel({
   context,
   characterClass,
   mrrUsd,
+  handle,
 }: {
   context: RankContext
   characterClass: CharacterClass
   mrrUsd: number
+  handle: string
 }) {
   const gap = context.above ? context.above.mrrUsd - mrrUsd : 0
   const realm = context.realmRank
@@ -50,22 +52,41 @@ export function RankPanel({
           />
         )}
         <Figure value={`top ${context.percentile}%`} label="overall" />
+        {/* The one figure that can only go up. Rank falls when somebody else
+            ships; a peak is never taken away. */}
+        {context.best && context.best.rank < context.rank && (
+          <Figure value={`#${context.best.rank}`} label={`best · ${shortDay(context.best.day)}`} />
+        )}
       </div>
 
+      {/* The rivals were a dead end: two names, and nothing to do about either.
+          Each now carries the comparison as a second link, which is the thing
+          somebody looking at "the founder immediately above me" actually
+          wants. */}
       {(context.above || context.below) && (
         <div className="rivals">
           {context.above && (
-            <Link href={`/c/${context.above.handle}`} className="rival">
+            <div className="rival">
               <span className="label">Above</span>
-              <span className="rival-name">@{context.above.handle}</span>
+              <Link href={`/c/${context.above.handle}`} className="rival-name">
+                @{context.above.handle}
+              </Link>
               {gap > 0 && <span className="rival-gap">{usdCompact(gap)} MRR ahead</span>}
-            </Link>
+              <Link href={`/c/${handle}/vs/${context.above.handle}`} className="rival-vs label">
+                Compare
+              </Link>
+            </div>
           )}
           {context.below && (
-            <Link href={`/c/${context.below.handle}`} className="rival">
+            <div className="rival">
               <span className="label">Below</span>
-              <span className="rival-name">@{context.below.handle}</span>
-            </Link>
+              <Link href={`/c/${context.below.handle}`} className="rival-name">
+                @{context.below.handle}
+              </Link>
+              <Link href={`/c/${handle}/vs/${context.below.handle}`} className="rival-vs label">
+                Compare
+              </Link>
+            </div>
           )}
         </div>
       )}
@@ -298,6 +319,14 @@ const usdCompact = (v: number) =>
     notation: v >= 10_000 ? 'compact' : 'standard',
     maximumFractionDigits: v >= 10_000 ? 1 : 0,
   }).format(v)
+
+/** "12 Aug" — enough to place a peak in time without spending a whole label on it. */
+const shortDay = (day: string) =>
+  new Date(`${day}T00:00:00Z`).toLocaleDateString('en-US', {
+    day: 'numeric',
+    month: 'short',
+    timeZone: 'UTC',
+  })
 
 const formatDay = (day: string) =>
   new Date(`${day}T00:00:00Z`).toLocaleDateString('en-US', {

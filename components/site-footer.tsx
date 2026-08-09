@@ -52,10 +52,14 @@ export async function SiteFooter() {
 
         <div className="sitefooter-col">
           <p className="label">Your sheet</p>
+          {/* This used to point at a public GitHub issue, which asked anyone
+              wanting to be erased to announce it in public first. Sign-in
+              answers the ownership question the issue tracker was standing in
+              for, so the route is now one button on your own sheet. */}
           <p className="muted sitefooter-note">
             Nothing is shown that TrustMRR does not already show, and an unclaimed sheet is never
-            indexed. Removal is temporarily by hand while we work out how to check ownership —{' '}
-            <a href={`${REPO}/issues`}>ask here</a> and it will be done.
+            indexed. Sign in with X on your own sheet to claim it — or to remove it, in one click
+            and without telling anybody.
           </p>
         </div>
       </div>

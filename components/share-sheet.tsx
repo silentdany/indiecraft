@@ -29,17 +29,20 @@ export function ShareSheet({
   characterClass: string
   rank: number
 }) {
-  const [copied, setCopied] = useState(false)
+  const [copied, setCopied] = useState<'link' | 'badge' | null>(null)
+  const [showBadge, setShowBadge] = useState(false)
 
-  const url = `${typeof window === 'undefined' ? '' : window.location.origin}/c/${handle}?s=${level}-${ilvl ?? 'na'}`
+  const origin = typeof window === 'undefined' ? '' : window.location.origin
+  const url = `${origin}/c/${handle}?s=${level}-${ilvl ?? 'na'}`
   const text = `Level ${level} ${characterClass}, rank #${rank} on the World of Indiecraft armory.`
+  const badge = `[![World of Indiecraft](${origin}/c/${handle}/badge.svg)](${origin}/c/${handle})`
 
-  async function copy() {
+  async function copy(what: 'link' | 'badge') {
     try {
-      await navigator.clipboard.writeText(url)
-      setCopied(true)
-      capture('share_clicked', { handle, target: 'copy' })
-      setTimeout(() => setCopied(false), 2000)
+      await navigator.clipboard.writeText(what === 'link' ? url : badge)
+      setCopied(what)
+      capture('share_clicked', { handle, target: what })
+      setTimeout(() => setCopied(null), 2000)
     } catch {
       // Clipboard is refused on insecure origins and in some embedded views.
       // Selecting the address bar still works, so this is not worth an alert.
@@ -57,10 +60,31 @@ export function ShareSheet({
       >
         Share on X
       </a>
-      <button type="button" className="share-copy label" onClick={copy}>
+      <button type="button" className="share-copy label" onClick={() => copy('link')}>
         <Icon name="gear" size={13} />
-        {copied ? 'Copied' : 'Copy link'}
+        {copied === 'link' ? 'Copied' : 'Copy link'}
       </button>
+      {/*
+        The badge is the loop that runs without anybody thinking about it: one
+        line of Markdown in a README, and from then on it updates itself and
+        links back. It is folded away behind a toggle because it is for the
+        founder, once, and everybody else on this page came to read a sheet.
+      */}
+      <button type="button" className="share-copy label" onClick={() => setShowBadge((v) => !v)}>
+        <Icon name="crest" size={13} />
+        Badge
+      </button>
+
+      {showBadge && (
+        <div className="share-badge">
+          {/* biome-ignore lint/performance/noImgElement: the point is the raw endpoint, exactly as a README would embed it. */}
+          <img src={`/c/${handle}/badge.svg`} alt={`Level ${level} ${characterClass} badge`} />
+          <code>{badge}</code>
+          <button type="button" className="share-copy label" onClick={() => copy('badge')}>
+            {copied === 'badge' ? 'Copied' : 'Copy Markdown'}
+          </button>
+        </div>
+      )}
     </div>
   )
 }
