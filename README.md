@@ -110,6 +110,13 @@ pnpm dev
 | `pnpm compute` | Re-runs the engine over existing snapshots, no server needed |
 | `pnpm schema:apply --reset` | Recreates the derived tables (never `snapshots`) |
 | `pnpm test` | Engine tests |
+| `bash scripts/setup-x-auth.sh` | Walks you through creating the X OAuth app that lets founders claim their sheet |
+
+Claiming is off until that last one has been run: without `X_CLIENT_ID` and
+`X_CLIENT_SECRET` the sign-in, claim and removal routes all return 404, every
+sheet stays `noindex`, and the sitemap holds only the three static pages. The
+site works fine that way — it just cannot be found, and nobody can consent to
+being in it.
 
 ### Architecture
 
@@ -124,10 +131,19 @@ Vercel Cron (safety net, after the crawl)
         └─> pure engine → founders, characters, achievements
 
 Next.js App Router (public, read-only)
-  ├─> /c/{handle}            character sheet
-  ├─> /ladder                ranking
-  └─> /api/og/c/{handle}     dynamic OG image
+  ├─> /c/{handle}                   character sheet
+  ├─> /c/{handle}/vs/{other}        two sheets, stat for stat
+  ├─> /c/{handle}/badge.svg         embeddable, self-updating badge
+  ├─> /c/{handle}/opengraph-image   the card that travels
+  └─> /ladder                       ranking, filterable by class, faction, realm
 ```
+
+The OG image sits under the route segment it describes and **must never move
+under `/api/`**: `robots.txt` disallows that prefix, and Twitterbot,
+facebookexternalhit, LinkedInBot and Slackbot all read robots.txt before
+fetching an image named in a meta tag. It lived there once and every card
+silently failed to render while returning a perfectly good 200 to anyone who
+checked by hand.
 
 The crawl **cannot** run on Vercel. The corpus is ~200 startups listed ten per page, so a full run is ~20 list requests plus ~200 detail requests at a 4s throttle — roughly fifteen minutes, still far past a serverless function's ceiling. GitHub Actions gives six hours and writes straight to the database.
 
@@ -139,7 +155,7 @@ Three things about the TrustMRR API that its docs don't say, measured on 2026-08
 
 ### Two ground rules, never to be broken
 
-1. **Never write a destructive command that touches `snapshots` or `consent_events`.** They are the two irreplaceable tables. The API returns current state only, so a lost day of history never comes back; and `consent_events` records what people asked for, so dropping it republishes every sheet somebody asked to remove. Everything else is derived and recomputes in seconds. `scripts/apply-schema.ts` refuses to run a reset that mentions either.
+1. **Never write a destructive command that touches `snapshots`, `consent_events` or `character_days`.** They are the three irreplaceable tables. The API returns current state only, so a lost day of history never comes back; `consent_events` records what people asked for, so dropping it republishes every sheet somebody asked to remove; and `character_days` holds where each founder *stood* on a given day, which depends on everybody else's numbers that day and so can only be re-invented, never recomputed. Everything else is derived and recomputes in seconds. `scripts/apply-schema.ts` refuses to run a reset that mentions any of them.
 2. **Never import `supabase-js`.** Supabase is only a Postgres host here. With `postgres.js` on the raw connection string, a `pg_dump` is enough to leave.
 
 ### Environment variables
@@ -150,8 +166,10 @@ Three things about the TrustMRR API that its docs don't say, measured on 2026-08
 | `DATABASE_URL` | Transaction pooler, port 6543 — the app (`prepare: false` mandatory) |
 | `DIRECT_URL` | Session pooler, port 5432 — the crawler (see note below) |
 | `CRON_SECRET` | Protects `/api/cron/compute` |
+| `X_CLIENT_ID` / `X_CLIENT_SECRET` | X OAuth 2.0 app — claiming is off without them |
+| `AUTH_SECRET` | Signs the session cookie (falls back to `CRON_SECRET`) |
 | `NEXT_PUBLIC_POSTHOG_KEY` | Analytics |
-| `NEXT_PUBLIC_SITE_URL` | Base for absolute OG URLs |
+| `NEXT_PUBLIC_SITE_URL` | Base for absolute OG URLs, and the OAuth `redirect_uri` |
 
 > **On `DIRECT_URL`:** Supabase's true direct endpoint (`db.<ref>.supabase.co:5432`) resolves to IPv6 only. GitHub Actions runners and most local machines are IPv4-only, so point `DIRECT_URL` at the **session pooler** (`aws-0-<region>.pooler.supabase.com:5432`). It's IPv4, and unlike the transaction pooler it supports prepared statements and long transactions.
 
