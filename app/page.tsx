@@ -93,8 +93,12 @@ export default async function Home() {
       <section style={{ marginTop: 26 }}>
         <header className="section-head">
           <h2 className="serif">THE LADDER</h2>
+          {/* Says the number, because "Full top 100" was a link that named a
+              limit the ladder no longer has, and nobody clicks through to find
+              a bigger list than the one they were promised. Twenty rows here,
+              everybody through the link. */}
           <Link href="/ladder" className="label">
-            Full top 100 →
+            {ladder ? `All ${ladder.total.toLocaleString('en-US')} founders →` : 'The ladder →'}
           </Link>
         </header>
 

@@ -5,19 +5,20 @@ import { ogFonts } from '@/lib/og-fonts'
 import { getLadder } from '@/lib/queries'
 
 export const runtime = 'nodejs'
-export const alt = 'The Indiecraft ladder — the top founders by level'
+export const alt = 'The Indiecraft ladder — indie founders ranked by level'
 export const size = OG_SIZE
 export const contentType = 'image/png'
 
 /**
  * The ladder's own card shows the actual top five rather than describing a
- * leaderboard. Names and quality colours are the argument; "top 100 by level"
- * is only the caption.
+ * leaderboard. Names and quality colours are the argument; the caption is only
+ * a caption — but it carries the real total, because the number of founders on
+ * it is the reason to open the link.
  */
 export default async function Image() {
-  const rows = await getLadder()
-    .then((page) => page.rows.slice(0, 5))
-    .catch(() => [])
+  const { rows, total } = await getLadder()
+    .then((page) => ({ rows: page.rows.slice(0, 5), total: page.total }))
+    .catch(() => ({ rows: [], total: 0 }))
 
   return new ImageResponse(
     <OgCard>
@@ -26,7 +27,8 @@ export default async function Image() {
           THE LADDER
         </div>
         <div style={{ display: 'flex', fontSize: 20, color: OG.muted, marginTop: 8 }}>
-          Top 100 founders by level, then by item level
+          {total > 0 ? `${total.toLocaleString('en-US')} founders` : 'Indie founders'} by level,
+          then by item level
         </div>
 
         <div style={{ display: 'flex', flexDirection: 'column', marginTop: 22 }}>
