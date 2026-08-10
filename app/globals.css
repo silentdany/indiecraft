@@ -60,8 +60,8 @@
   --ic-negative: #e01c1c;
 
   --ic-serif: "Cinzel", "Times New Roman", serif;
-  /* Loaded in app/layout.tsx via next/font, which self-hosts it. The stack
-     after it is only the gap before the file lands. */
+  /* Alegreya Sans, loaded in app/layout.tsx via next/font, which self-hosts it.
+     The stack after it is only the gap before the file lands. */
   --ic-sans: var(--ic-font-sans), ui-sans-serif, system-ui, sans-serif;
 
   /* No light mode. The interface never inverts. */
@@ -84,11 +84,53 @@ body {
   background: var(--ic-bg);
   color: var(--ic-text);
   font-family: var(--ic-sans);
+  /* Alegreya Sans defaults to oldstyle figures, where 0, 1 and 2 sit at
+     x-height and 3, 4, 5, 7 and 9 hang below the baseline. That is correct for
+     a novel and wrong for this: it turns "$0 MRR" into something that reads as
+     "$o MRR" and makes every dollar amount on the site look misspelled. Not
+     optional, and not a preference. */
+  font-variant-numeric: lining-nums;
+  /*
+   * Alegreya Sans has a small lowercase: an x-height of 0.50em against the
+   * 0.571em of the system stack this scale was drawn for. Every one of the
+   * ninety-odd px sizes below would read 12% smaller than it was meant to, and
+   * bumping `font-size` here fixes almost none of them because almost all of
+   * them set their own.
+   *
+   * font-size-adjust is the one lever that works at every size at once: it
+   * scales each element until its x-height hits the ratio given, so 0.571
+   * restores the exact apparent size of the old stack without touching a single
+   * px value. Alegreya is also 26% narrower than the old stack, so the result
+   * still sets shorter lines than before — the density survives the swap.
+   *
+   * Cinzel opts out below. It has its own proportions and is not what this
+   * number describes.
+   */
+  font-size-adjust: 0.571;
+  /* Its word space is the other half of the same story: 0.29 of an x-height
+     against the old stack's 0.56, which at this density makes "No cofounder on
+     any product" read as one word. Not enough to match the old gap — that would
+     look gappy in a face this narrow — just enough that the words separate. */
+  word-spacing: 0.08em;
   /* The reference runs dense: 14px body, 12px metadata. An armory is a readout,
      not an article, and the density is most of why it reads as one. */
   font-size: 14px;
   line-height: 1.5;
   -webkit-font-smoothing: antialiased;
+}
+
+/* Form controls opt themselves out of both of the body's typography fixes and
+   have to be opted back in. The UA stylesheet sets word-spacing: normal, and it
+   sets the `font` shorthand — which resets font-size-adjust to none. A declared
+   value beats an inherited one however weak the selector, so neither reaches an
+   input on its own.
+   The two search fields say `font: inherit` themselves, at a specificity this
+   rule cannot reach, so they repeat the font-size-adjust line locally. */
+input,
+textarea,
+select {
+  font-size-adjust: inherit;
+  word-spacing: inherit;
 }
 
 a {
@@ -122,6 +164,9 @@ a:hover {
    Never on body copy: unreadable at small sizes. */
 .serif {
   font-family: var(--ic-serif);
+  /* Cinzel keeps its own proportions; the body's x-height normalisation is
+     measured off the sans and would resize every title on the site. */
+  font-size-adjust: none;
   font-weight: 500;
   letter-spacing: 0.02em;
 }
@@ -358,7 +403,10 @@ a:hover {
 .topbar-over {
   font-family: var(--ic-sans);
   font-size: 8.5px;
-  font-weight: 600;
+  /* 700, not 600: Alegreya Sans has no 600, and asking for one leaves the
+     browser to pick — or to synthesise one, which at 8.5px looks like a
+     rendering fault. */
+  font-weight: 700;
   letter-spacing: 0.3em;
   /* letter-spacing pads the right of the last glyph; give it back on the left
      so the two lines actually align. */
@@ -487,6 +535,10 @@ a:hover {
   outline: none;
   color: var(--ic-text);
   font: inherit;
+  /* The `font` shorthand resets font-size-adjust to none, so `font: inherit`
+     silently un-does the body's x-height normalisation and leaves this input
+     12% smaller than every other piece of text. Put back explicitly. */
+  font-size-adjust: inherit;
   padding: 11px 8px 11px 0;
 }
 .inspect input::placeholder {
@@ -892,6 +944,7 @@ a:hover {
    rows. The word "iLvl" beside it stays a quiet label. */
 .ladder-ilvl-value {
   font-family: var(--ic-serif);
+  font-size-adjust: none;
   font-size: 13px;
   letter-spacing: 0.02em;
 }
@@ -1358,6 +1411,8 @@ a:hover {
   border: 1px solid var(--ic-line-2);
   color: var(--ic-text);
   font: inherit;
+  /* See .inspect input: the shorthand drops font-size-adjust. */
+  font-size-adjust: inherit;
   font-size: 12px;
   outline: none;
 }
@@ -2158,6 +2213,7 @@ a:hover {
 }
 .history-delta > span:first-child {
   font-family: var(--ic-serif);
+  font-size-adjust: none;
   font-size: 17px;
 }
 /* Capped rather than greedy: stretched across a wide panel, three points draw a

@@ -1,5 +1,5 @@
 import type { Metadata } from 'next'
-import { IBM_Plex_Sans } from 'next/font/google'
+import { Alegreya_Sans } from 'next/font/google'
 import Link from 'next/link'
 import type { ReactNode } from 'react'
 import { BrandMark } from '@/components/brand-mark'
@@ -15,16 +15,25 @@ import './globals.css'
  * origin, so this keeps the rule Cinzel already follows: nothing fetches a font
  * at runtime. It also emits the @font-face and a `font-display: swap` for free.
  *
- * Plex over the system stack because the system stack is whatever the reader
- * happens to own — San Francisco on a Mac, Segoe on Windows, Roboto on Android
- * — and a readout this dense should look the same to everybody. Plex is a
- * technical face with slightly narrow figures, which suits a page that is
- * mostly numbers, and it has enough character to sit under a Roman serif
- * without vanishing.
+ * Anything over the system stack because the system stack is whatever the
+ * reader happens to own — San Francisco on a Mac, Segoe on Windows, Roboto on
+ * Android — and a readout this dense should not look like three different
+ * products depending on who opened it.
+ *
+ * Alegreya Sans over the grotesques it was benched against because it is the
+ * only one with calligraphic roots, and the page it sits on is set in Cinzel,
+ * a Roman capital. The two share a skeleton; a neutral UI face next to Cinzel
+ * reads as two unrelated pages pasted together.
+ *
+ * Two consequences it carries, both handled in globals.css: it has no 600, and
+ * its figures are oldstyle by default — which on a site that is mostly dollar
+ * amounts turns `$0 MRR` into `$o MRR`.
  */
-const plex = IBM_Plex_Sans({
+const sans = Alegreya_Sans({
   subsets: ['latin'],
-  weight: ['400', '500', '600'],
+  // No 600 in the family. globals.css asks for 400/500/700 only, so nothing
+  // here is left to the browser to synthesise.
+  weight: ['400', '500', '700'],
   display: 'swap',
   variable: '--ic-font-sans',
 })
@@ -56,7 +65,7 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
-    <html lang="en" className={plex.variable}>
+    <html lang="en" className={sans.variable}>
       <body>
         <PostHogProvider>
           <header className="topbar">
