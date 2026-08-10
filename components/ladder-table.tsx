@@ -30,8 +30,12 @@ export function LadderTable({ rows }: { rows: LadderRow[] }) {
       {rows.map((row) => {
         const faction = row.faction ? FACTIONS_BY_KEY.get(row.faction) : undefined
         return (
-          <li key={row.handle}>
-            <Link href={`/c/${row.handle}`}>
+          <li key={row.handle} className="ladder-row">
+            {/* The whole row is the link, via a stretched ::after rather than
+                by wrapping everything — the compare link below has to sit
+                inside the same row without nesting one anchor in another,
+                which is invalid and which browsers resolve unpredictably. */}
+            <Link href={`/c/${row.handle}`} className="ladder-main">
               <span className="ladder-rank serif">{row.rank}</span>
               <span className="qsquare ladder-level serif" style={{ color: row.rarity.hex }}>
                 {row.level}
@@ -93,6 +97,17 @@ export function LadderTable({ rows }: { rows: LadderRow[] }) {
                   </>
                 )}
               </span>
+            </Link>
+
+            {/* One click from any row into a comparison with that founder,
+                which is the entry point the feature was missing. It sits above
+                the stretched link and wins the click on its own area. */}
+            <Link
+              href={`/compare?a=${row.handle}`}
+              className="ladder-compare label"
+              aria-label={`Compare @${row.handle} with somebody`}
+            >
+              Compare
             </Link>
           </li>
         )

@@ -60,9 +60,16 @@ export default async function VersusPage({ params }: Props) {
 
       <Versus a={a} b={b} />
 
+      {/* Comparing one pair almost always raises the next question, so the way
+          to change either side is on the page rather than back through the
+          ladder. */}
+      <p className="rules-outro">
+        <Link href={`/compare?a=${a.handle}`}>Compare @{a.handle} with somebody else</Link> ·{' '}
+        <Link href={`/compare?a=${b.handle}`}>or @{b.handle}</Link>
+      </p>
       <p className="rules-outro">
         <Link href={`/c/${a.handle}`}>Back to @{a.handle}</Link> ·{' '}
-        <Link href="/ladder">The ladder</Link>
+        <Link href={`/c/${b.handle}`}>@{b.handle}</Link> · <Link href="/ladder">The ladder</Link>
       </p>
     </main>
   )

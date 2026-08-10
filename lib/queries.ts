@@ -570,6 +570,44 @@ export interface FacetCount<T extends string = string> {
   count: number
 }
 
+/** One row in the compare picker: enough to recognise somebody, nothing more. */
+export interface PickerFounder {
+  handle: string
+  displayName: string
+  level: number
+  characterClass: CharacterClass
+  rarity: Rarity
+}
+
+/**
+ * Everybody who can be compared, for the picker on /compare.
+ *
+ * The whole list rather than the top hundred: comparing is the one place where
+ * the founder ranked 130th matters as much as the first, since they are exactly
+ * who somebody ranked 128th wants to measure against. At 142 rows this is a
+ * few kilobytes of JSON and filtering happens in the browser — a search
+ * round trip per keystroke would be slower and worse.
+ */
+export async function getComparableFounders(): Promise<PickerFounder[]> {
+  const sql = db()
+  const rows = await sql<
+    { handle: string; display_name: string | null; level: number; class: string }[]
+  >`
+    select c.handle, f.display_name, c.level, c.class
+    from characters c
+    join founders f on f.handle = c.handle
+    where f.opted_out_at is null
+    order by c.level desc, c.ilvl desc nulls last, c.handle
+  `
+  return rows.map((row) => ({
+    handle: row.handle,
+    displayName: row.display_name ?? row.handle,
+    level: row.level,
+    characterClass: row.class as CharacterClass,
+    rarity: rarityFor(row.level),
+  }))
+}
+
 /**
  * The realms with anybody on them, largest first.
  *
