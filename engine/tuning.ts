@@ -191,8 +191,32 @@ export const FUNDING_POLICY: 'mark' | 'exclude' | 'ignore' = 'mark'
  * signals that actually exist, and `effectiveCustomers` falls back to
  * activeSubscriptions, which takes the base-size signal from 16% to 78%.
  *
- * Resulting spread: Hunter 24%, Monk 17%, Warrior 17%, Paladin 13%, Rogue 10%,
- * Warlock 7%, Mage 4%, Priest 4%, Bard 2%, Adventurer 1%.
+ * ---------------------------------------------------------------------------
+ * Retuned 2026-08-10, when the crawler stopped seeing only the top 200.
+ *
+ * Those 200 were the best-documented listings on TrustMRR, and the tree had
+ * quietly been fitted to them. Against the rest of the corpus it fell apart:
+ * Adventurer — the class of insufficient data, tuned down to 1% — went straight
+ * back to 26%, because only 5 of 77 such listings report a marketing channel at
+ * all and four of the ten rules key off channels or domain rating.
+ *
+ * The floors were the larger half of the problem. 45 of those 76 founders had
+ * real MRR and a real customer count; they were rejected for having fewer than
+ * ten. Four subscribers at $139 is a business, and the tree called it unknown.
+ *
+ * Two changes, both measured against the live corpus rather than guessed: the
+ * base-size floors came down (see PALADIN_MIN_CUSTOMERS), and Ranger was added
+ * as the last rule that can see anything — because "we don't know" is the wrong
+ * answer for somebody with money coming in.
+ *
+ * Resulting spread over 619 founders: Monk 23%, Ranger 16%, Adventurer 15%,
+ * Paladin 9%, Mage 8%, Warrior 8%, Hunter 7%, Bard 6%, Warlock 3%, Rogue 3%,
+ * Priest 1%.
+ *
+ * Adventurer is now exactly what it claims to be: 93 founders who have shipped
+ * something and earned nothing yet. Worth watching as coverage grows — Monk is
+ * the largest class because a listing with lifetime revenue and no MRR lands
+ * there, and in the tail that is a great many of them.
  * ---------------------------------------------------------------------------
  */
 export interface ClassRule {
@@ -211,11 +235,32 @@ export interface ClassRule {
 
 const hasAny = (values: string[], group: readonly string[]) => values.some((v) => group.includes(v))
 
+/**
+ * How small a paying base can be and still count as one.
+ *
+ * These were 10 and 100, chosen against a corpus that turned out to be the top
+ * 200 listings by rank — every business in it was already big. Reading the rest
+ * of TrustMRR brought in founders with four subscribers at $139, and the tree
+ * had nothing to say about them: not enough customers for Paladin, not cheap
+ * enough for Warrior, not expensive enough for Rogue.
+ *
+ * Lowered against the real spread rather than by feel. Nobody moves down —
+ * these floors only widen, so every change is somebody leaving Adventurer.
+ */
+const PALADIN_MIN_CUSTOMERS = 3
+const WARRIOR_MIN_CUSTOMERS = 25
+
 export const CLASS_RULES: readonly ClassRule[] = [
   {
     class: 'Adventurer',
     reason: 'Where everything starts.',
-    condition: 'No products yet, or below level 5',
+    // Two ways in, and the second one is where nearly everybody arrives. This
+    // rule almost never fires: a single product grants 500 XP, which is level
+    // 17, so `level < 5` is unreachable for anyone with something shipped. The
+    // count on /rules comes from the fallback at the end of the tree, and since
+    // Ranger now takes everyone with revenue, the fallback means exactly one
+    // thing — shipped, earning nothing yet.
+    condition: 'No products yet, or nothing earned yet',
     test: (a, { level }) => a.nProducts === 0 || level < 5,
   },
   // --- How they build, then how they get customers. Both are chosen; the
@@ -274,8 +319,8 @@ export const CLASS_RULES: readonly ClassRule[] = [
   {
     class: 'Warrior',
     reason: 'Volume, earned one dollar at a time.',
-    condition: '100+ paying, under $30 each',
-    test: (a, { arpu }) => a.effectiveCustomers >= 100 && arpu < 30,
+    condition: '25+ paying, under $30 each',
+    test: (a, { arpu }) => a.effectiveCustomers >= WARRIOR_MIN_CUSTOMERS && arpu < 30,
   },
   {
     class: 'Paladin',
@@ -284,8 +329,21 @@ export const CLASS_RULES: readonly ClassRule[] = [
     // how the most ordinary founder on the ladder ended up labelled "we don't
     // know".
     reason: 'Holds the line. A real base at a price that lasts.',
-    condition: '10+ paying, $30 or more each',
-    test: (a, { arpu }) => a.effectiveCustomers >= 10 && arpu >= 30,
+    condition: '3+ paying, $30 or more each',
+    test: (a, { arpu }) => a.effectiveCustomers >= PALADIN_MIN_CUSTOMERS && arpu >= 30,
+  },
+  {
+    class: 'Ranger',
+    // The last rule that can see anything. Everyone here is earning; what the
+    // corpus does not say is the shape of it — a handful of customers, or a
+    // price too low to read as either volume or premium, or a listing with
+    // revenue and no customer count at all.
+    //
+    // "We don't know" is the wrong answer for somebody with money coming in,
+    // and it was the answer they got until the crawler saw past the top 200.
+    reason: 'Earning already, and still finding the shape of it.',
+    condition: 'Real revenue that the rules above cannot yet place',
+    test: (a) => a.revenueTotalUsd > 0 || a.mrrUsd > 0,
   },
 ]
 
@@ -329,6 +387,8 @@ export const CLASS_COLORS: Record<CharacterClass, string> = {
   Warrior: '#dd8b5e',
   /** Plate silver. Holds the line, and never mistakes itself for gold. */
   Paladin: '#b6c0cb',
+  /** Periwinkle: the one hue the other ten left free, for the newest class. */
+  Ranger: '#8f93d6',
 }
 
 /** Safety net: never demeaning, always reachable. */

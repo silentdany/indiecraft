@@ -95,6 +95,7 @@ export type CharacterClass =
   | 'Rogue'
   | 'Warrior'
   | 'Paladin'
+  | 'Ranger'
   | 'Hunter'
   | 'Bard'
   | 'Warlock'

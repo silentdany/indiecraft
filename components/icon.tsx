@@ -95,6 +95,17 @@ const PATHS: Record<IconName, React.ReactNode> = {
   Rogue: <path d="M12 2l3 6v7l-3 7-3-7V8zM6.5 10.5h11" />,
   /** Crossed blades. Volume, earned one dollar at a time. */
   Warrior: <path d="M4 3l11 14M20 3L9 17M5.5 16.5l3 3M18.5 16.5l-3 3" />,
+  /**
+   * A path with the first marker planted on it. Earning already, still finding
+   * the shape of it — the ground ahead is unmapped, but the first stake is in.
+   */
+  Ranger: (
+    <g>
+      <path d="M4 20.5c3.5-1.5 5-4.5 5-8" />
+      <path d="M9 12.5V3.5l7 2.5-7 2.5" />
+      <path d="M13.5 20.5h7" />
+    </g>
+  ),
   /** A shield. Holds the line. */
   Paladin: <path d="M12 2.5l8 3v6c0 5-4 8.2-8 10-4-1.8-8-5-8-10v-6z" />,
 

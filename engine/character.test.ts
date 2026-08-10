@@ -281,10 +281,36 @@ describe('class', () => {
     expect(classFrom(a, 50)).toBe('Paladin')
   })
 
-  it('falls back to Adventurer when the data says nothing, never anything else', () => {
-    expect(classFrom(founder({ nProducts: 1, mrrUsd: 39, revenueTotalUsd: 0 }), 20)).toBe(
+  /**
+   * The line the retune of 2026-08-10 drew: Adventurer means "no revenue", not
+   * "we could not be bothered". Somebody with money coming in is never told the
+   * armory has no idea what they are.
+   */
+  it('falls back to Adventurer only when there is no revenue at all', () => {
+    expect(classFrom(founder({ nProducts: 1, mrrUsd: 0, revenueTotalUsd: 0 }), 20)).toBe(
       'Adventurer',
     )
+  })
+
+  it('gives anyone still earning a class, however little the corpus says', () => {
+    // MRR but no customer count at all — a very common shape outside the top
+    // 200, and one that used to land in "we do not know".
+    expect(classFrom(founder({ nProducts: 1, mrrUsd: 39, revenueTotalUsd: 0 }), 20)).toBe('Ranger')
+    // Lifetime revenue only, with no recurring, is Monk and stays Monk.
+    expect(classFrom(founder({ nProducts: 1, mrrUsd: 0, revenueTotalUsd: 4_000 }), 20)).toBe('Monk')
+  })
+
+  it('counts a small paying base as a base', () => {
+    // Four subscribers at $139. A business the old floor of ten called unknown.
+    const a = founder({ nProducts: 1, customers: 0, activeSubscriptions: 4, mrrUsd: 557 })
+    expect(classFrom(a, 20)).toBe('Paladin')
+  })
+
+  it('still reserves Warrior for actual volume', () => {
+    // Cheap, and enough of them to be volume.
+    expect(classFrom(founder({ nProducts: 1, customers: 40, mrrUsd: 600 }), 20)).toBe('Warrior')
+    // Cheap, but three customers is not volume — that is somebody starting.
+    expect(classFrom(founder({ nProducts: 1, customers: 3, mrrUsd: 45 }), 20)).toBe('Ranger')
   })
 
   it('never leaves a class that could read as an insult', () => {

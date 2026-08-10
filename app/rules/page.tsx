@@ -156,10 +156,11 @@ export default async function Rules() {
           })}
         </ol>
         <p className="muted rules-note">
-          Anyone the rules cannot describe is an Adventurer. It is the class of insufficient data,
-          it is never a verdict, and at one percent of the ladder it is doing its job. The colours
-          are ours and they are load-bearing: a class is a colour before it is a word, which is what
-          lets a hundred-row ladder be read without being parsed.
+          Anyone still earning falls through to Ranger, so Adventurer means one thing only: shipped,
+          and nothing coming in yet. It is never a verdict — every founder here has launched
+          something, which most people never do. The colours are ours and they are load-bearing: a
+          class is a colour before it is a word, which is what lets a hundred-row ladder be read
+          without being parsed.
         </p>
       </Section>
 
