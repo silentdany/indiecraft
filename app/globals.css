@@ -93,7 +93,7 @@ body {
    * everywhere the gradient has already faded out.
    */
   background:
-    radial-gradient(125% 640px at 50% -90px, rgba(248, 183, 0, 0.085), transparent 70%),
+    radial-gradient(125% 640px at 50% -90px, rgba(248, 183, 0, 0.055), transparent 70%),
     var(--ic-bg);
   color: var(--ic-text);
   font-family: var(--ic-sans);
@@ -144,6 +144,49 @@ textarea,
 select {
   font-size-adjust: inherit;
   word-spacing: inherit;
+}
+
+/*
+ * The grain.
+ *
+ * A flat colour is the one thing an armory is not: the reference is stone and
+ * parchment, and every surface on it has tooth. This is that tooth, generated
+ * rather than photographed — an feTurbulence desaturated to grey, tiled at
+ * 200px, laid over everything on a fixed layer so it does not swim while the
+ * page scrolls underneath it.
+ *
+ * soft-light rather than plain opacity: grey noise at low alpha over a near
+ * black lifts the whole page toward grey, which is a wash and not a texture.
+ * Under soft-light a mid grey is a no-op and only the deviations show, so the
+ * background keeps its depth and gains a surface.
+ *
+ * Fixed, and above the content on purpose — grain that stops at the edge of
+ * every panel is not grain, it is a pattern in the gaps. pointer-events: none
+ * because it covers the entire viewport and would otherwise eat every click.
+ */
+body::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: 9;
+  pointer-events: none;
+  /*
+   * 0.32 off a measured sweep, not a guess. Grey noise under soft-light buys
+   * texture and pays for it in lift, linearly, because soft-light can barely
+   * darken a near-black — the darkening arm is compressed against zero, so the
+   * layer only really lightens. Against this background:
+   *
+   *   opacity   0.20   0.28   0.32   0.40   0.55
+   *   lift      1.6    2.2    2.6    3.4    4.7    (of 255)
+   *   texture   0.66   0.97   1.10   1.39   1.81   (sd of 255)
+   *
+   * 0.32 is a tooth you can see and a lift of one percent, which is nothing as
+   * a colour shift. Move it if you disagree; the trade is the whole decision.
+   */
+  opacity: 0.32;
+  mix-blend-mode: soft-light;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='200' height='200' filter='url(%23g)'/%3E%3C/svg%3E");
+  background-size: 200px 200px;
 }
 
 a {
@@ -207,7 +250,7 @@ a:hover {
      drawn — a border with light coming off it is metal, a border without is a
      rectangle. Only the frame gets this, which is the whole point: it is the
      device that marks the subject, and it earns the one glow on the page. */
-  box-shadow: 0 0 44px -14px rgba(248, 183, 0, 0.3);
+  box-shadow: 0 0 44px -16px rgba(248, 183, 0, 0.2);
 }
 .frame::before {
   content: "";
