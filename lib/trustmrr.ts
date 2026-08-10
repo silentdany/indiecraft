@@ -21,6 +21,9 @@
 
 export const TRUSTMRR_BASE = 'https://trustmrr.com/api/v1'
 
+/** Named in TrustMRR's robots.txt, which allows every agent. */
+const SITEMAP_URL = 'https://trustmrr.com/startup-sitemap.xml'
+
 /** 4s per request: 15 req/min, comfortably under the limit of 20. */
 export const THROTTLE_MS = 4_000
 
@@ -138,6 +141,37 @@ export class TrustmrrClient {
 
     const unique = [...new Set(slugs)]
     return limitTo ? unique.slice(0, limitTo) : unique
+  }
+
+  /**
+   * Every slug TrustMRR publishes, from its sitemap.
+   *
+   * `listSlugs` cannot do this, and the reason took a while to see: the list
+   * endpoint is hard-capped at 200. `meta.total` says 200 and means "200 in
+   * this list", not "200 in the corpus" — the site itself advertises over two
+   * thousand, and the sitemap carries ~9,000. Page 21 returns an empty array,
+   * `limit=100` still returns 10, and nothing anywhere says the word "top".
+   *
+   * So the crawler spent every night collecting the same top 200 by rank and
+   * the other nine tenths of TrustMRR did not exist as far as this armory was
+   * concerned. A founder outside the top 200 could look themselves up and find
+   * nothing, which is how this was finally noticed.
+   *
+   * robots.txt names this sitemap explicitly and allows every agent, so reading
+   * it is exactly what it is published for. Detail lookups still go through the
+   * API with the same throttle.
+   */
+  async sitemapSlugs(): Promise<string[]> {
+    const response = await fetch(SITEMAP_URL, { signal: AbortSignal.timeout(60_000) })
+    if (!response.ok) throw new Error(`TrustMRR sitemap ${response.status}`)
+    const xml = await response.text()
+
+    const slugs = new Set<string>()
+    for (const match of xml.matchAll(/<loc>\s*([^<\s]+)\s*<\/loc>/g)) {
+      const path = match[1]?.match(/^https:\/\/trustmrr\.com\/startup\/([^/?#]+)$/)
+      if (path?.[1]) slugs.add(path[1])
+    }
+    return [...slugs].sort()
   }
 
   async detail(slug: string): Promise<TrustmrrStartup> {

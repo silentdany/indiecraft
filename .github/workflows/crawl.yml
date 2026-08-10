@@ -12,7 +12,13 @@ on:
   workflow_dispatch:
     inputs:
       limit:
-        description: 'Number of startups (empty = all)'
+        description: 'Ranked-list only, this many (a wiring check)'
+        required: false
+      budget:
+        description: 'Slugs to collect this run (default 900, ~100 min)'
+        required: false
+      slug:
+        description: 'Only these slugs, comma-separated'
         required: false
       dump_slugs:
         description: 'Dump the channel / techStack vocabularies'
@@ -50,10 +56,14 @@ jobs:
         run: |
           args=()
           if [ -n "${LIMIT:-}" ]; then args+=(--limit "$LIMIT"); fi
+          if [ -n "${BUDGET:-}" ]; then args+=(--budget "$BUDGET"); fi
+          if [ -n "${SLUG:-}" ]; then args+=(--slug "$SLUG"); fi
           if [ "${DUMP_SLUGS:-}" = "true" ]; then args+=(--dump-slugs); fi
           pnpm exec tsx scripts/crawl.ts "${args[@]}"
         env:
           LIMIT: ${{ inputs.limit }}
+          BUDGET: ${{ inputs.budget }}
+          SLUG: ${{ inputs.slug }}
           DUMP_SLUGS: ${{ inputs.dump_slugs }}
           TRUSTMRR_API_KEY: ${{ secrets.TRUSTMRR_API_KEY }}
           # Session pooler: long-lived process, IPv4-reachable from the runner.

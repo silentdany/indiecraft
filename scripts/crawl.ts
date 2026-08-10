@@ -1,17 +1,34 @@
 /**
  * The crawler.
  *
- * Runs on GitHub Actions, never on Vercel. The corpus is ~200 startups (the
- * spec's 840 was a guess; `meta.total` says otherwise), listed 10 per page, so
- * a full run is ~20 list requests plus ~200 detail requests at a 3.5s throttle:
- * roughly thirteen minutes. Still well past a serverless function's ceiling,
- * so the architectural call stands.
+ * Runs on GitHub Actions, never on Vercel: a run is hours long, which is well
+ * past a serverless function's ceiling.
  *
- * Every day without a collection is a day of history permanently lost — the API
+ * ---------------------------------------------------------------------------
+ * The corpus is ~9,000 startups, not the ~200 this file used to claim.
+ *
+ * `meta.total` on the list endpoint says 200 and means "200 in this list", not
+ * "200 in the corpus". Page 21 comes back empty, `limit=100` still returns 10,
+ * and nothing in the response uses the word "top". So for its whole life this
+ * crawler collected the same top 200 by rank every night, and nine tenths of
+ * TrustMRR did not exist as far as the armory was concerned — a founder outside
+ * that 200 could look themselves up and find nothing.
+ *
+ * Discovery now comes from TrustMRR's own sitemap, which robots.txt names and
+ * allows. Detail lookups still go through the API at the same throttle.
+ * ---------------------------------------------------------------------------
+ *
+ * One night cannot hold 9,000 slugs at 4s apiece — that is ten hours against a
+ * 180-minute ceiling — so a run takes the ranked 200 plus the stalest slice of
+ * everything else. Coverage grows every night and then keeps rotating.
+ *
+ * Every day without a collection is a day of history permanently lost: the API
  * only ever returns current state. A failed slug never aborts the run.
  *
  * Usage:
  *   pnpm crawl
+ *   pnpm crawl --budget 2000     collect more of the tail in one run
+ *   pnpm crawl --slug brieform   one startup, comma-separated for several
  *   pnpm crawl --limit 20        short run, to check the wiring
  *   pnpm crawl --dump-slugs      dump the channel / techStack vocabularies
  *   pnpm crawl --no-compute      skip the follow-up compute step
@@ -28,19 +45,96 @@ import {
   toCents,
 } from '../lib/trustmrr'
 
+/**
+ * How many slugs one nightly run may collect.
+ *
+ * At a 4s throttle plus request time this lands around 100 minutes, inside the
+ * workflow's 180-minute ceiling with room for retries. The corpus is ~9,000, so
+ * full coverage takes about a fortnight of nights and then keeps rotating —
+ * which is the right trade: a run that tried to do all of it in one night would
+ * take ten hours, exceed the ceiling, and collect nothing at all.
+ */
+const DEFAULT_BUDGET = 900
+
 interface Options {
   limit?: number
+  budget: number
+  /** Crawl exactly these slugs and nothing else. */
+  only: string[]
   dumpSlugs: boolean
   compute: boolean
 }
 
 function parseArgs(argv: string[]): Options {
-  const limitFlag = argv.indexOf('--limit')
+  const flag = (name: string) => {
+    const i = argv.indexOf(name)
+    return i >= 0 ? argv[i + 1] : undefined
+  }
+  const only = flag('--slug')
   return {
-    limit: limitFlag >= 0 ? Number(argv[limitFlag + 1]) : undefined,
+    limit: flag('--limit') ? Number(flag('--limit')) : undefined,
+    budget: flag('--budget') ? Number(flag('--budget')) : DEFAULT_BUDGET,
+    only: only
+      ? only
+          .split(',')
+          .map((s) => s.trim())
+          .filter(Boolean)
+      : [],
     dumpSlugs: argv.includes('--dump-slugs'),
     compute: !argv.includes('--no-compute'),
   }
+}
+
+/**
+ * What to collect tonight: the ranked list first, then the stalest of the rest.
+ *
+ * The ranked 200 are the ladder and are refreshed every night without fail.
+ * Everything else rotates by staleness — never-collected slugs before
+ * least-recently-collected — so coverage grows monotonically and no startup can
+ * be starved by the ordering.
+ */
+async function planRun(
+  sql: ReturnType<typeof directDb>,
+  client: TrustmrrClient,
+  options: Options,
+): Promise<string[]> {
+  if (options.only.length > 0) return options.only
+
+  const ranked = await client.listSlugs(options.limit)
+  console.log(`  ${ranked.length} ranked (the API list is capped here)`)
+  if (options.limit) return ranked.slice(0, options.limit)
+
+  let discovered: string[] = []
+  try {
+    discovered = await client.sitemapSlugs()
+    console.log(`  ${discovered.length} in the sitemap`)
+  } catch (error) {
+    // A missing sitemap costs tonight's expansion, never tonight's ladder.
+    console.warn(`  ✗ sitemap — ${(error as Error).message}`)
+    return ranked
+  }
+
+  const rankedSet = new Set(ranked)
+  const rest = discovered.filter((slug) => !rankedSet.has(slug))
+  const room = Math.max(0, options.budget - ranked.length)
+  if (room === 0) return ranked
+
+  // Slugs we have never captured sort first (no row → null → nulls first),
+  // then the ones we have not seen in longest.
+  const seen = await sql<{ startup_slug: string; last_on: string | null }[]>`
+    select startup_slug, max(captured_on)::text as last_on
+    from snapshots group by startup_slug
+  `
+  const lastSeen = new Map(seen.map((r) => [r.startup_slug, r.last_on ?? '']))
+  const queued = rest
+    .map((slug) => ({ slug, last: lastSeen.get(slug) }))
+    .sort((a, b) => (a.last ?? '').localeCompare(b.last ?? ''))
+    .slice(0, room)
+    .map((r) => r.slug)
+
+  const fresh = queued.filter((s) => !lastSeen.has(s)).length
+  console.log(`  + ${queued.length} rotating (${fresh} never collected before)`)
+  return [...ranked, ...queued]
 }
 
 async function main() {
@@ -55,10 +149,10 @@ async function main() {
   let inserted = 0
 
   try {
-    console.log('→ listing startups…')
-    const slugs = await client.listSlugs(options.limit)
+    console.log('→ planning the run…')
+    const slugs = await planRun(sql, client, options)
     console.log(
-      `  ${slugs.length} slugs, ~${Math.round((slugs.length * 3.5) / 60)} min of crawling`,
+      `  ${slugs.length} slugs, ~${Math.round((slugs.length * 4.4) / 60)} min of crawling`,
     )
 
     for (const [index, slug] of slugs.entries()) {
