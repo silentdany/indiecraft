@@ -46,13 +46,27 @@ import {
 } from '../lib/trustmrr'
 
 /**
+ * Seconds a slug actually costs, measured rather than derived.
+ *
+ * THROTTLE_MS is 4s, and the obvious arithmetic says a slug therefore costs 4s.
+ * It costs ten. Two separate runs agree: the scheduled crawl of 2026-08-09 did
+ * 200 slugs in 32.7 minutes, and a 2,400-slug dispatch was averaging 9.4s an
+ * hour in. The gap is request latency plus a Postgres round trip per snapshot,
+ * neither of which the throttle knows about.
+ *
+ * Budget arithmetic that uses 4 rather than this number overruns the workflow
+ * ceiling by a factor of two and gets the job killed mid-run.
+ */
+const SECONDS_PER_SLUG = 10
+
+/**
  * How many slugs one nightly run may collect.
  *
- * At a 4s throttle plus request time this lands around 100 minutes, inside the
- * workflow's 180-minute ceiling with room for retries. The corpus is ~9,000, so
- * full coverage takes about a fortnight of nights and then keeps rotating —
- * which is the right trade: a run that tried to do all of it in one night would
- * take ten hours, exceed the ceiling, and collect nothing at all.
+ * 900 × 10s is 150 minutes, inside the workflow's 180-minute ceiling with room
+ * for install, schema and the compute trigger. The corpus is ~9,000, so full
+ * coverage takes about a fortnight of nights and then keeps rotating — which is
+ * the right trade: a run that tried to take all of it in one night would need
+ * twenty-five hours, be killed at three, and never reach the compute step.
  */
 const DEFAULT_BUDGET = 900
 
@@ -151,9 +165,14 @@ async function main() {
   try {
     console.log('→ planning the run…')
     const slugs = await planRun(sql, client, options)
-    console.log(
-      `  ${slugs.length} slugs, ~${Math.round((slugs.length * 4.4) / 60)} min of crawling`,
-    )
+    const eta = Math.round((slugs.length * SECONDS_PER_SLUG) / 60)
+    console.log(`  ${slugs.length} slugs, ~${eta} min of crawling`)
+    // Said out loud rather than silently truncated: a budget somebody passed by
+    // hand is a decision, and the run should warn about it instead of quietly
+    // being killed two hours later with no compute step.
+    if (eta > 165) {
+      console.warn(`  ⚠ that is past the 180 min workflow ceiling — expect to be cut short`)
+    }
 
     for (const [index, slug] of slugs.entries()) {
       let detail: TrustmrrStartup
