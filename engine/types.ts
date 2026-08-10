@@ -172,6 +172,13 @@ export interface AchievementDef {
    * every badge on this site is supposed to be a thing that cannot be taken
    * away. Fixed like an item's quality — calibrated against the corpus once,
    * with the share of the day recorded beside each one.
+   *
+   * Rarity is what a badge is WORTH, and the share is only the best evidence
+   * for it, not the definition. Two sit deliberately above their band:
+   * `realm_first` because there is exactly one per realm and no amount of work
+   * gets you a second, and `renowned` because a domain rating of 70 is years of
+   * somebody else's links rather than a number you can decide to have. Both are
+   * at 1.6%, which is epic by the arithmetic and legendary by the ask.
    */
   rarity: RarityName
   test: (a: FounderAggregate, level: number) => boolean

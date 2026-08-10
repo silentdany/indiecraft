@@ -722,8 +722,8 @@ export const ACHIEVEMENTS: readonly AchievementDef[] = [
   },
   {
     code: 'renowned',
-    /** 1.6% of the corpus. */
-    rarity: 'epic',
+    /** 1.6% of the corpus, and legendary above its band — see `rarity`. */
+    rarity: 'legendary',
     label: 'Renowned',
     description: 'Domain rating of 70 or above.',
     test: (a) => (a.domainRating ?? 0) >= 70,
@@ -837,8 +837,8 @@ export const ACHIEVEMENTS: readonly AchievementDef[] = [
      * is not an achievement — it is a rounding error with a medal.
      */
     code: 'realm_first',
-    /** 1.6% of the corpus. */
-    rarity: 'epic',
+    /** 1.6% of the corpus, and legendary above its band — see `rarity`. */
+    rarity: 'legendary',
     label: 'Realm First!',
     description: 'Highest level on a realm of ten founders or more.',
     test: () => false,
