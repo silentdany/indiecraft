@@ -28,13 +28,15 @@ export const revalidate = 300
  * explained.
  */
 export default async function Home() {
-  const [rows, stats, classes, factions, realms] = await Promise.all([
-    getLadder().catch(() => []),
+  const [ladder, stats, classes, factions, realms] = await Promise.all([
+    getLadder().catch(() => null),
     getRealmStats().catch(() => null),
     getClassCounts().catch(() => []),
     getFactionCounts().catch(() => []),
     getRealmCounts().catch(() => []),
   ])
+
+  const rows = ladder?.rows ?? []
 
   const site = process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000'
 

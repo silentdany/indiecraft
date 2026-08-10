@@ -518,51 +518,134 @@ export interface LadderFilter {
   faction?: string | null
 }
 
+/** What a page of the ladder asks for, on top of the three facets. */
+export interface LadderQuery extends LadderFilter {
+  /**
+   * Free text over handle and display name. It never changes anybody's rank:
+   * the point of finding yourself on the ladder is seeing where you actually
+   * stand, not being told you are first out of one.
+   */
+  q?: string | null
+  /** 1-based. Out of range is not an error; it yields no rows and a real total. */
+  page?: number
+}
+
+export interface LadderPage {
+  rows: LadderRow[]
+  /** Rows matching the facets and the search — what the pager counts. */
+  total: number
+  page: number
+  perPage: number
+  pageCount: number
+}
+
+export const LADDER_PAGE_SIZE = 100
+
 /**
- * Top 100 by level, then by iLvl on a tie.
+ * A page of the ladder, ordered by level then iLvl.
  *
- * No bottom rankings, ever: we show a top, never the floor. WoW never showed a
- * leaderboard of the worst players. Filtering does not change that — a realm
- * ladder is still a top, just of a smaller world.
+ * It used to return the top hundred and nothing else, on the reasoning that we
+ * show a top and never the floor — WoW never published a leaderboard of the
+ * worst players. That principle survives the ordering but not the cut: with a
+ * corpus past a thousand, a hard limit of a hundred meant most founders could
+ * not find themselves at all, which is worse than being far down a list. The
+ * list still starts at the top, still ranks by the same two numbers, and still
+ * labels nobody as last.
+ *
+ * Rank comes from a window function over the facet-filtered set rather than
+ * from the row's position in the result. Those agree only on page one, and only
+ * without a search: `index + 1` would tell the 400th founder they are 1st.
  */
-export async function getLadder(filter: LadderFilter = {}): Promise<LadderRow[]> {
+export async function getLadder(query: LadderQuery = {}): Promise<LadderPage> {
   const sql = db()
-  const realm = normalizeRealm(filter.realm)
-  const faction = asFaction(filter.faction ?? null)
-  const rows = await sql<
-    {
-      handle: string
-      level: number
-      ilvl: number | null
-      class: string
-      n_products: number
-      realm: string | null
-      faction: string | null
-    }[]
-  >`
-    select c.handle, c.level, c.ilvl, c.class, c.n_products, c.realm, c.faction
-    from characters c
-    join founders f on f.handle = c.handle
+  const realm = normalizeRealm(query.realm)
+  const faction = asFaction(query.faction ?? null)
+  const characterClass = query.characterClass ?? null
+  const q = query.q?.trim().replace(/^@/, '').toLowerCase() ?? ''
+  const like = `%${q}%`
+  const perPage = LADDER_PAGE_SIZE
+  const page = Math.max(Math.trunc(query.page ?? 1) || 1, 1)
+
+  // The facets decide which ladder this is, and therefore what a rank means.
+  const facets = sql`
     where f.opted_out_at is null
-      ${filter.characterClass ? sql`and c.class = ${filter.characterClass}` : sql``}
+      ${characterClass ? sql`and c.class = ${characterClass}` : sql``}
       ${realm ? sql`and c.realm = ${realm}` : sql``}
       ${faction ? sql`and c.faction = ${faction}` : sql``}
-    -- nulls last: no recurring revenue is "not measured", never "worst".
-    order by c.level desc, c.ilvl desc nulls last, c.handle
-    limit 100
   `
-  return rows.map((row, index) => ({
-    rank: index + 1,
-    handle: row.handle,
-    level: row.level,
-    ilvl: row.ilvl,
-    characterClass: row.class as CharacterClass,
-    rarity: rarityFor(row.level),
-    ilvlRarity: row.ilvl === null ? null : rarityFor(row.ilvl),
-    nProducts: row.n_products,
-    realm: normalizeRealm(row.realm),
-    faction: asFaction(row.faction),
-  }))
+
+  /*
+   * Counted separately rather than with `count(*) over ()`, because a window
+   * count rides on the returned rows and a page past the end returns none — so
+   * the pager would lose the total exactly when it needs it to say how far past
+   * the end you are. Two statements in parallel, both trivial at this size.
+   */
+  const [[counted], rows] = await Promise.all([
+    sql<{ total: number }[]>`
+      select count(*)::int as total
+      from characters c
+      join founders f on f.handle = c.handle
+      ${facets}
+      ${q ? sql`and (c.handle ilike ${like} or f.display_name ilike ${like})` : sql``}
+    `,
+    /*
+     * The CTE is load-bearing, not decoration. A window function runs after
+     * `where`, so folding the search into the same statement would renumber the
+     * matches 1..n and tell the 400th founder they are first. Ranking happens
+     * over the facets alone; the search then filters rows that already know
+     * where they stand.
+     */
+    sql<
+      {
+        rank: number
+        handle: string
+        level: number
+        ilvl: number | null
+        class: string
+        n_products: number
+        realm: string | null
+        faction: string | null
+      }[]
+    >`
+      with ranked as (
+        select
+          c.handle, c.level, c.ilvl, c.class, c.n_products, c.realm, c.faction,
+          f.display_name,
+          (row_number() over (
+            -- nulls last: no recurring revenue is "not measured", never "worst".
+            order by c.level desc, c.ilvl desc nulls last, c.handle
+          ))::int as rank
+        from characters c
+        join founders f on f.handle = c.handle
+        ${facets}
+      )
+      select rank, handle, level, ilvl, class, n_products, realm, faction
+      from ranked
+      ${q ? sql`where handle ilike ${like} or display_name ilike ${like}` : sql``}
+      order by rank
+      limit ${perPage} offset ${(page - 1) * perPage}
+    `,
+  ])
+
+  const total = counted?.total ?? 0
+  return {
+    total,
+    page,
+    perPage,
+    pageCount: Math.max(Math.ceil(total / perPage), 1),
+    rows: rows.map((row) => ({
+      rank: row.rank,
+      handle: row.handle,
+      level: row.level,
+      ilvl: row.ilvl,
+      characterClass: row.class as CharacterClass,
+      rarity: rarityFor(row.level),
+      ilvlRarity: row.ilvl === null ? null : rarityFor(row.ilvl),
+      nProducts: row.n_products,
+      realm: normalizeRealm(row.realm),
+      faction: asFaction(row.faction),
+    })),
+  }
 }
 
 export interface FacetCount<T extends string = string> {

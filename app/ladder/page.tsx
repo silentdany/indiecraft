@@ -1,5 +1,6 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
+import { redirect } from 'next/navigation'
 import { Icon } from '@/components/icon'
 import { JsonLd } from '@/components/json-ld'
 import { LadderTable } from '@/components/ladder-table'
@@ -11,12 +12,13 @@ import {
   getLadder,
   getRealmCounts,
   type LadderFilter,
+  type LadderQuery,
 } from '@/lib/queries'
 import { normalizeRealm, realmLabel } from '@/lib/realm'
 
 export const revalidate = 300
 
-type Search = { class?: string; realm?: string; faction?: string }
+type Search = { class?: string; realm?: string; faction?: string; q?: string; page?: string }
 
 /**
  * A filtered ladder is a different page and has to say so.
@@ -38,18 +40,8 @@ export async function generateMetadata({
     title,
     description,
     alternates: { canonical },
-    /*
-     * Filtered views are noindex, and this is a consent decision rather than an
-     * SEO one.
-     *
-     * Ten classes by three factions by twenty-four realms is roughly seven
-     * hundred pages, each naming founders who never asked to be listed
-     * anywhere. The bare ladder already carries that exposure once and is left
-     * exactly as it was; multiplying it by seven hundred because the facets
-     * happened to be cheap to build is not a decision a feature gets to make on
-     * its own. The pages work, they are linked, and people can share them —
-     * they are just not submitted to be crawled.
-     */
+    // Every narrowed view is noindex — see `describe`, where the rule and the
+    // reason for it live.
     robots: filtered ? { index: false, follow: true } : undefined,
   }
 }
@@ -58,15 +50,26 @@ export default async function Ladder({ searchParams }: { searchParams: Promise<S
   const search = await searchParams
   const filter = toFilter(search)
 
-  const [rows, classes, realms, factions] = await Promise.all([
-    getLadder(filter),
+  const [ladder, classes, realms, factions] = await Promise.all([
+    getLadder(toQuery(search)),
     getClassCounts(),
     getRealmCounts(),
     getFactionCounts(),
   ])
+  const { rows, total, page, perPage, pageCount } = ladder
+
+  /*
+   * `?page=999` on a twelve-page ladder is not an error state worth designing.
+   * It comes from a stale link or a hand-edited URL, and the honest answer is
+   * the last page — which also keeps the pager from having to reason about a
+   * "previous" that would be page 998. The total is already in hand, so this
+   * costs one redirect and no extra query.
+   */
+  if (total > 0 && page > pageCount) redirect(href(search, { page: pageStr(pageCount) }))
 
   const site = process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000'
-  const { title, heading, description, filtered } = describe(search)
+  const { title, heading, description } = describe(search)
+  const q = search.q?.trim() ?? ''
 
   return (
     <main className="page">
@@ -93,10 +96,9 @@ export default async function Ladder({ searchParams }: { searchParams: Promise<S
         <h1 className="serif gold" style={{ fontSize: 22, letterSpacing: '0.14em', margin: 0 }}>
           {heading}
         </h1>
-        {/* No bottom rankings. We show a top, never the floor. */}
-        <span className="label">
-          {filtered ? `${rows.length} of the top 100` : 'Top 100 by level, then iLvl'}
-        </span>
+        {/* Says what this page is, not what the whole ladder is: "1,155
+            founders" above rows 101–200 is a caption for a different page. */}
+        <span className="label">{caption({ total, page, perPage, q })}</span>
       </header>
 
       <div className="facets">
@@ -162,9 +164,133 @@ export default async function Ladder({ searchParams }: { searchParams: Promise<S
         </Facet>
       </div>
 
+      {/* A plain GET form, like every facet above it is a plain link: the
+          ladder stays usable and shareable without a line of JavaScript, and
+          the URL keeps being the whole state of the page. The facets ride along
+          as hidden fields so searching narrows the ladder you are looking at
+          rather than dropping you back onto the global one. `page` is
+          deliberately not carried — a new search starts at the top. */}
+      <search className="laddersearch">
+        <form action="/ladder" method="get">
+          {filter.characterClass && (
+            <input type="hidden" name="class" value={filter.characterClass} />
+          )}
+          {filter.realm && <input type="hidden" name="realm" value={filter.realm} />}
+          {filter.faction && <input type="hidden" name="faction" value={filter.faction} />}
+          <input
+            type="search"
+            name="q"
+            defaultValue={q}
+            placeholder="Find a founder on this ladder"
+            aria-label="Search this ladder by handle or name"
+            autoComplete="off"
+          />
+          <button type="submit" className="label">
+            Search
+          </button>
+          {q && (
+            <Link href={href(search, { q: undefined, page: undefined })} className="label">
+              Clear
+            </Link>
+          )}
+        </form>
+      </search>
+
       <LadderTable rows={rows} />
+
+      <Pager search={search} page={page} pageCount={pageCount} />
     </main>
   )
+}
+
+/**
+ * Previous and next, plus the first and last page and the numbers either side
+ * of where you are.
+ *
+ * Not a full run of twelve numbers, and not prev/next alone. Twelve becomes
+ * ninety the moment the corpus does, and prev/next alone makes the far end of a
+ * long ladder reachable only by clicking eleven times — the two founders most
+ * likely to want it being the one at the bottom and the one checking whether
+ * they are.
+ */
+function Pager({ search, page, pageCount }: { search: Search; page: number; pageCount: number }) {
+  if (pageCount <= 1) return null
+
+  const around = new Set<number>([1, pageCount, page - 1, page, page + 1])
+  const pages = [...around].filter((n) => n >= 1 && n <= pageCount).sort((a, b) => a - b)
+
+  return (
+    <nav className="pager" aria-label="Ladder pages">
+      {page > 1 ? (
+        <Link
+          href={href(search, { page: pageStr(page - 1) })}
+          className="pager-step label"
+          rel="prev"
+        >
+          ← Previous
+        </Link>
+      ) : (
+        <span className="pager-step pager-off label">← Previous</span>
+      )}
+
+      <span className="pager-nums">
+        {pages.map((n, i) => (
+          <span key={n} className="pager-num-slot">
+            {/* A gap in the run is an ellipsis, not a missing link: it tells you
+                the numbers either side are not consecutive. */}
+            {i > 0 && n - (pages[i - 1] ?? 0) > 1 && <span className="pager-gap">…</span>}
+            {n === page ? (
+              <span className="pager-num serif" aria-current="page">
+                {n}
+              </span>
+            ) : (
+              <Link href={href(search, { page: pageStr(n) })} className="pager-num serif">
+                {n}
+              </Link>
+            )}
+          </span>
+        ))}
+      </span>
+
+      {page < pageCount ? (
+        <Link
+          href={href(search, { page: pageStr(page + 1) })}
+          className="pager-step label"
+          rel="next"
+        >
+          Next →
+        </Link>
+      ) : (
+        <span className="pager-step pager-off label">Next →</span>
+      )}
+    </nav>
+  )
+}
+
+/** Page 1 is the bare URL, so it has exactly one address rather than two. */
+const pageStr = (n: number): string | undefined => (n <= 1 ? undefined : String(n))
+
+/** Which slice of what, in one line, and grammatical in all four states. */
+function caption({
+  total,
+  page,
+  perPage,
+  q,
+}: {
+  total: number
+  page: number
+  perPage: number
+  q: string
+}): string {
+  const n = (x: number) => x.toLocaleString('en-US')
+  if (total === 0) return q ? `Nobody matches “${q}”` : 'Nobody here yet'
+
+  const first = (page - 1) * perPage + 1
+  const last = Math.min(page * perPage, total)
+  // No range on a single page of results: "1–7 of 7" says nothing "7" does not.
+  const slice = total <= perPage ? n(total) : `${n(first)}–${n(last)} of ${n(total)}`
+  const matching = q ? ` matching “${q}”` : ''
+  return `${slice}${matching} · by level, then iLvl`
 }
 
 function Facet({
@@ -226,6 +352,11 @@ function href(search: Search, patch: Partial<Search>): string {
   if (next.class) params.set('class', next.class)
   if (next.faction) params.set('faction', next.faction)
   if (next.realm) params.set('realm', next.realm)
+  if (next.q?.trim()) params.set('q', next.q.trim())
+  // Read off the patch and never off `search`: changing a facet changes which
+  // ladder this is, and page 7 of the old one is meaningless on the new one.
+  // Only the pager passes a page, and it always passes the one it means.
+  if (patch.page) params.set('page', patch.page)
   const query = params.toString()
   return query ? `/ladder?${query}` : '/ladder'
 }
@@ -236,6 +367,16 @@ function toFilter(search: Search): LadderFilter {
     realm: normalizeRealm(search.realm),
     faction: search.faction ?? null,
   }
+}
+
+function toQuery(search: Search): LadderQuery {
+  return { ...toFilter(search), q: search.q ?? null, page: pageNum(search.page) }
+}
+
+/** A junk `?page=` is page one, not a crash and not an empty ladder. */
+function pageNum(raw: string | undefined): number {
+  const n = Number.parseInt(raw ?? '1', 10)
+  return Number.isFinite(n) && n > 0 ? n : 1
 }
 
 /** One place that names a filtered ladder, so the h1, the title and the JSON-LD agree. */
@@ -273,13 +414,31 @@ function describe(search: Search): {
   // construction that survives every country name in the list.
   const sentence = realm ? `${subject} on the ${realm} realm` : subject
 
+  const page = pageNum(search.page)
+  const q = search.q?.trim() ?? ''
+  // A page number belongs in the title or two hundred pages compete for the
+  // same one, and a searcher who lands on page 8 should know that is where
+  // they are.
+  const suffix = page > 1 ? ` — page ${page}` : ''
+
   return {
-    title: plain ? `The ladder — ${named}` : 'The ladder',
+    title: (plain ? `The ladder — ${named}` : 'The ladder') + suffix,
     heading: plain ? named.toUpperCase() : 'THE LADDER',
     description: plain
-      ? `The highest-levelled indie ${sentence}, ranked by lifetime revenue and current MRR.`
-      : 'The hundred highest-levelled indie founders, ranked by lifetime revenue and current MRR. Filter by class, faction or realm.',
-    canonical: href(search, {}),
-    filtered: Boolean(plain),
+      ? `Indie ${sentence}, ranked by lifetime revenue and current MRR.`
+      : 'Every indie founder on TrustMRR, ranked by lifetime revenue and current MRR. Filter by class, faction or realm, or search for a handle.',
+    canonical: href(search, { page: pageStr(page) }),
+    /*
+     * Narrowed in any way at all: a facet, a search, or a page past the first.
+     *
+     * The facet half of this was already a consent decision rather than an SEO
+     * one, and paging is the same decision at a larger scale. The bare ladder
+     * carries the exposure of naming non-consenting founders once and is left
+     * exactly as it was — but it used to stop at a hundred, and submitting all
+     * twelve pages to be crawled would multiply that by twelve for people who
+     * never asked to be listed anywhere. The pages work, they are linked, and
+     * anybody can read or share them. They are just not submitted.
+     */
+    filtered: Boolean(plain) || page > 1 || q !== '',
   }
 }

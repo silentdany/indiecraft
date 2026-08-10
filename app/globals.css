@@ -793,6 +793,102 @@ a:hover {
 
 /* --- The ladder ----------------------------------------------------------- */
 
+/* Sits between the facets and the rows, because that is the order the two are
+   used in: pick which ladder, then find yourself on it. */
+.laddersearch form {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 14px;
+}
+.laddersearch input {
+  flex: 1 1 260px;
+  min-width: 0;
+  max-width: 340px;
+  padding: 8px 11px;
+  background: var(--ic-well);
+  border: 1px solid var(--ic-line-2);
+  color: var(--ic-text);
+  font: inherit;
+  font-size: 13px;
+  /* See .inspect input: the shorthand drops font-size-adjust. */
+  font-size-adjust: inherit;
+  outline: none;
+}
+.laddersearch input:focus {
+  border-color: var(--ic-gold);
+}
+.laddersearch input::placeholder {
+  color: var(--ic-text-muted);
+}
+.laddersearch button {
+  padding: 8px 13px;
+  background: none;
+  border: 1px solid var(--ic-line-2);
+  color: var(--ic-gold);
+  cursor: pointer;
+}
+.laddersearch button:hover {
+  border-color: var(--ic-gold);
+}
+
+/* --- Paging --------------------------------------------------------------- */
+
+.pager {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-top: 18px;
+  padding-top: 14px;
+  border-top: 1px solid var(--ic-line);
+}
+.pager-step {
+  padding: 6px 2px;
+  white-space: nowrap;
+}
+/* Kept in place rather than removed at either end, so the numbers between them
+   do not slide sideways when you reach the first or last page. */
+.pager-off {
+  color: var(--ic-text-muted);
+  opacity: 0.45;
+}
+.pager-nums {
+  display: flex;
+  align-items: baseline;
+  gap: 2px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+.pager-num-slot {
+  display: flex;
+  align-items: baseline;
+  gap: 2px;
+}
+.pager-num {
+  display: inline-block;
+  min-width: 30px;
+  padding: 5px 7px;
+  text-align: center;
+  font-size: 14px;
+  color: var(--ic-text-muted);
+  border: 1px solid transparent;
+}
+a.pager-num:hover {
+  color: var(--ic-gold);
+  border-color: var(--ic-line-2);
+}
+.pager-num[aria-current="page"] {
+  color: var(--ic-bg);
+  background: var(--ic-gold);
+  border-color: var(--ic-gold);
+}
+.pager-gap {
+  color: var(--ic-text-muted);
+  padding: 0 3px;
+}
+
 .ladder {
   list-style: none;
   margin: 0;

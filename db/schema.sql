@@ -128,6 +128,25 @@ alter table characters add column if not exists faction text;
 create index if not exists characters_realm_idx   on characters (realm);
 create index if not exists characters_faction_idx on characters (faction);
 
+-- The ladder's actual sort order, which characters_ladder_idx above never
+-- matched: `ilvl desc` in an index means NULLS FIRST, and the query says
+-- `ilvl desc nulls last` because no recurring revenue is "not measured", not
+-- "worst". A planner cannot use an index whose null placement disagrees, so
+-- every ladder page was a sort of the whole table — invisible at this size and
+-- not invisible for long, now that the page walks the entire corpus rather than
+-- stopping at a hundred. `handle` is in it because it is the tiebreak, which
+-- makes the index the whole ordering and the read a plain walk.
+create index if not exists characters_ladder_order_idx
+  on characters (level desc, ilvl desc nulls last, handle);
+
+-- Prefix search on a handle, case-insensitively: `ilike 'dany%'` can walk this,
+-- and `ilike '%dany%'` cannot walk anything without pg_trgm. Not adding the
+-- extension yet — infix over sixteen hundred short rows is a scan of well under
+-- a millisecond, and an extension is a thing to install on every environment
+-- and to remember forever. The line to revisit this is a corpus in six figures.
+create index if not exists characters_handle_lower_idx
+  on characters (lower(handle) text_pattern_ops);
+
 -- ---------------------------------------------------------------------------
 -- One row per founder per day. The third table nothing can rebuild.
 -- ---------------------------------------------------------------------------

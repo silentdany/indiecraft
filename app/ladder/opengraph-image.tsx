@@ -16,7 +16,7 @@ export const contentType = 'image/png'
  */
 export default async function Image() {
   const rows = await getLadder()
-    .then((r) => r.slice(0, 5))
+    .then((page) => page.rows.slice(0, 5))
     .catch(() => [])
 
   return new ImageResponse(
