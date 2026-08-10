@@ -303,18 +303,48 @@ export async function computeAll(sql: postgres.Sql): Promise<ComputeReport> {
     // but a `schema:apply --reset` drops the whole founders table. This replay
     // is what makes that safe. Remove it and the next reset silently
     // republishes every sheet somebody asked to remove.
+    /*
+     * The LATEST decision wins, not the first one.
+     *
+     * This used to take `min(occurred_at) filter (action = 'opt_out')`, which
+     * made one accidental click permanent: any opt_out ever recorded meant
+     * opted out forever, and the sheet 404s, so its owner could not even reach
+     * the page to undo it. Somebody removed their own sheet by mistake within a
+     * minute of claiming it and had no way back.
+     *
+     * Reading the most recent event instead makes removal reversible by exactly
+     * one person — the one who can sign in as that handle — and nothing about
+     * the safety property changes: a sheet whose last word was "remove" stays
+     * removed, through resets and forever, until its owner says otherwise.
+     *
+     * Nothing is ever deleted from consent_events. The history stays whole; it
+     * is only read differently.
+     */
     await tx`
-      update founders f set
-        opted_out_at = e.opted_out_at,
-        claimed_at   = e.claimed_at
-      from (
-        select handle,
-               min(occurred_at) filter (where action = 'opt_out') as opted_out_at,
-               min(occurred_at) filter (where action = 'claim')   as claimed_at
+      with latest as (
+        select distinct on (handle) handle, action, occurred_at
         from consent_events
-        group by handle
-      ) e
-      where e.handle = f.handle
+        order by handle, occurred_at desc, id desc
+      ),
+      last_removal as (
+        select handle, max(occurred_at) as at
+        from consent_events where action = 'opt_out' group by handle
+      ),
+      -- The first claim that still stands: one made before a later removal was
+      -- undone by that removal, so it does not count.
+      standing_claim as (
+        select c.handle, min(c.occurred_at) as at
+        from consent_events c
+        left join last_removal r on r.handle = c.handle
+        where c.action = 'claim' and (r.at is null or c.occurred_at > r.at)
+        group by c.handle
+      )
+      update founders f set
+        opted_out_at = case when l.action = 'opt_out' then l.occurred_at else null end,
+        claimed_at   = sc.at
+      from latest l
+      left join standing_claim sc on sc.handle = l.handle
+      where l.handle = f.handle
     `
   })
 

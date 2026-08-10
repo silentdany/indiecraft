@@ -1257,6 +1257,67 @@ a:hover {
   background: var(--ic-gold-bright);
 }
 
+/* --- Signed in, and what this sheet is ------------------------------------
+   Stated before any button. Somebody who has just proved who they are should
+   not have to infer their own status from the fact that a "Remove" button
+   appeared next to it. */
+
+.consent-own,
+.restore {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.consent-status {
+  display: flex;
+  align-items: flex-start;
+  gap: 9px;
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--ic-text-muted);
+}
+.consent-status svg {
+  flex-shrink: 0;
+  margin-top: 3px;
+  color: var(--ic-gold);
+}
+.consent-status strong {
+  color: var(--ic-text);
+  font-weight: 500;
+}
+.restore p {
+  margin: 0;
+  max-width: 60ch;
+}
+
+/* The confirm step. Inline rather than a dialog: leaving must stay cheap, and
+   the second click is still only the second click. */
+.consent-confirm {
+  display: inline-flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 14px;
+  padding: 7px 12px;
+  border: 1px solid var(--ic-negative);
+  background: var(--ic-well);
+}
+/* The only red in the interface, spent on the only irreversible-looking
+   action. It is not actually irreversible — the owner can restore it — but it
+   should still never be pressed by accident. */
+.consent-danger {
+  border: 0;
+  background: none;
+  padding: 4px 0;
+  color: var(--ic-negative);
+  cursor: pointer;
+  font-family: inherit;
+  font-weight: 700;
+}
+.consent-danger:hover:not(:disabled) {
+  color: #ff5a5a;
+}
+
 /* Quiet, but never hidden and never more than one click away. */
 .consent-remove {
   background: none;

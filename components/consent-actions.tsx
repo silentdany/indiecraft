@@ -12,12 +12,15 @@ import { capture } from './posthog-provider'
  *   not signed in  → one link: prove you are this person.
  *   signed in, someone else's sheet → nothing to offer, and it says so.
  *   signed in, yours, unclaimed → claim, or remove.
- *   signed in, yours, claimed → unclaim, or remove.
+ *   signed in, yours, claimed → says so plainly, then unclaim or remove.
  *
- * Claiming is the growth loop, so it gets the solid amber block. Removal stays
- * one click and never becomes a form — the spec's rule is about how few steps
- * leaving costs, and it survives sign-in intact because the person is already
- * signed in by the time they see the button.
+ * Removal asks once before it happens. It used to fire on the first click,
+ * which is defensible for a right somebody should never have to fight for —
+ * until the first person to claim a sheet removed it by accident a minute
+ * later. One click is a promise about how FEW steps leaving costs, not a
+ * promise to act before the person has finished reading the button. The
+ * confirm is inline, needs no dialog, and the second click is still the
+ * second click.
  */
 export function ConsentActions({
   handle,
@@ -32,6 +35,7 @@ export function ConsentActions({
   enabled: boolean
 }) {
   const [state, setState] = useState<'idle' | 'working' | 'removed' | 'error'>('idle')
+  const [confirming, setConfirming] = useState(false)
 
   if (!enabled) return null
 
@@ -50,8 +54,14 @@ export function ConsentActions({
     location.reload()
   }
 
-  if (state === 'removed')
-    return <p className="muted">Sheet removed. It is gone from the ladder.</p>
+  if (state === 'removed') {
+    return (
+      <p className="muted">
+        Sheet removed. It is gone from the ladder. Signing in again on this URL will offer it back —
+        nothing is deleted.
+      </p>
+    )
+  }
 
   if (!viewer) {
     return (
@@ -86,36 +96,80 @@ export function ConsentActions({
   }
 
   return (
-    <div className="consent">
-      {claimed ? (
-        <button
-          type="button"
-          onClick={() => act('unclaim')}
-          disabled={state === 'working'}
-          className="consent-remove label"
-        >
-          Unclaim — make this sheet unlisted again
-        </button>
-      ) : (
-        <button
-          type="button"
-          onClick={() => act('claim')}
-          disabled={state === 'working'}
-          className="consent-claim serif"
-        >
-          <Icon name="crest" size={16} />
-          This is me — claim this sheet
-        </button>
-      )}
-      <button
-        type="button"
-        onClick={() => act('opt_out')}
-        disabled={state === 'working'}
-        className="consent-remove label"
-      >
-        {state === 'working' ? 'Working…' : 'Remove my sheet'}
-      </button>
-      {state === 'error' && <span className="muted">Failed. Try again.</span>}
+    <div className="consent-own">
+      {/* Who you are and what this sheet is, before any button. Somebody who
+          has just signed in should not have to infer either from the fact that
+          a "Remove" button appeared. */}
+      <p className="consent-status">
+        <Icon name="crest" size={15} />
+        <span>
+          Signed in as <strong>@{viewer}</strong> — this is your sheet
+          {claimed ? (
+            <>
+              , and it is <strong className="gold">claimed</strong>. It is public, indexed and
+              linked from the ladder.
+            </>
+          ) : (
+            <>
+              . It is <strong>not claimed</strong> yet, so it stays unlisted and out of search.
+            </>
+          )}
+        </span>
+      </p>
+
+      <div className="consent">
+        {claimed ? (
+          <button
+            type="button"
+            onClick={() => act('unclaim')}
+            disabled={state === 'working'}
+            className="consent-remove label"
+          >
+            Unclaim — make it unlisted again
+          </button>
+        ) : (
+          <button
+            type="button"
+            onClick={() => act('claim')}
+            disabled={state === 'working'}
+            className="consent-claim serif"
+          >
+            <Icon name="crest" size={16} />
+            This is me — claim this sheet
+          </button>
+        )}
+
+        {confirming ? (
+          <span className="consent-confirm">
+            <span className="label">Remove this sheet from the armory?</span>
+            <button
+              type="button"
+              onClick={() => act('opt_out')}
+              disabled={state === 'working'}
+              className="consent-danger label"
+            >
+              {state === 'working' ? 'Removing…' : 'Yes, remove it'}
+            </button>
+            <button
+              type="button"
+              onClick={() => setConfirming(false)}
+              className="consent-remove label"
+            >
+              Cancel
+            </button>
+          </span>
+        ) : (
+          <button
+            type="button"
+            onClick={() => setConfirming(true)}
+            className="consent-remove label"
+          >
+            Remove my sheet
+          </button>
+        )}
+
+        {state === 'error' && <span className="muted">Failed. Try again.</span>}
+      </div>
     </div>
   )
 }

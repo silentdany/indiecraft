@@ -700,6 +700,24 @@ export const getLastComputedAt = cache(async (): Promise<string | null> => {
 })
 
 /**
+ * Was this sheet removed, rather than never existing?
+ *
+ * A removed sheet 404s to the world, which is the point — but it also 404s to
+ * the person who removed it, so somebody who clicks the button by mistake has
+ * nowhere to go. This is the one query allowed to see past `opted_out_at`, and
+ * the page that uses it shows nothing about the founder: only that a sheet was
+ * removed, and only to somebody signed in as that exact handle.
+ */
+export async function wasRemoved(rawHandle: string): Promise<boolean> {
+  const sql = db()
+  const handle = rawHandle.replace(/^@/, '').toLowerCase()
+  const [row] = await sql<{ removed: boolean }[]>`
+    select opted_out_at is not null as removed from founders where handle = ${handle}
+  `
+  return row?.removed ?? false
+}
+
+/**
  * Handles that belong in the sitemap.
  *
  * Claimed only, and that is the whole point: an unclaimed sheet is `noindex`,

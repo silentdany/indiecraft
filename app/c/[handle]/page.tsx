@@ -7,6 +7,7 @@ import { Frame } from '@/components/frame'
 import { GearItem } from '@/components/gear-item'
 import { ACHIEVEMENT_ICONS, Icon } from '@/components/icon'
 import { JsonLd } from '@/components/json-ld'
+import { RestoreSheet } from '@/components/restore-sheet'
 import { ShareSheet } from '@/components/share-sheet'
 import {
   HistoryPanel,
@@ -21,7 +22,7 @@ import { ViewTracker } from '@/components/view-tracker'
 import { ACHIEVEMENTS, ACHIEVEMENTS_BY_CODE, CLASS_COLORS, CLASS_REASONS } from '@/engine'
 import { sessionHandle } from '@/lib/auth'
 import { consentActionsEnabled } from '@/lib/consent'
-import { getCharacter } from '@/lib/queries'
+import { getCharacter, wasRemoved } from '@/lib/queries'
 import { realmLabel } from '@/lib/realm'
 
 export const revalidate = 300
@@ -60,8 +61,28 @@ export default async function CharacterSheet({ params }: Props) {
   const { handle } = await params
   const character = await getCharacter(handle)
 
-  // Opt-out is applied immediately: opted_out_at → 404, not a grey page.
-  if (!character) notFound()
+  if (!character) {
+    /*
+     * Removal is still a 404 to the world — that part does not soften.
+     *
+     * But it was also a 404 to the person who removed it, which made an
+     * accidental click permanent: no page left to change your mind on. Signed
+     * in as this exact handle, and only then, the 404 becomes a way back.
+     */
+    const viewer = await sessionHandle()
+    if (viewer && viewer === handle.replace(/^@/, '').toLowerCase() && (await wasRemoved(handle))) {
+      return (
+        <main className="page">
+          <header className="page-head">
+            <h1 className="serif gold">SHEET REMOVED</h1>
+          </header>
+          <RestoreSheet handle={viewer} viewer={viewer} />
+        </main>
+      )
+    }
+    // Opt-out is applied immediately: opted_out_at → 404, not a grey page.
+    notFound()
+  }
 
   const { rarity, claimed } = character
   const earnedCodes = new Set(character.achievements.map((a) => a.code))

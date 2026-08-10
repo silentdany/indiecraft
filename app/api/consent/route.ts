@@ -76,9 +76,12 @@ export async function POST(request: Request) {
 
   let changed = 0
   if (action === 'claim') {
+    // Claiming also undoes a removal, and that is the only way back: a removed
+    // sheet 404s, so its owner cannot reach the page to change their mind.
+    // Only the person who can sign in as this handle can do it.
     const result = await sql`
-      update founders set claimed_at = coalesce(claimed_at, now())
-      where handle = ${handle} and opted_out_at is null
+      update founders set claimed_at = coalesce(claimed_at, now()), opted_out_at = null
+      where handle = ${handle}
     `
     changed = result.count
   } else if (action === 'unclaim') {
