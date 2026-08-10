@@ -137,34 +137,83 @@ export async function computeAll(sql: postgres.Sql): Promise<ComputeReport> {
       `
     }
 
-    for (const sheet of sheets) {
-      const products = byFounder.get(sheet.handle) ?? []
-      const aggregate = aggregateFounder(sheet.handle, products)
-
+    /*
+     * Batched, not one founder at a time.
+     *
+     * The achievements insert below already carried the note that a per-code
+     * loop was "ruinous over a network hop" — and the two statements around it
+     * were still doing exactly that per FOUNDER. At 144 founders that is 7.7
+     * seconds and invisible. Discovering the other 97% of TrustMRR takes the
+     * corpus to a few thousand, where three round trips each is four minutes
+     * against a 300-second function ceiling: a cliff nobody would see coming
+     * until the night it fell off.
+     *
+     * Chunked at 1,000 rows because Postgres allows 65,535 bind parameters per
+     * statement, and `characters` binds thirteen columns — 5,000 founders in
+     * one statement is 65,000 and the failure would arrive exactly when the
+     * corpus got interesting.
+     */
+    const founderRows = sheets.map((sheet) => {
       // xFounderName and xProfilePicture give a real name and a real face —
       // both absent from the spec, both present in every live response.
       const identity = identities.get(sheet.handle)
+      return {
+        handle: sheet.handle,
+        display_name: identity?.name ?? null,
+        avatar_url: identity?.avatar ?? null,
+      }
+    })
+
+    for (const rows of chunk(founderRows, 1000)) {
       await tx`
-        insert into founders (handle, display_name, avatar_url)
-        values (${sheet.handle}, ${identity?.name ?? null}, ${identity?.avatar ?? null})
+        insert into founders ${tx(rows, 'handle', 'display_name', 'avatar_url')}
         on conflict (handle) do update set
           display_name = coalesce(excluded.display_name, founders.display_name),
           avatar_url   = coalesce(excluded.avatar_url, founders.avatar_url)
       `
+    }
 
-      // previous_level / leveled_at only move on a real level-up: that is what
-      // drives the "DING!" variant of the OG image.
+    const characterRows = sheets.map((sheet) => {
+      const aggregate = aggregateFounder(sheet.handle, byFounder.get(sheet.handle) ?? [])
+      return {
+        handle: sheet.handle,
+        xp: sheet.xp,
+        level: sheet.level,
+        ilvl: sheet.ilvl,
+        class: sheet.class,
+        realm: sheet.realm,
+        faction: sheet.faction,
+        n_products: sheet.nProducts,
+        mrr_cents: Math.round(aggregate.mrrUsd * 100),
+        revenue_total_cents: Math.round(aggregate.revenueTotalUsd * 100),
+        customers: aggregate.customers,
+        active_subscriptions: aggregate.activeSubscriptions,
+        growth_mrr_30d: aggregate.growthMrr30d,
+      }
+    })
+
+    // previous_level / leveled_at only move on a real level-up: that is what
+    // drives the "DING!" variant of the OG image. The CASE reads `excluded`
+    // against the existing row, which holds per-row inside a multi-row insert
+    // exactly as it did one at a time.
+    for (const rows of chunk(characterRows, 1000)) {
       await tx`
-        insert into characters (
-          handle, xp, level, ilvl, class, realm, faction, n_products, mrr_cents,
-          revenue_total_cents, customers, active_subscriptions, growth_mrr_30d
-        ) values (
-          ${sheet.handle}, ${sheet.xp}, ${sheet.level}, ${sheet.ilvl}, ${sheet.class},
-          ${sheet.realm}, ${sheet.faction},
-          ${sheet.nProducts}, ${Math.round(aggregate.mrrUsd * 100)},
-          ${Math.round(aggregate.revenueTotalUsd * 100)}, ${aggregate.customers},
-          ${aggregate.activeSubscriptions}, ${aggregate.growthMrr30d}
-        )
+        insert into characters ${tx(
+          rows,
+          'handle',
+          'xp',
+          'level',
+          'ilvl',
+          'class',
+          'realm',
+          'faction',
+          'n_products',
+          'mrr_cents',
+          'revenue_total_cents',
+          'customers',
+          'active_subscriptions',
+          'growth_mrr_30d',
+        )}
         on conflict (handle) do update set
           xp = excluded.xp,
           level = excluded.level,
@@ -186,21 +235,19 @@ export async function computeAll(sql: postgres.Sql): Promise<ComputeReport> {
             else characters.leveled_at end,
           computed_at = now()
       `
+    }
 
-      // Append-only: an earned achievement is never lost, even if the condition
-      // becomes false again. Hence do nothing — never a delete.
-      //
-      // One multi-row insert rather than one per code. A founder carries a
-      // dozen achievements, so the loop was ~1,700 round trips across the
-      // corpus — survivable on a local socket, ruinous over a network hop.
-      if (sheet.achievements.length > 0) {
-        const rows = sheet.achievements.map((code) => ({ handle: sheet.handle, code }))
-        const result = await tx`
-          insert into character_achievements ${tx(rows, 'handle', 'code')}
-          on conflict (handle, code) do nothing
-        `
-        achievementsGranted += result.count
-      }
+    // Append-only: an earned achievement is never lost, even if the condition
+    // becomes false again. Hence do nothing — never a delete.
+    const achievementRows = sheets.flatMap((sheet) =>
+      sheet.achievements.map((code) => ({ handle: sheet.handle, code })),
+    )
+    for (const rows of chunk(achievementRows, 1000)) {
+      const result = await tx`
+        insert into character_achievements ${tx(rows, 'handle', 'code')}
+        on conflict (handle, code) do nothing
+      `
+      achievementsGranted += result.count
     }
 
     // Both of these are one statement each, for the same reason as above.
@@ -314,6 +361,17 @@ function businessTypeOf(raw: TrustmrrStartup): string | null {
   const value = isString(insight) ? insight : isString(audience) ? audience : null
   // 'Unknown' is a real value in the payload and it is not an answer.
   return value === 'Unknown' ? null : value
+}
+
+/**
+ * Postgres binds at most 65,535 parameters per statement, and a `characters`
+ * row costs thirteen of them. Chunking is what stops the corpus growing into a
+ * hard failure.
+ */
+function chunk<T>(items: T[], size: number): T[][] {
+  const out: T[][] = []
+  for (let i = 0; i < items.length; i += size) out.push(items.slice(i, i + size))
+  return out
 }
 
 /** Every normalized pair a < b, for an undirected graph without duplicates. */
