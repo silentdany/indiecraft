@@ -1914,12 +1914,68 @@ a:hover {
    The one action the whole product is measured on, so it gets the solid amber
    block and sits directly under the identity block rather than in a footer. */
 
+/* The card first, the words beside it, the buttons under those. Nobody shares
+   a thing they cannot see, and the card is the reason this product exists. */
 .share {
+  display: flex;
+  align-items: flex-start;
+  flex-wrap: wrap;
+  gap: 18px;
+  margin-top: 16px;
+}
+
+.share-preview {
+  flex: 0 0 auto;
+  width: 300px;
+  max-width: 100%;
+  border: 1px solid var(--ic-line-2);
+  line-height: 0;
+}
+.share-preview:hover {
+  border-color: var(--ic-gold);
+}
+.share-preview img {
+  width: 100%;
+  height: auto;
+}
+
+.share-compose {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 16px;
+  flex: 1 1 300px;
+  min-width: 0;
+  /* Matches the preview so the two columns end level at desktop width. */
+  min-height: 157px;
+}
+
+/* Set as the post will read, not as interface chrome: this is a sentence
+   somebody is about to put their name to. */
+.share-text {
+  margin: 0;
+  font-size: 16px;
+  line-height: 1.45;
+  color: var(--ic-text);
+}
+
+.share-actions {
   display: flex;
   align-items: center;
   flex-wrap: wrap;
-  gap: 14px;
-  margin-top: 16px;
+  gap: 16px;
+}
+
+@media (max-width: 620px) {
+  /* The preview goes full width rather than shrinking into a stamp — at 300px
+     it is already at the edge of showing the level, and below that it stops
+     being a preview and becomes decoration. */
+  .share-preview {
+    width: 100%;
+  }
+  .share-compose {
+    min-height: 0;
+  }
 }
 
 /* --- The badge block ------------------------------------------------------

@@ -22,6 +22,7 @@ import { ACHIEVEMENTS, ACHIEVEMENTS_BY_CODE, CLASS_COLORS, CLASS_REASONS } from 
 import { sessionHandle } from '@/lib/auth'
 import { consentActionsEnabled } from '@/lib/consent'
 import { getCharacter } from '@/lib/queries'
+import { realmLabel } from '@/lib/realm'
 
 export const revalidate = 300
 
@@ -212,7 +213,30 @@ export default async function CharacterSheet({ params }: Props) {
         level={character.level}
         ilvl={character.ilvl}
         characterClass={character.characterClass}
-        rank={character.rank}
+        facts={{
+          level: character.level,
+          ilvl: character.ilvl,
+          characterClass: character.characterClass,
+          rank: character.rank,
+          total: character.rankContext?.total ?? 0,
+          classRank: character.rankContext?.classRank ?? 0,
+          classTotal: character.rankContext?.classTotal ?? 0,
+          realm: character.rankContext?.realmRank
+            ? {
+                name: realmLabel(character.rankContext.realmRank.realm),
+                rank: character.rankContext.realmRank.rank,
+                total: character.rankContext.realmRank.total,
+              }
+            : null,
+          achievements: character.achievements.length,
+          achievementsTotal: ACHIEVEMENTS.length,
+          recentLevelUp: character.recentLevelUp?.level ?? null,
+          recentAchievement: character.recentAchievement
+            ? (ACHIEVEMENTS_BY_CODE.get(character.recentAchievement.code)?.label ?? null)
+            : null,
+          growthMrr30d: character.stats.growthMrr30d,
+          mrrUsd: character.mrrUsd,
+        }}
       />
 
       {character.rankContext && (

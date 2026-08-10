@@ -10,6 +10,7 @@ import {
   FACTIONS_BY_KEY,
   rarityFor,
 } from '@/engine'
+import { ogImageId } from '@/lib/og-image'
 import type { CharacterPage } from '@/lib/queries'
 import { getCharacter } from '@/lib/queries'
 import { realmLabel } from '@/lib/realm'
@@ -77,7 +78,7 @@ export async function generateImageMetadata({ params }: { params: { handle: stri
   const character = await getCharacter(params.handle).catch(() => null)
   return [
     {
-      id: character ? `${character.level}-${character.ilvl ?? 'na'}` : 'card',
+      id: character ? ogImageId(character.level, character.ilvl) : 'card',
       alt: character
         ? `${character.displayName} — level ${character.level} ${character.characterClass}`
         : alt,
