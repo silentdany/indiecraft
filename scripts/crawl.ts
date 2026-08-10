@@ -46,28 +46,28 @@ import {
 } from '../lib/trustmrr'
 
 /**
- * Seconds a slug actually costs.
+ * Seconds a slug actually costs. Measured: 20 slugs in 155s, no failures.
  *
  * The API allows 10 requests a minute and says so in its headers, so a slug
- * cannot cost less than six seconds however the client is written. Add the
- * request itself and a Postgres round trip and it lands near seven.
+ * cannot cost less than six seconds however the client is written. The request
+ * and a Postgres round trip make up the rest.
  *
- * It used to be ten, measured, and the extra three seconds were pure waste: the
- * client paced at 4s, ran 50% over quota, and paid a 65-second backoff every
- * time it tripped. Obeying the published limit made the crawl faster.
+ * It used to be ten, also measured, and the extra two seconds were pure waste:
+ * the client paced at 4s, ran 50% over quota, and paid a 65-second backoff
+ * every time it tripped. Obeying the published limit made the crawl faster.
  */
-const SECONDS_PER_SLUG = 7
+const SECONDS_PER_SLUG = 7.8
 
 /**
  * How many slugs one nightly run may collect.
  *
- * 1,250 × 7s is about 145 minutes, inside the workflow's 180-minute ceiling
+ * 1,100 × 7.8s is about 143 minutes, inside the workflow's 180-minute ceiling
  * with room for install, schema and the compute trigger. The corpus is ~9,000,
  * so full coverage takes a week of nights and then keeps rotating — a run that
- * tried to take all of it at once would need eighteen hours, be killed at
- * three, and never reach the compute step.
+ * tried to take all of it at once would need twenty hours, be killed at three,
+ * and never reach the compute step.
  */
-const DEFAULT_BUDGET = 1_250
+const DEFAULT_BUDGET = 1_100
 
 interface Options {
   limit?: number
