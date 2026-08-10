@@ -139,6 +139,17 @@ create index if not exists characters_faction_idx on characters (faction);
 create index if not exists characters_ladder_order_idx
   on characters (level desc, ilvl desc nulls last, handle);
 
+-- Read by nothing but the achievement progress bars, which is why they are
+-- nullable and carry no defaults that would read as a claim: a founder whose
+-- listing never reported a margin has null, not 0%. See the same distinction in
+-- `hasRetentionSignal`.
+alter table characters add column if not exists visitors_30d          int;
+alter table characters add column if not exists categories            int;
+alter table characters add column if not exists stack_size            int;
+alter table characters add column if not exists profit_margin_30d     numeric;
+alter table characters add column if not exists google_impressions_30d bigint;
+alter table characters add column if not exists products_earning      int;
+
 -- Prefix search on a handle, case-insensitively: `ilike 'dany%'` can walk this,
 -- and `ilike '%dany%'` cannot walk anything without pg_trgm. Not adding the
 -- extension yet — infix over sixteen hundred short rows is a scan of well under

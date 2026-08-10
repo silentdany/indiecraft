@@ -1378,6 +1378,9 @@ a.pager-num:hover {
   gap: 8px;
 }
 .ach-card {
+  /* Each card names its own quality colour; gold is only the fallback for a
+     code the engine no longer defines. */
+  --ach-color: var(--ic-gold);
   display: flex;
   align-items: flex-start;
   gap: 10px;
@@ -1391,7 +1394,8 @@ a.pager-num:hover {
 .ach-icon {
   width: 32px;
   height: 32px;
-  color: var(--ic-gold);
+  color: var(--ach-color);
+  border-color: color-mix(in srgb, var(--ach-color) 45%, transparent);
 }
 
 /* `flex: 1` is what makes the progress bars mean anything. Without it the body
@@ -1409,7 +1413,7 @@ a.pager-num:hover {
 }
 .ach-title {
   font-size: 13px;
-  color: var(--ic-gold);
+  color: var(--ach-color);
 }
 .ach-desc {
   margin-top: 2px;
@@ -1420,6 +1424,36 @@ a.pager-num:hover {
 /* Not yet earned. Dim enough to read as the back half of the set, never so dim
    it looks broken — and never styled as failure: every one of these is phrased
    as something to gain. */
+.ach-more {
+  margin-top: 10px;
+}
+.ach-more > summary {
+  cursor: pointer;
+  padding: 7px 0;
+  color: var(--ic-text-muted);
+  list-style: none;
+}
+.ach-more > summary::-webkit-details-marker {
+  display: none;
+}
+/* A caret that turns, rather than the browser's default triangle, which is the
+   one piece of native chrome on the page that would not match anything. */
+.ach-more > summary::before {
+  content: "▸";
+  display: inline-block;
+  margin-right: 8px;
+  transition: transform 120ms ease;
+}
+.ach-more[open] > summary::before {
+  transform: rotate(90deg);
+}
+.ach-more > summary:hover {
+  color: var(--ic-gold);
+}
+.ach-more[open] > summary {
+  margin-bottom: 4px;
+}
+
 .ach-locked-head {
   margin: 22px 0 8px;
 }
@@ -1430,7 +1464,10 @@ a.pager-num:hover {
   border-style: dashed;
 }
 .ach-locked .ach-title {
-  color: var(--ic-text-muted);
+  /* Its own colour, at half strength: a locked legendary should still read as
+     a legendary. Flattening every locked title to grey was fine at fifteen
+     achievements and throws away the whole point at thirty-five. */
+  color: color-mix(in srgb, var(--ach-color) 55%, var(--ic-text-muted));
 }
 .ach-locked .ach-icon {
   opacity: 0.45;

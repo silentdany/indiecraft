@@ -153,6 +153,15 @@ interface CharacterRow {
   customers: number
   active_subscriptions: number
   growth_mrr_30d: string | null
+  /* Achievement progress only, and all nullable: they were added after the
+     table existed, so a row that has not been recomputed since carries nulls
+     rather than zeroes. */
+  visitors_30d: number | null
+  categories: number | null
+  stack_size: number | null
+  profit_margin_30d: string | null
+  google_impressions_30d: string | null
+  products_earning: number | null
   previous_level: number | null
   leveled_at: Date | string | null
 }
@@ -173,6 +182,8 @@ export const getCharacter = cache(async (rawHandle: string): Promise<CharacterPa
            c.xp, c.level, c.ilvl, c.class, c.realm, c.faction,
            c.n_products, c.mrr_cents, c.revenue_total_cents,
            c.customers, c.active_subscriptions, c.growth_mrr_30d,
+           c.visitors_30d, c.categories, c.stack_size, c.profit_margin_30d,
+           c.google_impressions_30d, c.products_earning,
            c.previous_level, c.leveled_at
     from characters c
     join founders f on f.handle = c.handle
@@ -445,6 +456,16 @@ export const getCharacter = cache(async (rawHandle: string): Promise<CharacterPa
       domainRating,
       level,
       cofounders: edges.length,
+      // Null here means the column predates this founder's last compute, not
+      // that the value is zero — but a progress bar has to draw something, and
+      // the next nightly run fills them in. Only profitMargin keeps its null,
+      // because that one distinguishes "no margin reported" from "0% margin".
+      visitors30d: row.visitors_30d ?? 0,
+      categories: row.categories ?? 0,
+      stackSize: row.stack_size ?? 0,
+      profitMargin30d: row.profit_margin_30d === null ? null : Number(row.profit_margin_30d),
+      googleImpressions30d: Number(row.google_impressions_30d ?? 0),
+      productsEarning: row.products_earning ?? 0,
     },
     progress: {
       current,

@@ -1,6 +1,7 @@
 import Link from 'next/link'
+import type { CSSProperties } from 'react'
 import { ACHIEVEMENT_ICONS, Icon, type IconName } from '@/components/icon'
-import { ACHIEVEMENTS, CLASS_COLORS, FACTIONS_BY_KEY } from '@/engine'
+import { ACHIEVEMENTS, achievementRarityHex, CLASS_COLORS, FACTIONS_BY_KEY } from '@/engine'
 import type { AchievementProgressInput, CharacterClass } from '@/engine/types'
 import type { HistoryPoint, RankContext, SheetProfile, SheetStats } from '@/lib/queries'
 import { realmLabel } from '@/lib/realm'
@@ -202,33 +203,72 @@ export function LockedAchievements({
   // Closest first: the next one to fall is the interesting one.
   withProgress.sort((a, b) => (b.ratio ?? -1) - (a.ratio ?? -1))
 
+  /*
+   * Nine, then the rest behind a disclosure.
+   *
+   * There are thirty-five achievements now. A founder holding three would meet
+   * thirty-two locked cards below their own — a wall that buries the earned
+   * ones and reads as a list of failures rather than of things to go and get.
+   * Nine is three rows on desktop, and since the list is already sorted by how
+   * close each one is, those nine are the ones actually within reach.
+   *
+   * A <details> and not a button, so the rest are still in the HTML for anybody
+   * who wants them, still findable by the browser's own search, and still there
+   * with JavaScript off.
+   */
+  const NEAR = 9
+  const near = withProgress.slice(0, NEAR)
+  const far = withProgress.slice(NEAR)
+
   return (
     <>
       <p className="ach-locked-head label">Still to earn</p>
-      <ul className="ach ach-locked">
-        {withProgress.map(({ def, p, ratio }) => (
-          <li key={def.code} className="ach-card">
-            <span className="qsquare ach-icon">
-              <Icon name={ACHIEVEMENT_ICONS[def.code] ?? 'achievement'} size={17} />
-            </span>
-            <span className="ach-body">
-              <span className="ach-title serif">{def.label}</span>
-              <span className="ach-desc">{def.description}</span>
-              {p && ratio !== null && (
-                <span className="ach-progress">
-                  <span className="bar">
-                    <span style={{ width: `${Math.round(ratio * 100)}%` }} />
-                  </span>
-                  <span className="label">
-                    {fmt(p.current)} / {fmt(p.target)}
-                  </span>
-                </span>
-              )}
-            </span>
-          </li>
-        ))}
-      </ul>
+      <LockedList items={near} />
+      {far.length > 0 && (
+        <details className="ach-more">
+          <summary className="label">{far.length} further out</summary>
+          <LockedList items={far} />
+        </details>
+      )}
     </>
+  )
+}
+
+type LockedItem = {
+  def: (typeof ACHIEVEMENTS)[number]
+  p: { current: number; target: number } | null
+  ratio: number | null
+}
+
+function LockedList({ items }: { items: LockedItem[] }) {
+  return (
+    <ul className="ach ach-locked">
+      {items.map(({ def, p, ratio }) => (
+        <li
+          key={def.code}
+          className="ach-card"
+          style={{ '--ach-color': achievementRarityHex(def.rarity) } as CSSProperties}
+        >
+          <span className="qsquare ach-icon">
+            <Icon name={ACHIEVEMENT_ICONS[def.code] ?? 'achievement'} size={17} />
+          </span>
+          <span className="ach-body">
+            <span className="ach-title serif">{def.label}</span>
+            <span className="ach-desc">{def.description}</span>
+            {p && ratio !== null && (
+              <span className="ach-progress">
+                <span className="bar">
+                  <span style={{ width: `${Math.round(ratio * 100)}%` }} />
+                </span>
+                <span className="label">
+                  {fmt(p.current)} / {fmt(p.target)}
+                </span>
+              </span>
+            )}
+          </span>
+        </li>
+      ))}
+    </ul>
   )
 }
 

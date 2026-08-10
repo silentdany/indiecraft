@@ -379,21 +379,47 @@ export function Icon({
  * so adding an achievement in tuning.ts never breaks the sheet — it just looks
  * generic until somebody draws it one.
  */
+/**
+ * One glyph per achievement, reused where two badges measure the same thing at
+ * different heights — Ramen and Mythic are both MRR, and giving them different
+ * pictures would imply they are different kinds of accomplishment. The tiers
+ * are told apart by their names and their rarity, not by inventing a glyph.
+ */
 export const ACHIEVEMENT_ICONS: Record<string, IconName> = {
   first_blood: 'drop',
   the_thousand: 'coins',
+  ten_thousand: 'coins',
+  exalted: 'coins',
+  the_million: 'coins',
   ramen: 'bowl',
   raid_boss: 'crown',
+  mythic: 'crown',
+  legendary: 'crown',
   hundred_customers: 'crowd',
   thousand_customers: 'banner',
   multiboxer: 'stack',
   alt_king: 'stack',
   unkillable: 'shieldPulse',
   ascension: 'rising',
+  bloodlust: 'rising',
   veteran: 'hourglass',
+  old_guard: 'hourglass',
+  classic: 'hourglass',
   lone_wolf: 'lone',
   guilded: 'linked',
   authority: 'beacon',
+  renowned: 'beacon',
+  summoned: 'beacon',
+  server_full: 'crowd',
+  mercenary: 'Both',
+  ironman: 'shieldPulse',
+  companion: 'characters',
+  dual_spec: 'stack',
+  tinker: 'gear',
+  alchemist: 'drop',
+  auction_house: 'coins',
+  clean_sweep: 'gear',
+  realm_first: 'realm',
   ding_sixty: 'ring',
 }
 

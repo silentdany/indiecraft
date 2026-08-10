@@ -26,6 +26,15 @@ export interface ProductInput {
   country: string | null
   /** startupInsights.businessType, falling back to targetAudience. */
   businessType: string | null
+  /* --- Achievement-only. Nothing below feeds a level, a class or a rank. --- */
+  /** e.g. 'Artificial Intelligence'. */
+  category: string | null
+  isMobileApp: boolean
+  /** Percentage, 0–100. */
+  profitMargin30d: number | null
+  googleImpressions30d: number | null
+  /** Set once by TrustMRR and never cleared, so it survives a delisting. */
+  listedForSaleAt: string | null
 }
 
 /**
@@ -75,6 +84,20 @@ export interface FounderAggregate {
   stack: string[]
   cofounders: string[]
   fundingStatuses: string[]
+  /* --- Achievement-only, all summed or folded across the founder's products.
+     Kept apart from the block above because none of it is allowed to reach the
+     level, the class or the ladder: a badge may read a thin field, a ranking
+     may not. --- */
+  visitors30d: number
+  /** Distinct `category` values across the products. */
+  categories: string[]
+  hasMobileApp: boolean
+  /** Best margin across the products, percent. Null when none reported one. */
+  profitMargin30d: number | null
+  googleImpressions30d: number
+  everListedForSale: boolean
+  /** Two products or more, every one of them earning. */
+  allProductsEarning: boolean
   /**
    * Realm and faction: where they build, and who they sell to.
    *
@@ -121,13 +144,36 @@ export interface AchievementProgressInput {
   domainRating: number | null
   level: number
   cofounders: number
+  /* The numeric achievement fields, so a locked badge can show a bar rather
+     than a blank. The boolean ones — a mobile app, a listing, a faction — have
+     no bar to show and are absent on purpose. */
+  visitors30d: number
+  categories: number
+  stackSize: number
+  profitMargin30d: number | null
+  googleImpressions30d: number
+  productsEarning: number
 }
+
+/** The five quality tiers, by name. The hexes live in RARITY_BANDS. */
+export type RarityName = 'common' | 'uncommon' | 'rare' | 'epic' | 'legendary'
 
 export interface AchievementDef {
   code: string
   label: string
   /** Always phrased positively. Test: would this person be happy to screenshot it? */
   description: string
+  /**
+   * Quality, in the same five tiers as a level and an item.
+   *
+   * Set here rather than computed from how many people hold it, which was the
+   * obvious idea and the wrong one: a share that moves with the corpus means a
+   * founder's epic quietly becomes a rare when enough others catch up, and
+   * every badge on this site is supposed to be a thing that cannot be taken
+   * away. Fixed like an item's quality — calibrated against the corpus once,
+   * with the share of the day recorded beside each one.
+   */
+  rarity: RarityName
   test: (a: FounderAggregate, level: number) => boolean
   /**
    * How close they are, when that is a fair thing to show.

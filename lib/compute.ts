@@ -1,6 +1,6 @@
 import type postgres from 'postgres'
 import { aggregateFounder, computeCharacter } from '@/engine'
-import { FUNDING_POLICY } from '@/engine/tuning'
+import { FUNDING_POLICY, REALM_FIRST_CODE, REALM_FIRST_MIN_SIZE } from '@/engine/tuning'
 import type { ProductInput } from '@/engine/types'
 import { normalizeRealm } from '@/lib/realm'
 import { centsToUsd, normalizeHandle, type TrustmrrStartup } from '@/lib/trustmrr'
@@ -149,9 +149,9 @@ export async function computeAll(sql: postgres.Sql): Promise<ComputeReport> {
      * until the night it fell off.
      *
      * Chunked at 1,000 rows because Postgres allows 65,535 bind parameters per
-     * statement, and `characters` binds thirteen columns — 5,000 founders in
-     * one statement is 65,000 and the failure would arrive exactly when the
-     * corpus got interesting.
+     * statement, and `characters` binds nineteen columns — 3,400 founders in
+     * one statement would reach the ceiling, and the failure would arrive
+     * exactly when the corpus got interesting.
      */
     const founderRows = sheets.map((sheet) => {
       // xFounderName and xProfilePicture give a real name and a real face —
@@ -189,6 +189,13 @@ export async function computeAll(sql: postgres.Sql): Promise<ComputeReport> {
         customers: aggregate.customers,
         active_subscriptions: aggregate.activeSubscriptions,
         growth_mrr_30d: aggregate.growthMrr30d,
+        // Achievement progress only. Nothing below reaches a level or a rank.
+        visitors_30d: aggregate.visitors30d,
+        categories: aggregate.categories.length,
+        stack_size: aggregate.stack.length,
+        profit_margin_30d: aggregate.profitMargin30d,
+        google_impressions_30d: aggregate.googleImpressions30d,
+        products_earning: (byFounder.get(sheet.handle) ?? []).filter((p) => p.mrrUsd > 0).length,
       }
     })
 
@@ -213,6 +220,12 @@ export async function computeAll(sql: postgres.Sql): Promise<ComputeReport> {
           'customers',
           'active_subscriptions',
           'growth_mrr_30d',
+          'visitors_30d',
+          'categories',
+          'stack_size',
+          'profit_margin_30d',
+          'google_impressions_30d',
+          'products_earning',
         )}
         on conflict (handle) do update set
           xp = excluded.xp,
@@ -227,6 +240,12 @@ export async function computeAll(sql: postgres.Sql): Promise<ComputeReport> {
           customers = excluded.customers,
           active_subscriptions = excluded.active_subscriptions,
           growth_mrr_30d = excluded.growth_mrr_30d,
+          visitors_30d = excluded.visitors_30d,
+          categories = excluded.categories,
+          stack_size = excluded.stack_size,
+          profit_margin_30d = excluded.profit_margin_30d,
+          google_impressions_30d = excluded.google_impressions_30d,
+          products_earning = excluded.products_earning,
           previous_level = case
             when excluded.level > characters.level then characters.level
             else characters.previous_level end,
@@ -296,6 +315,44 @@ export async function computeAll(sql: postgres.Sql): Promise<ComputeReport> {
         ilvl      = excluded.ilvl,
         mrr_cents = excluded.mrr_cents
     `
+
+    /*
+     * Realm First!, the one achievement no `test` can decide.
+     *
+     * Every other badge is a property of one founder and is computed by the
+     * pure engine. This one is a property of a RANKING: whether you are top of
+     * your realm depends entirely on everybody else, so it has to run here,
+     * after `characters` is written, in the same statement style as the ladder
+     * above it.
+     *
+     * The floor is the whole design. Without it there are 73 winners, because
+     * 54 realms hold exactly one founder — and being first on a realm of one is
+     * a rounding error with a medal. At ten it is 19 realms, all contested.
+     *
+     * Append-only like every other achievement: whoever gets there first keeps
+     * it when somebody overtakes them. That is a deliberate reading of "an
+     * earned achievement is never lost" and it matches the game — a server
+     * first is a historical fact, not a current standing.
+     */
+    const realmFirst = await tx`
+      with sized as (
+        select c.realm, count(*)::int as n
+        from characters c
+        join founders f on f.handle = c.handle
+        where f.opted_out_at is null and c.realm is not null
+        group by c.realm
+        having count(*) >= ${REALM_FIRST_MIN_SIZE}
+      )
+      insert into character_achievements (handle, code)
+      select distinct on (c.realm) c.handle, ${REALM_FIRST_CODE}
+      from characters c
+      join founders f on f.handle = c.handle
+      join sized s on s.realm = c.realm
+      where f.opted_out_at is null
+      order by c.realm, c.level desc, c.ilvl desc nulls last, c.handle
+      on conflict (handle, code) do nothing
+    `
+    achievementsGranted += realmFirst.count
 
     // Last, and load-bearing: replay what people asked for on top of what we
     // crawled. opted_out_at and claimed_at are the only two values here that no
@@ -382,7 +439,18 @@ function toProduct(row: SnapshotRow): ProductInput {
     // present on 65% of listings against the audience field's 55%. Taking
     // either one alone throws away founders the other would have placed.
     businessType: businessTypeOf(raw),
+    category: raw.category ?? null,
+    isMobileApp: raw.isMobileApp === true,
+    profitMargin30d: numberOrNull(raw.profitMarginLast30Days),
+    googleImpressions30d: numberOrNull(raw.googleSearchImpressionsLast30Days),
+    listedForSaleAt: raw.firstListedForSaleAt ?? null,
   }
+}
+
+/** Guards against the API sending a numeric field as a string or as NaN. */
+function numberOrNull(value: unknown): number | null {
+  const n = Number(value)
+  return value === null || value === undefined || Number.isNaN(n) ? null : n
 }
 
 function businessTypeOf(raw: TrustmrrStartup): string | null {

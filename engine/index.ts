@@ -14,6 +14,7 @@ export type { FactionDef } from './tuning'
 export {
   ACHIEVEMENTS,
   ACHIEVEMENTS_BY_CODE,
+  achievementRarityHex,
   CLASS_COLORS,
   CLASS_REASONS,
   FACTIONS,
@@ -22,6 +23,7 @@ export {
   LEVEL_THRESHOLDS,
   MAX_LEVEL,
   RARITY_BANDS,
+  RARITY_BY_NAME,
 } from './tuning'
 export type {
   AchievementDef,
@@ -31,4 +33,5 @@ export type {
   FounderAggregate,
   ProductInput,
   Rarity,
+  RarityName,
 } from './types'

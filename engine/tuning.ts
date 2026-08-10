@@ -14,7 +14,14 @@
  * bug.
  */
 
-import type { AchievementDef, CharacterClass, Faction, FounderAggregate, Rarity } from './types'
+import type {
+  AchievementDef,
+  CharacterClass,
+  Faction,
+  FounderAggregate,
+  Rarity,
+  RarityName,
+} from './types'
 
 // ---------------------------------------------------------------------------
 // 1. XP
@@ -85,6 +92,23 @@ export const RARITY_BANDS: readonly { minLevel: number; rarity: Rarity }[] = [
   { minLevel: 10, rarity: { name: 'uncommon', hex: '#1eff00' } },
   { minLevel: 1, rarity: { name: 'common', hex: '#9d9d9d' } },
 ]
+
+/**
+ * The same five colours, addressable by name.
+ *
+ * A level looks its rarity up by number; an achievement carries the name
+ * outright, because how hard a badge is has nothing to do with anybody's level.
+ * One palette either way — the point of a quality colour is that it means the
+ * same thing everywhere it appears.
+ */
+export const RARITY_BY_NAME: ReadonlyMap<RarityName, Rarity> = new Map(
+  RARITY_BANDS.map((b) => [b.rarity.name as RarityName, b.rarity]),
+)
+
+/** Gold when a code is unknown, which only happens for a retired achievement. */
+export function achievementRarityHex(rarity: RarityName | undefined): string {
+  return (rarity && RARITY_BY_NAME.get(rarity)?.hex) || '#f8b700'
+}
 
 // ---------------------------------------------------------------------------
 // 5. TrustMRR vocabularies
@@ -477,10 +501,23 @@ const ageInMs = (iso: string | null): number =>
 /**
  * All computable from the API, all retroactive, all phrased positively.
  * An earned achievement is never lost, even if the condition becomes false.
+ *
+ * Every threshold here was set against the live corpus rather than picked for
+ * roundness, and the share of 1,157 founders holding each one is recorded
+ * beside it. A badge nobody can earn is decoration; a badge everybody has is
+ * wallpaper. The two useful bands are roughly 1% — worth screenshotting — and
+ * roughly 15% — worth working toward.
+ *
+ * The one exception is `realm_first`, which is not a property of a founder and
+ * cannot be tested here: it depends on everybody else's level. It is awarded in
+ * lib/compute.ts once the ladder exists, and appears in this list only so the
+ * sheet knows its name and description.
  */
 export const ACHIEVEMENTS: readonly AchievementDef[] = [
   {
     code: 'first_blood',
+    /** 76.1% of the corpus. */
+    rarity: 'common',
     label: 'First Blood',
     description: 'The first dollar earned.',
     test: (a) => a.revenueTotalUsd >= 1,
@@ -488,13 +525,46 @@ export const ACHIEVEMENTS: readonly AchievementDef[] = [
   },
   {
     code: 'the_thousand',
+    /** 41.3% of the corpus. */
+    rarity: 'common',
     label: 'The Thousand',
     description: '$1,000 in lifetime revenue.',
     test: (a) => a.revenueTotalUsd >= 1_000,
     progress: (p) => ({ current: p.revenueTotalUsd, target: 1_000 }),
   },
+  // The XP axis had exactly two rungs, $1 and $1,000, on a site whose entire
+  // scoring spine is lifetime revenue. Three more, to the top of the corpus.
+  {
+    code: 'ten_thousand',
+    /** 24.3% of the corpus. */
+    rarity: 'uncommon',
+    label: 'Ten Thousand',
+    description: '$10,000 in lifetime revenue.',
+    test: (a) => a.revenueTotalUsd >= 10_000,
+    progress: (p) => ({ current: p.revenueTotalUsd, target: 10_000 }),
+  },
+  {
+    code: 'exalted',
+    /** 14.1% of the corpus. */
+    rarity: 'rare',
+    label: 'Exalted',
+    description: '$100,000 in lifetime revenue.',
+    test: (a) => a.revenueTotalUsd >= 100_000,
+    progress: (p) => ({ current: p.revenueTotalUsd, target: 100_000 }),
+  },
+  {
+    code: 'the_million',
+    /** 4.7% of the corpus. */
+    rarity: 'epic',
+    label: 'The Million',
+    description: '$1,000,000 in lifetime revenue.',
+    test: (a) => a.revenueTotalUsd >= 1_000_000,
+    progress: (p) => ({ current: p.revenueTotalUsd, target: 1_000_000 }),
+  },
   {
     code: 'ramen',
+    /** 16.5% of the corpus. */
+    rarity: 'uncommon',
     label: 'Ramen Profitable',
     description: '$1,000 in MRR.',
     test: (a) => a.mrrUsd >= 1_000,
@@ -502,13 +572,37 @@ export const ACHIEVEMENTS: readonly AchievementDef[] = [
   },
   {
     code: 'raid_boss',
+    /** 9.3% of the corpus. */
+    rarity: 'rare',
     label: 'Raid Boss Slayer',
     description: '$10,000 in MRR.',
     test: (a) => a.mrrUsd >= 10_000,
     progress: (p) => ({ current: p.mrrUsd, target: 10_000 }),
   },
   {
+    code: 'mythic',
+    /** 1.4% of the corpus. */
+    rarity: 'epic',
+    label: 'Mythic',
+    description: '$100,000 in MRR.',
+    test: (a) => a.mrrUsd >= 100_000,
+    progress: (p) => ({ current: p.mrrUsd, target: 100_000 }),
+  },
+  {
+    // One founder in the corpus holds this. That is the point of a top rung:
+    // it is not aspirational decoration, somebody is actually up there.
+    code: 'legendary',
+    /** 0.1% of the corpus. */
+    rarity: 'legendary',
+    label: 'Legendary',
+    description: '$1,000,000 in MRR.',
+    test: (a) => a.mrrUsd >= 1_000_000,
+    progress: (p) => ({ current: p.mrrUsd, target: 1_000_000 }),
+  },
+  {
     code: 'hundred_customers',
+    /** 3.2% of the corpus. */
+    rarity: 'epic',
     label: 'Centurion',
     description: '100 customers.',
     test: (a) => a.customers >= 100,
@@ -516,6 +610,8 @@ export const ACHIEVEMENTS: readonly AchievementDef[] = [
   },
   {
     code: 'thousand_customers',
+    /** 1.6% of the corpus. */
+    rarity: 'epic',
     label: 'Legion',
     description: '1,000 customers.',
     test: (a) => a.customers >= 1_000,
@@ -523,6 +619,8 @@ export const ACHIEVEMENTS: readonly AchievementDef[] = [
   },
   {
     code: 'multiboxer',
+    /** 1.2% of the corpus. */
+    rarity: 'epic',
     label: 'Multiboxer',
     description: 'Three products shipped.',
     test: (a) => a.nProducts >= 3,
@@ -530,6 +628,8 @@ export const ACHIEVEMENTS: readonly AchievementDef[] = [
   },
   {
     code: 'alt_king',
+    /** 0.3% of the corpus. */
+    rarity: 'legendary',
     label: 'Alt King',
     description: 'Five products shipped.',
     test: (a) => a.nProducts >= 5,
@@ -537,6 +637,8 @@ export const ACHIEVEMENTS: readonly AchievementDef[] = [
   },
   {
     code: 'unkillable',
+    /** 0.8% of the corpus. */
+    rarity: 'legendary',
     label: 'Unkillable',
     description: '80% retention across at least 50 customers.',
     test: (a) => a.retention >= 0.8 && a.customers >= 50,
@@ -553,43 +655,208 @@ export const ACHIEVEMENTS: readonly AchievementDef[] = [
   },
   {
     code: 'ascension',
+    /** 8.2% of the corpus. */
+    rarity: 'rare',
     label: 'Ascension',
     description: '+20% MRR over thirty days.',
     test: (a) => a.growthMrr30d >= 20,
     progress: (p) => ({ current: Math.max(p.growthMrr30d, 0), target: 20 }),
   },
   {
+    code: 'bloodlust',
+    /** 2.9% of the corpus. */
+    rarity: 'epic',
+    label: 'Bloodlust',
+    description: 'MRR doubled over thirty days.',
+    test: (a) => a.growthMrr30d >= 100,
+    progress: (p) => ({ current: Math.max(p.growthMrr30d, 0), target: 100 }),
+  },
+  {
     code: 'veteran',
+    /** 17.5% of the corpus. */
+    rarity: 'uncommon',
     label: 'Veteran',
     description: 'Two years since the first launch.',
     test: (a) => ageInMs(a.foundedFirst) >= YEARS(2),
   },
   {
+    code: 'old_guard',
+    /** 5.1% of the corpus. */
+    rarity: 'rare',
+    label: 'Old Guard',
+    description: 'Five years since the first launch.',
+    test: (a) => ageInMs(a.foundedFirst) >= YEARS(5),
+  },
+  {
+    code: 'classic',
+    /** 0.9% of the corpus. */
+    rarity: 'legendary',
+    label: 'Classic',
+    description: 'Ten years since the first launch.',
+    test: (a) => ageInMs(a.foundedFirst) >= YEARS(10),
+  },
+  {
     code: 'lone_wolf',
+    /** 98.7% of the corpus. */
+    rarity: 'common',
     label: 'Lone Wolf',
     description: 'No cofounder on any product.',
     test: (a) => a.nProducts > 0 && a.cofounders.length === 0,
   },
   {
     code: 'guilded',
+    /** 1.3% of the corpus. */
+    rarity: 'epic',
     label: 'Guilded',
     description: 'At least one cofounder.',
     test: (a) => a.cofounders.length >= 1,
   },
   {
     code: 'authority',
+    /** 4.3% of the corpus. */
+    rarity: 'epic',
     label: 'Authority',
     description: 'Domain rating of 50 or above.',
     test: (a) => (a.domainRating ?? 0) >= 50,
     progress: (p) => ({ current: p.domainRating ?? 0, target: 50 }),
   },
   {
+    code: 'renowned',
+    /** 1.6% of the corpus. */
+    rarity: 'epic',
+    label: 'Renowned',
+    description: 'Domain rating of 70 or above.',
+    test: (a) => (a.domainRating ?? 0) >= 70,
+    progress: (p) => ({ current: p.domainRating ?? 0, target: 70 }),
+  },
+  {
+    code: 'mercenary',
+    /** 4.1% of the corpus. */
+    rarity: 'epic',
+    label: 'Mercenary',
+    // Mercenary Mode lets you fight for the other side. Selling to both is the
+    // harder position to hold and the corpus says so: 47 of 1,157.
+    description: 'Sells to businesses and to people.',
+    test: (a) => a.faction === 'Both',
+  },
+  {
+    code: 'ironman',
+    /** 5.3% of the corpus. */
+    rarity: 'rare',
+    label: 'Ironman',
+    description: 'No outside funding on any product.',
+    // Only when funding is reported at all: silence is not a claim to have
+    // bootstrapped, and this badge must never be awarded for a blank field.
+    test: (a) =>
+      a.fundingStatuses.length > 0 && a.fundingStatuses.every((s) => s === 'bootstrapped'),
+  },
+  {
+    code: 'companion',
+    /** 13.5% of the corpus. */
+    rarity: 'rare',
+    label: 'Companion',
+    description: 'Shipped a mobile app.',
+    test: (a) => a.hasMobileApp,
+  },
+  {
+    code: 'dual_spec',
+    /** 3.9% of the corpus. */
+    rarity: 'epic',
+    label: 'Dual Spec',
+    description: 'Products in two different categories.',
+    test: (a) => a.categories.length >= 2,
+    progress: (p) => ({ current: p.categories, target: 2 }),
+  },
+  {
+    code: 'tinker',
+    /** 3.9% of the corpus. */
+    rarity: 'epic',
+    label: 'Tinker',
+    description: 'Ten technologies or more across the stack.',
+    test: (a) => a.stack.length >= 10,
+    progress: (p) => ({ current: p.stackSize, target: 10 }),
+  },
+  {
+    code: 'alchemist',
+    /** 17.1% of the corpus. */
+    rarity: 'uncommon',
+    label: 'Alchemist',
+    description: '90% profit margin over thirty days.',
+    test: (a) => (a.profitMargin30d ?? 0) >= 90,
+    // Null is "never reported", not "zero margin", so it gets no bar rather
+    // than a bar sitting at 0 of 90 — the same distinction Unkillable makes.
+    progress: (p) =>
+      p.profitMargin30d === null ? null : { current: p.profitMargin30d, target: 90 },
+  },
+  {
+    code: 'server_full',
+    /** 2.1% of the corpus. */
+    rarity: 'epic',
+    label: 'Server Full',
+    description: '10,000 visitors over thirty days.',
+    test: (a) => a.visitors30d >= 10_000,
+    progress: (p) => ({ current: p.visitors30d, target: 10_000 }),
+  },
+  {
+    code: 'summoned',
+    /** 0.3% of the corpus. */
+    rarity: 'legendary',
+    label: 'Summoned',
+    description: '100,000 Google impressions over thirty days.',
+    test: (a) => a.googleImpressions30d >= 100_000,
+    progress: (p) => ({ current: p.googleImpressions30d, target: 100_000 }),
+  },
+  {
+    code: 'auction_house',
+    /** 24.9% of the corpus. */
+    rarity: 'uncommon',
+    label: 'Auction House',
+    // firstListedForSaleAt, never `onSale`: the second flips back when a
+    // listing is withdrawn, and an earned achievement is never lost.
+    description: 'Listed a product for sale.',
+    test: (a) => a.everListedForSale,
+  },
+  {
+    code: 'clean_sweep',
+    /** 1.4% of the corpus. */
+    rarity: 'epic',
+    label: 'Clean Sweep',
+    description: 'Two products or more, every one of them earning.',
+    test: (a) => a.allProductsEarning,
+    progress: (p) => (p.nProducts < 2 ? null : { current: p.productsEarning, target: p.nProducts }),
+  },
+  {
+    /*
+     * Not tested here, and it cannot be: it depends on everybody else's level,
+     * and this function sees one founder. lib/compute.ts awards it after the
+     * ladder is written. The entry exists so the sheet has a name and a
+     * description to render.
+     *
+     * Only on realms of ten or more. Without that floor there are 73 winners,
+     * because 54 realms hold exactly one founder, and "first in a field of one"
+     * is not an achievement — it is a rounding error with a medal.
+     */
+    code: 'realm_first',
+    /** 1.6% of the corpus. */
+    rarity: 'epic',
+    label: 'Realm First!',
+    description: 'Highest level on a realm of ten founders or more.',
+    test: () => false,
+  },
+  {
     code: 'ding_sixty',
+    /** 0.9% of the corpus. */
+    rarity: 'legendary',
     label: 'Ding 60',
     description: 'Max level.',
     test: (_a, level) => level >= MAX_LEVEL,
     progress: (p) => ({ current: p.level, target: MAX_LEVEL }),
   },
 ]
+
+/** Awarded by lib/compute.ts against the finished ladder, never by `test`. */
+export const REALM_FIRST_CODE = 'realm_first'
+/** Realms smaller than this have no contest to win. */
+export const REALM_FIRST_MIN_SIZE = 10
 
 export const ACHIEVEMENTS_BY_CODE = new Map(ACHIEVEMENTS.map((a) => [a.code, a]))

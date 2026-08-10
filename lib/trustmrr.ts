@@ -112,6 +112,19 @@ export interface TrustmrrStartup {
     /** Same three answers as targetAudience, on 65%. The character's faction. */
     businessType?: string | null
   } | null
+  /* --- Read only by achievements. ------------------------------------------
+     The payload carries forty-odd fields and the engine extracted eleven; these
+     five are the ones with enough coverage to be worth a badge. None of them
+     feed the level, the class or the ladder, which is why they live here rather
+     than as extracted columns on `snapshots`. */
+  /** One string, e.g. 'Artificial Intelligence'. */
+  category?: string | null
+  isMobileApp?: boolean | null
+  /** Percentage, 0–100. */
+  profitMarginLast30Days?: number | null
+  googleSearchImpressionsLast30Days?: number | null
+  /** Set once and never cleared, unlike `onSale` — so an achievement can use it. */
+  firstListedForSaleAt?: string | null
 }
 
 export class TrustmrrClient {

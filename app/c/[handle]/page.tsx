@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
+import type { CSSProperties } from 'react'
 import { BadgeBlock } from '@/components/badge-block'
 import { ConsentActions } from '@/components/consent-actions'
 import { Frame } from '@/components/frame'
@@ -19,7 +20,13 @@ import {
   type TimelineEvent,
 } from '@/components/sheet-panels'
 import { ViewTracker } from '@/components/view-tracker'
-import { ACHIEVEMENTS, ACHIEVEMENTS_BY_CODE, CLASS_COLORS, CLASS_REASONS } from '@/engine'
+import {
+  ACHIEVEMENTS,
+  ACHIEVEMENTS_BY_CODE,
+  achievementRarityHex,
+  CLASS_COLORS,
+  CLASS_REASONS,
+} from '@/engine'
 import { sessionHandle } from '@/lib/auth'
 import { consentActionsEnabled } from '@/lib/consent'
 import { getCharacter, wasRemoved } from '@/lib/queries'
@@ -260,7 +267,11 @@ export default async function CharacterSheet({ params }: Props) {
           {character.achievements.map((earned) => {
             const def = ACHIEVEMENTS_BY_CODE.get(earned.code)
             return (
-              <li key={earned.code} className="ach-card">
+              <li
+                key={earned.code}
+                className="ach-card"
+                style={{ '--ach-color': achievementRarityHex(def?.rarity) } as CSSProperties}
+              >
                 <span className="qsquare ach-icon">
                   <Icon name={ACHIEVEMENT_ICONS[earned.code] ?? 'achievement'} size={17} />
                 </span>

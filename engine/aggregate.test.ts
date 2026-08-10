@@ -22,6 +22,11 @@ function product(overrides: Partial<ProductInput> = {}): ProductInput {
     cofounders: [],
     country: null,
     businessType: null,
+    category: null,
+    isMobileApp: false,
+    profitMargin30d: null,
+    googleImpressions30d: null,
+    listedForSaleAt: null,
     ...overrides,
   }
 }

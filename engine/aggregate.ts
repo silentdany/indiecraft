@@ -42,6 +42,18 @@ export function aggregateFounder(handle: string, products: ProductInput[]): Foun
     ),
     realm: commonest(products.map((p) => p.country)),
     faction: asFaction(commonest(products.map((p) => p.businessType))),
+
+    visitors30d: sum(products, (p) => p.visitors30d ?? 0),
+    categories: distinct(products.map((p) => p.category).filter((c): c is string => Boolean(c))),
+    hasMobileApp: products.some((p) => p.isMobileApp),
+    // The best margin, not the average: a founder with one 95% product and one
+    // loss-making experiment has demonstrably built a 95% business.
+    profitMargin30d: maxOrNull(products.map((p) => p.profitMargin30d)),
+    googleImpressions30d: sum(products, (p) => p.googleImpressions30d ?? 0),
+    everListedForSale: products.some((p) => p.listedForSaleAt !== null),
+    // Two or more, because "all one of my products earns" is not a portfolio
+    // statement, it is the same fact as having any revenue at all.
+    allProductsEarning: products.length >= 2 && products.every((p) => p.mrrUsd > 0),
   }
 }
 

@@ -4,6 +4,7 @@ import { ACHIEVEMENT_ICONS, Icon, type IconName } from '@/components/icon'
 import {
   ACHIEVEMENTS,
   ACHIEVEMENTS_BY_CODE,
+  achievementRarityHex,
   CLASS_COLORS,
   FACTIONS_BY_KEY,
   rarityFor,
@@ -621,7 +622,10 @@ function pickVariant(character: CharacterPage) {
     return {
       icon: ACHIEVEMENT_ICONS[character.recentAchievement.code] ?? ('achievement' as const),
       kicker: (def?.label ?? character.recentAchievement.code).toUpperCase(),
-      kickerColor: GOLD,
+      // Its quality colour, for the same reason the class kicker wears the
+      // class colour: the card and the page have to agree, or the colour
+      // system stops meaning anything the moment it leaves the site.
+      kickerColor: achievementRarityHex(def?.rarity),
       headline: name,
       nameSize,
     }
