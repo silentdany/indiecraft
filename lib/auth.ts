@@ -246,11 +246,18 @@ export async function verifiedHandle(
       return null
     }
 
-    const token = (await tokenResponse.json()) as { access_token?: unknown }
+    const token = (await tokenResponse.json()) as {
+      access_token?: unknown
+      scope?: unknown
+      token_type?: unknown
+    }
     if (typeof token.access_token !== 'string') {
       authLog('token response carried no access_token')
       return null
     }
+    // The granted scopes, never the token. If X issues a token without
+    // users.read the next call fails and the reason is here, not there.
+    authLog('token ok. type:', token.token_type, 'scope:', token.scope)
 
     const meResponse = await fetch(ME_URL, {
       headers: { Authorization: `Bearer ${token.access_token}` },
@@ -267,14 +274,16 @@ export async function verifiedHandle(
        * standalone rather than attached to a Project. Nothing in the consent
        * flow hints at it, and the only symptom is that sign-in always fails.
        */
+      // Always the raw body as well as the hint. The first version of this
+      // replaced the body with the advice, which threw away the one field that
+      // identifies WHICH app X is complaining about — and that turned out to be
+      // the question worth asking.
+      authLog('users/me rejected', meResponse.status, body)
       if (body.includes('client-not-enrolled')) {
         authLog(
-          'the X app is not attached to a Project, so /2/users/me refuses the token.',
-          'Fix it at https://developer.x.com/en/portal/projects-and-apps —',
-          'the OAuth credentials do not change.',
+          'hint: that app is not attached to a Project with v2 access.',
+          'https://developer.x.com/en/portal/projects-and-apps',
         )
-      } else {
-        authLog('users/me rejected', meResponse.status, body)
       }
       return null
     }
@@ -311,7 +320,7 @@ function authLog(...parts: unknown[]): void {
 /** Error bodies are small; a runaway one must not become the log. */
 async function safeBody(response: Response): Promise<string> {
   try {
-    return (await response.text()).slice(0, 300)
+    return (await response.text()).slice(0, 700)
   } catch {
     return '<unreadable>'
   }
