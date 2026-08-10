@@ -257,7 +257,25 @@ export async function verifiedHandle(
       signal: AbortSignal.timeout(8000),
     })
     if (!meResponse.ok) {
-      authLog('users/me rejected', meResponse.status, await safeBody(meResponse))
+      const body = await safeBody(meResponse)
+      /*
+       * The one failure worth naming, because it is a setup mistake that looks
+       * exactly like a code bug.
+       *
+       * OAuth succeeds completely — X issues a real access token — and then
+       * every v2 endpoint answers 403 "client-not-enrolled" because the app is
+       * standalone rather than attached to a Project. Nothing in the consent
+       * flow hints at it, and the only symptom is that sign-in always fails.
+       */
+      if (body.includes('client-not-enrolled')) {
+        authLog(
+          'the X app is not attached to a Project, so /2/users/me refuses the token.',
+          'Fix it at https://developer.x.com/en/portal/projects-and-apps —',
+          'the OAuth credentials do not change.',
+        )
+      } else {
+        authLog('users/me rejected', meResponse.status, body)
+      }
       return null
     }
 
