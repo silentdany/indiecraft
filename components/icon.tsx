@@ -80,16 +80,17 @@ const PATHS: Record<IconName, React.ReactNode> = {
     </g>
   ),
   /**
-   * An arrow already loosed. Found before they go looking.
+   * A recurve bow. Found before they go looking.
    *
-   * A bow was the obvious choice and it never worked: arc plus string closes
-   * into a letter D at any size. Crossed arrows read as the shuffle button.
+   * The tips reaching past the string are the whole trick. A limb plus a
+   * straight string closes into a letter D, and every earlier attempt read as
+   * one; let the nocks overhang and it is unmistakably a bow.
    */
   Hunter: (
     <g>
-      <path d="M3.5 20.5L20 4" />
-      <path d="M13.5 3.5h7v7" />
-      <path d="M3.5 20.5l1-4.6M3.5 20.5l4.6-1" />
+      <path d="M17.5 2.5C13 4.5 8 7.5 8 12s5 7.5 9.5 9.5" />
+      <path d="M16 4.5v15" />
+      <path d="M6.5 12h3" />
     </g>
   ),
   /** A slit eye. Summons customers, and pays for every one. */
