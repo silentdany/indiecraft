@@ -57,63 +57,104 @@ type IconName =
 
 const PATHS: Record<IconName, React.ReactNode> = {
   // --- Classes -------------------------------------------------------------
-  /** A compass: the beginning of a journey, and the class of not-knowing-yet. */
+  //
+  // Each one is the emblem the reference uses for that class, redrawn: a Priest
+  // is a holy symbol, a Paladin is a hammer, a Rogue is crossed daggers. An
+  // earlier set illustrated the RULE instead — a Priest was a cardiogram
+  // because the rule is about retention — which was clever and recognisable to
+  // nobody. The symbol is the part players already know; the drawing is ours.
+
+  /** Not a class: a compass, for the journey that has not picked one yet. */
   Adventurer: (
     <g>
       <circle cx="12" cy="12" r="8.5" />
       <path d="M15 9l-2 5-5 2 2-5z" />
     </g>
   ),
-  /** A spark. Built with whatever just shipped. */
-  Mage: <path d="M12 2.5l2 7.5 7.5 2-7.5 2-2 7.5-2-7.5-7.5-2 7.5-2z" />,
-  /** A crosshair. Found before they go looking. */
+  /** A staff crowned with an orb. */
+  Mage: (
+    <g>
+      <circle cx="15.5" cy="6.5" r="3.2" />
+      <path d="M13.2 8.8L5 19.5" />
+      <path d="M19.5 3.5l1.5-1.5M20.5 9l1.8.6M11.5 2.6l.6 1.8" />
+    </g>
+  ),
+  /** A nocked arrow. Found before they go looking. */
   Hunter: (
     <g>
-      <circle cx="12" cy="12" r="7" />
-      <path d="M12 1.5v4M12 18.5v4M1.5 12h4M18.5 12h4" />
+      <path d="M7.5 2.5C3 7 3 17 7.5 21.5" />
+      <path d="M7.5 2.5v19" />
+      <path d="M4 12h17" />
+      <path d="M17.5 8.5L21 12l-3.5 3.5" />
     </g>
   ),
-  /** A summoning ring around a flame: every customer arrives, and is paid for. */
+  /** A slit eye. Summons customers, and pays for every one. */
   Warlock: (
     <g>
-      <circle cx="12" cy="12" r="8.5" />
-      <path d="M12 7.5c2.5 2 3.5 3.4 3.5 5a3.5 3.5 0 01-7 0c0-1 .4-1.9 1.2-2.8.3 1 .8 1.5 1.5 1.7-.3-1.5-.1-2.8.8-3.9z" />
+      <path d="M2 12s4-6.5 10-6.5S22 12 22 12s-4 6.5-10 6.5S2 12 2 12z" />
+      <path d="M12 8.5v7" />
+      <path d="M6.5 6.5L4.5 4M17.5 6.5L19.5 4" />
     </g>
   ),
-  /** Totems: a following you called together, standing where you put them. */
+  /** A bolt called down. Their audience is their channel. */
   Shaman: (
     <g>
-      <path d="M6 21v-6.5M12 21v-11M18 21v-8" />
-      <path d="M4 14.5h4M10 10h4M16 13h4" />
-      <path d="M12 3.5l1.6 3.2 3.4.5-2.5 2.4.6 3.4-3.1-1.6-3.1 1.6.6-3.4L7 7.2l3.4-.5z" />
+      <path d="M14.5 2L6 13.5h5L9.5 22 18 10.5h-5z" />
     </g>
   ),
-  /** A pulse that does not stop. Their customers stay. */
-  Priest: <path d="M2 12.5h4.5l2-5 3.5 10 2.5-7 1.8 2h5.7" />,
-  /** A ring closed by a single line: paid in full, nothing left to renew. */
+  /** A holy symbol. Their customers stay. */
+  Priest: (
+    <g>
+      <path d="M12 2.5v19" />
+      <path d="M6 8.5h12" />
+      <circle cx="12" cy="8.5" r="2.2" />
+    </g>
+  ),
+  /** Yin and yang: nothing owed, nothing owing. */
   Monk: (
     <g>
       <circle cx="12" cy="12" r="8.5" />
-      <path d="M6.5 12h11" />
+      <path d="M12 3.5a4.25 4.25 0 000 8.5 4.25 4.25 0 010 8.5" />
+      <path d="M12 7v.01M12 17v.01" />
     </g>
   ),
   /** A dagger. Few marks, big scores. */
-  Rogue: <path d="M12 2l3 6v7l-3 7-3-7V8zM6.5 10.5h11" />,
-  /** Crossed blades. Volume, earned one dollar at a time. */
-  Warrior: <path d="M4 3l11 14M20 3L9 17M5.5 16.5l3 3M18.5 16.5l-3 3" />,
+  Rogue: (
+    <g>
+      <path d="M12 1.5l2.8 6.5v5.5h-5.6V8z" />
+      <path d="M7 14.5h10" />
+      <path d="M12 15.5v5" />
+      <path d="M10 21h4" />
+    </g>
+  ),
+  /** Crossed blades, hilts and all. Volume, earned one dollar at a time. */
+  Warrior: (
+    <g>
+      <path d="M4 2.5l11 13M20 2.5L9 15.5" />
+      <path d="M12.5 15l4.5-2M11.5 15l-4.5-2" />
+      <path d="M15 15.5l2.5 3M9 15.5l-2.5 3" />
+    </g>
+  ),
+  /** A warhammer. Holds the line. */
+  Paladin: (
+    <g>
+      <path d="M13.2 2.5l6.8 4-3.4 5.6-6.8-4z" />
+      <path d="M11.6 9.8L3.5 20.5" />
+      <path d="M2 19l3.5 2.5" />
+    </g>
+  ),
   /**
-   * A wing just opening. Earning already, still finding the shape of it —
-   * the newest thing in the roster, and not yet at full span.
+   * A talon's mark. Two attempts at a dragon's head became a leaf and then a
+   * squiggle — a head in profile does not survive being shrunk to 14px, and
+   * three claws do.
    */
   Evoker: (
     <g>
-      <path d="M3 18.5c4.5 0 8-2.2 10-6.5" />
-      <path d="M13 12c2.2-4.3 4.9-6.5 8-6.5 0 5.5-2.7 9.2-8 11" />
-      <path d="M13 12l-2.5 6.5" />
+      <path d="M4.5 2.5c-.8 6.5.6 12 4.2 16.5" />
+      <path d="M11.5 2c-.4 7 .8 12.6 3.6 17.5" />
+      <path d="M18.5 3.5c.6 6.6-.2 11.6-2.4 15.4" />
     </g>
   ),
-  /** A shield. Holds the line. */
-  Paladin: <path d="M12 2.5l8 3v6c0 5-4 8.2-8 10-4-1.8-8-5-8-10v-6z" />,
 
   // --- Readouts ------------------------------------------------------------
   characters: (
