@@ -79,13 +79,17 @@ const PATHS: Record<IconName, React.ReactNode> = {
       <path d="M19.5 3.5l1.5-1.5M20.5 9l1.8.6M11.5 2.6l.6 1.8" />
     </g>
   ),
-  /** A nocked arrow. Found before they go looking. */
+  /**
+   * An arrow already loosed. Found before they go looking.
+   *
+   * A bow was the obvious choice and it never worked: arc plus string closes
+   * into a letter D at any size. Crossed arrows read as the shuffle button.
+   */
   Hunter: (
     <g>
-      <path d="M7.5 2.5C3 7 3 17 7.5 21.5" />
-      <path d="M7.5 2.5v19" />
-      <path d="M4 12h17" />
-      <path d="M17.5 8.5L21 12l-3.5 3.5" />
+      <path d="M3.5 20.5L20 4" />
+      <path d="M13.5 3.5h7v7" />
+      <path d="M3.5 20.5l1-4.6M3.5 20.5l4.6-1" />
     </g>
   ),
   /** A slit eye. Summons customers, and pays for every one. */
@@ -135,12 +139,19 @@ const PATHS: Record<IconName, React.ReactNode> = {
       <path d="M15 15.5l2.5 3M9 15.5l-2.5 3" />
     </g>
   ),
-  /** A warhammer. Holds the line. */
+  /**
+   * A hammer on a shield. Holds the line.
+   *
+   * The hammer alone is the truer emblem and it cannot be drawn small: head-on
+   * it is a table, angled it is a shovel, and every variant tried read as
+   * furniture. The shield carries the silhouette at 14px and the hammer sits
+   * inside it, which is also exactly what this class's rule says it does.
+   */
   Paladin: (
     <g>
-      <path d="M13.2 2.5l6.8 4-3.4 5.6-6.8-4z" />
-      <path d="M11.6 9.8L3.5 20.5" />
-      <path d="M2 19l3.5 2.5" />
+      <path d="M12 2.5l7.5 2.8v5.6c0 4.7-3.7 7.7-7.5 9.4-3.8-1.7-7.5-4.7-7.5-9.4V5.3z" />
+      <path d="M8 7.5h8v3.5H8z" />
+      <path d="M12 11v5" />
     </g>
   ),
   /**
