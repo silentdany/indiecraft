@@ -1,5 +1,5 @@
 import { cache } from 'react'
-import { itemLevelFor, levelBounds, rarityFor } from '@/engine'
+import { ACHIEVEMENTS_BY_CODE, itemLevelFor, levelBounds, rarityFor } from '@/engine'
 import type { AchievementProgressInput, CharacterClass, Faction, Rarity } from '@/engine/types'
 import { db } from '@/lib/db'
 import { normalizeRealm } from '@/lib/realm'
@@ -537,6 +537,8 @@ export interface LadderFilter {
   characterClass?: string | null
   realm?: string | null
   faction?: string | null
+  /** An achievement code. Narrows to the founders who hold it. */
+  achievement?: string | null
 }
 
 /** What a page of the ladder asks for, on top of the three facets. */
@@ -582,6 +584,7 @@ export async function getLadder(query: LadderQuery = {}): Promise<LadderPage> {
   const realm = normalizeRealm(query.realm)
   const faction = asFaction(query.faction ?? null)
   const characterClass = query.characterClass ?? null
+  const achievement = query.achievement ?? null
   const q = query.q?.trim().replace(/^@/, '').toLowerCase() ?? ''
   const like = `%${q}%`
   const perPage = LADDER_PAGE_SIZE
@@ -593,6 +596,14 @@ export async function getLadder(query: LadderQuery = {}): Promise<LadderPage> {
       ${characterClass ? sql`and c.class = ${characterClass}` : sql``}
       ${realm ? sql`and c.realm = ${realm}` : sql``}
       ${faction ? sql`and c.faction = ${faction}` : sql``}
+      ${
+        achievement
+          ? sql`and exists (
+              select 1 from character_achievements a
+              where a.handle = c.handle and a.code = ${achievement}
+            )`
+          : sql``
+      }
   `
 
   /*
@@ -898,6 +909,39 @@ export async function getClassCounts(): Promise<{ name: string; count: number }[
   `
   return rows.map((r) => ({ name: r.class, count: r.n }))
 }
+
+/**
+ * How many founders hold each achievement.
+ *
+ * Ordered by rarity and then by size, not by size alone like every other facet
+ * here. The other three answer "what kind of founder"; this one answers "who
+ * did the hard thing", and burying `legendary` under `lone_wolf` because 1,142
+ * people have no cofounder would put the interesting filters last.
+ */
+export async function getAchievementCounts(): Promise<FacetCount[]> {
+  const sql = db()
+  const rows = await sql<{ code: string; n: number }[]>`
+    select a.code, count(*)::int as n
+    from character_achievements a
+    join founders f on f.handle = a.handle
+    join characters c on c.handle = a.handle
+    where f.opted_out_at is null
+    group by a.code
+  `
+  const order = new Map(RARITY_ORDER.map((name, i) => [name, i]))
+  return rows
+    .flatMap((r) => {
+      const def = ACHIEVEMENTS_BY_CODE.get(r.code)
+      // A code with no definition is a retired achievement still on somebody's
+      // record. It stays on their sheet and is not offered as a filter.
+      return def ? [{ value: r.code, count: r.n, rank: order.get(def.rarity) ?? 0 }] : []
+    })
+    .sort((a, b) => b.rank - a.rank || b.count - a.count || a.value.localeCompare(b.value))
+    .map(({ value, count }) => ({ value, count }))
+}
+
+/** Commonest first, so a higher index is a rarer badge. */
+const RARITY_ORDER = ['common', 'uncommon', 'rare', 'epic', 'legendary'] as const
 
 export async function getClasses(): Promise<string[]> {
   const sql = db()

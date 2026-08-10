@@ -422,6 +422,34 @@ a:hover {
 .facet:last-child .tabs {
   border-bottom: 1px solid var(--ic-line-2);
 }
+/* The overflow half of a facet that has too many values to show at once. Sits
+   inside the tab strip and flows with it, so an opened disclosure looks like
+   more of the same row rather than a second control. */
+.facet-more {
+  display: inline-block;
+}
+.facet-more > summary {
+  cursor: pointer;
+  padding: 7px 10px;
+  color: var(--ic-text-muted);
+  list-style: none;
+  white-space: nowrap;
+}
+.facet-more > summary::-webkit-details-marker {
+  display: none;
+}
+.facet-more > summary::before {
+  content: "+";
+  margin-right: 5px;
+}
+.facet-more > summary:hover {
+  color: var(--ic-gold);
+}
+.facet-more[open] {
+  display: block;
+  width: 100%;
+}
+
 @media (max-width: 560px) {
   .facet {
     flex-direction: column;
@@ -1377,6 +1405,23 @@ a.pager-num:hover {
   grid-template-columns: repeat(auto-fill, minmax(232px, 1fr));
   gap: 8px;
 }
+.ach-link {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  flex: 1;
+  min-width: 0;
+  color: inherit;
+}
+.ach-link:hover {
+  color: inherit;
+}
+/* The whole card lights up, not the text: a badge is one object, and colouring
+   only its title on hover would say the title is the link. */
+.ach-card:has(.ach-link:hover) {
+  border-color: color-mix(in srgb, var(--ach-color) 55%, transparent);
+}
+
 .ach-card {
   /* Each card names its own quality colour; gold is only the fallback for a
      code the engine no longer defines. */

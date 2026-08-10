@@ -272,13 +272,19 @@ export default async function CharacterSheet({ params }: Props) {
                 className="ach-card"
                 style={{ '--ach-color': achievementRarityHex(def?.rarity) } as CSSProperties}
               >
-                <span className="qsquare ach-icon">
-                  <Icon name={ACHIEVEMENT_ICONS[earned.code] ?? 'achievement'} size={17} />
-                </span>
-                <span className="ach-body">
-                  <span className="ach-title serif">{def?.label ?? earned.code}</span>
-                  <span className="ach-desc">{def?.description}</span>
-                </span>
+                {/* Every earned badge is a link to everybody else who holds it.
+                    A ladder filter nobody can find is a query parameter, not a
+                    feature, and the sheet is where somebody is already looking
+                    at the badge they want the company of. */}
+                <Link href={`/ladder?ach=${earned.code}`} className="ach-link">
+                  <span className="qsquare ach-icon">
+                    <Icon name={ACHIEVEMENT_ICONS[earned.code] ?? 'achievement'} size={17} />
+                  </span>
+                  <span className="ach-body">
+                    <span className="ach-title serif">{def?.label ?? earned.code}</span>
+                    <span className="ach-desc">{def?.description}</span>
+                  </span>
+                </Link>
               </li>
             )
           })}

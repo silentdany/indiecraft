@@ -4,9 +4,16 @@ import { redirect } from 'next/navigation'
 import { Icon } from '@/components/icon'
 import { JsonLd } from '@/components/json-ld'
 import { LadderTable } from '@/components/ladder-table'
-import { CLASS_COLORS, FACTIONS, FACTIONS_BY_KEY } from '@/engine'
+import {
+  ACHIEVEMENTS_BY_CODE,
+  achievementRarityHex,
+  CLASS_COLORS,
+  FACTIONS,
+  FACTIONS_BY_KEY,
+} from '@/engine'
 import type { CharacterClass } from '@/engine/types'
 import {
+  getAchievementCounts,
   getClassCounts,
   getFactionCounts,
   getLadder,
@@ -18,7 +25,14 @@ import { normalizeRealm, realmLabel } from '@/lib/realm'
 
 export const revalidate = 300
 
-type Search = { class?: string; realm?: string; faction?: string; q?: string; page?: string }
+type Search = {
+  class?: string
+  realm?: string
+  faction?: string
+  ach?: string
+  q?: string
+  page?: string
+}
 
 /**
  * A filtered ladder is a different page and has to say so.
@@ -50,11 +64,12 @@ export default async function Ladder({ searchParams }: { searchParams: Promise<S
   const search = await searchParams
   const filter = toFilter(search)
 
-  const [ladder, classes, realms, factions] = await Promise.all([
+  const [ladder, classes, realms, factions, badges] = await Promise.all([
     getLadder(toQuery(search)),
     getClassCounts(),
     getRealmCounts(),
     getFactionCounts(),
+    getAchievementCounts(),
   ])
   const { rows, total, page, perPage, pageCount } = ladder
 
@@ -140,6 +155,39 @@ export default async function Ladder({ searchParams }: { searchParams: Promise<S
           })}
         </Facet>
 
+        {/*
+          Thirty-five badges, so twelve then the rest behind a disclosure — the
+          same shape the sheet uses for its locked grid, and for the same
+          reason: a facet row five lines deep pushes the ladder off the screen.
+
+          Ordered by rarity rather than by size, unlike every other facet here.
+          "Who has Legendary" is the question somebody filters on; "who has Lone
+          Wolf" is 1,142 people and answers nothing. Each chip wears its quality
+          colour, which is what makes thirty-five of them scannable at all.
+        */}
+        {badges.length > 0 && (
+          <Facet label="Badge" all={href(search, { ach: undefined })} active={!!filter.achievement}>
+            {badges.slice(0, 12).map((b) => (
+              <BadgeLink key={b.value} badge={b} search={search} current={filter.achievement} />
+            ))}
+            {badges.length > 12 && (
+              <details className="facet-more">
+                <summary className="label">{badges.length - 12} more</summary>
+                <span className="tabs">
+                  {badges.slice(12).map((b) => (
+                    <BadgeLink
+                      key={b.value}
+                      badge={b}
+                      search={search}
+                      current={filter.achievement}
+                    />
+                  ))}
+                </span>
+              </details>
+            )}
+          </Facet>
+        )}
+
         {/* Twelve realms, not twenty-eight: the tail is realms of one, and a
             row of them would bury the eight that hold most of the corpus. The
             long tail is still reachable — every character sheet links its own
@@ -177,6 +225,7 @@ export default async function Ladder({ searchParams }: { searchParams: Promise<S
           )}
           {filter.realm && <input type="hidden" name="realm" value={filter.realm} />}
           {filter.faction && <input type="hidden" name="faction" value={filter.faction} />}
+          {filter.achievement && <input type="hidden" name="ach" value={filter.achievement} />}
           <input
             type="search"
             name="q"
@@ -293,6 +342,31 @@ function caption({
   return `${slice}${matching} · by level, then iLvl`
 }
 
+/** A badge chip, in its own quality colour, named by its label not its code. */
+function BadgeLink({
+  badge,
+  search,
+  current,
+}: {
+  badge: { value: string; count: number }
+  search: Search
+  current: string | null | undefined
+}) {
+  const def = ACHIEVEMENTS_BY_CODE.get(badge.value)
+  if (!def) return null
+  return (
+    <FacetLink
+      href={href(search, { ach: badge.value })}
+      current={current === badge.value}
+      count={badge.count}
+      color={achievementRarityHex(def.rarity)}
+      title={def.description}
+    >
+      {def.label}
+    </FacetLink>
+  )
+}
+
 function Facet({
   label,
   all,
@@ -352,6 +426,7 @@ function href(search: Search, patch: Partial<Search>): string {
   if (next.class) params.set('class', next.class)
   if (next.faction) params.set('faction', next.faction)
   if (next.realm) params.set('realm', next.realm)
+  if (next.ach) params.set('ach', next.ach)
   if (next.q?.trim()) params.set('q', next.q.trim())
   // Read off the patch and never off `search`: changing a facet changes which
   // ladder this is, and page 7 of the old one is meaningless on the new one.
@@ -366,6 +441,9 @@ function toFilter(search: Search): LadderFilter {
     characterClass: search.class ?? null,
     realm: normalizeRealm(search.realm),
     faction: search.faction ?? null,
+    // Validated against the definitions rather than passed through: the value
+    // reaches a query, and an unknown code should read as no filter at all.
+    achievement: search.ach && ACHIEVEMENTS_BY_CODE.has(search.ach) ? search.ach : null,
   }
 }
 
@@ -409,7 +487,12 @@ function describe(search: Search): {
   const realm = filter.realm ? realmLabel(filter.realm) : null
   const named = [realm, subject].filter(Boolean).join(' — ')
 
-  const plain = filter.characterClass || filter.realm || faction
+  // The badge leads the title rather than joining the subject, because it is a
+  // different kind of claim: a class is what you are, a badge is what you did.
+  const badge = filter.achievement ? ACHIEVEMENTS_BY_CODE.get(filter.achievement) : undefined
+
+  const narrowed = filter.characterClass || filter.realm || faction
+  const plain = narrowed || badge
   // Prose needs a preposition after all, and "on the X realm" is the one
   // construction that survives every country name in the list.
   const sentence = realm ? `${subject} on the ${realm} realm` : subject
@@ -421,12 +504,19 @@ function describe(search: Search): {
   // they are.
   const suffix = page > 1 ? ` — page ${page}` : ''
 
+  // "Legendary — founders" reads as a compound noun nobody uses. When the badge
+  // is the only filter it is the whole subject, and `named` would only add the
+  // word "founders" to a page that is entirely about founders.
+  const withBadge = badge ? (narrowed ? `${badge.label} — ${named}` : badge.label) : named
+
   return {
-    title: (plain ? `The ladder — ${named}` : 'The ladder') + suffix,
-    heading: plain ? named.toUpperCase() : 'THE LADDER',
+    title: (plain ? `The ladder — ${withBadge}` : 'The ladder') + suffix,
+    heading: plain ? withBadge.toUpperCase() : 'THE LADDER',
     description: plain
-      ? `Indie ${sentence}, ranked by lifetime revenue and current MRR.`
-      : 'Every indie founder on TrustMRR, ranked by lifetime revenue and current MRR. Filter by class, faction or realm, or search for a handle.',
+      ? badge
+        ? `Indie ${sentence} who earned ${badge.label} — ${badge.description.toLowerCase()} Ranked by lifetime revenue and current MRR.`
+        : `Indie ${sentence}, ranked by lifetime revenue and current MRR.`
+      : 'Every indie founder on TrustMRR, ranked by lifetime revenue and current MRR. Filter by class, faction, realm or badge, or search for a handle.',
     canonical: href(search, { page: pageStr(page) }),
     /*
      * Narrowed in any way at all: a facet, a search, or a page past the first.
