@@ -651,6 +651,21 @@ a:hover {
    below the width where two columns would each be too narrow to hold a country
    name on one line. */
 
+/* The three factions across the full width, directly under the realm strip
+   they belong with — both are the state of the whole corpus rather than a way
+   of slicing it. Three columns exactly, never auto-fit: a 2 + 1 wrap would read
+   as a hierarchy that does not exist between them. */
+.factionband {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+@media (max-width: 640px) {
+  .factionband {
+    grid-template-columns: 1fr;
+  }
+}
+
 .worlds {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
@@ -737,6 +752,17 @@ a:hover {
 }
 .realm-count {
   color: var(--ic-text-muted);
+}
+
+/* Classes reuse the realm row wholesale, because they are the same object: a
+   mark, a name, a count, and a link to that slice of the ladder. Only the
+   colour differs — a realm code is always gold, a class is always its own. */
+.class-mark {
+  color: var(--row-color, var(--ic-gold));
+  border-color: color-mix(in srgb, var(--row-color, var(--ic-gold)) 45%, transparent);
+}
+.class-name {
+  color: var(--row-color, var(--ic-text));
 }
 
 /* Every realm, on /rules, where the long tail of ones and twos is the point

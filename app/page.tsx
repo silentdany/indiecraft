@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import type { CSSProperties } from 'react'
 import { BrandMark } from '@/components/brand-mark'
 import { Frame } from '@/components/frame'
 import { Icon, type IconName } from '@/components/icon'
@@ -26,6 +27,27 @@ export const revalidate = 300
  * the product here IS the ladder — so the ladder is the page. Anyone who wants
  * the rules can read them in the repo, which is linked once and never
  * explained.
+ *
+ * The order is one question per band, answered before the next is asked:
+ *
+ *   1. who are you        — the crest and the inspect box
+ *   2. how big is this    — five figures across the realm strip
+ *   3. who sells to whom  — the three factions, the coarsest cut there is
+ *   4. who is winning     — the top of the ladder
+ *   5. where do you fit   — classes and realms, the two ladders somebody who
+ *                           will never be in the global top can place in
+ *
+ * Twenty rows of ladder used to sit at (4) and the answers to (5) were beneath
+ * them, which is precisely backwards: the top of a ladder is its least
+ * differentiated part — the first nine rows are all level 60 — so it was
+ * spending four hundred pixels saying one thing, and burying the two sections
+ * that exist for people who are not on it. Ten rows now, and the whole ladder
+ * is one link away from the heading above them.
+ *
+ * The class tabs moved out of the ladder section for a different reason. They
+ * sat between its heading and its rows, in the same tab styling the ladder page
+ * uses for its live facets, so they read as filtering the twenty rows below
+ * them. They never did — every one of them navigates away.
  */
 export default async function Home() {
   const [ladder, stats, classes, factions, realms] = await Promise.all([
@@ -90,77 +112,100 @@ export default async function Home() {
         </section>
       )}
 
-      <section style={{ marginTop: 26 }}>
+      {/* Three of them, splitting the whole corpus, so they get a band of their
+          own rather than a column: as one of two columns the list was three
+          cards tall next to ten realms and left two hundred pixels of nothing
+          under it.
+
+          Headed like every other section, because a bare row of three cards
+          reading "B2C / B2B / Both" does not say what it is a division of, and
+          on a site that calls countries realms it will not be guessed. */}
+      {factions.length > 0 && (
+        <section style={{ marginTop: 26 }}>
+          <header className="section-head">
+            <h2 className="serif">FACTIONS</h2>
+            <span className="label">Who they sell to</span>
+          </header>
+
+          <div className="factionband">
+            {factions.map((f) => {
+              const def = FACTIONS_BY_KEY.get(f.value)
+              if (!def) return null
+              return (
+                <Link
+                  key={f.value}
+                  href={`/ladder?faction=${f.value}`}
+                  className="faction-card"
+                  style={{ '--faction-color': def.color } as React.CSSProperties}
+                >
+                  <span className="qsquare faction-icon">
+                    <Icon name={def.key} size={20} />
+                  </span>
+                  <span className="faction-body">
+                    <span className="serif faction-name">{def.key}</span>
+                    <span className="label">{def.tagline}</span>
+                  </span>
+                  <span className="serif faction-count">{f.count}</span>
+                </Link>
+              )
+            })}
+          </div>
+        </section>
+      )}
+
+      <section style={{ marginTop: 30 }}>
         <header className="section-head">
           <h2 className="serif">THE LADDER</h2>
           {/* Says the number, because "Full top 100" was a link that named a
               limit the ladder no longer has, and nobody clicks through to find
-              a bigger list than the one they were promised. Twenty rows here,
+              a bigger list than the one they were promised. Ten rows here,
               everybody through the link. */}
           <Link href="/ladder" className="label">
             {ladder ? `All ${ladder.total.toLocaleString('en-US')} founders →` : 'The ladder →'}
           </Link>
         </header>
 
-        {classes.length > 0 && (
-          <nav className="tabs" aria-label="Filter by class">
-            {classes.map((c) => (
-              <Link
-                key={c.name}
-                href={`/ladder?class=${encodeURIComponent(c.name)}`}
-                className="tab"
-                style={
-                  { '--tab-color': CLASS_COLORS[c.name as CharacterClass] } as React.CSSProperties
-                }
-              >
-                <Icon name={c.name as CharacterClass} size={13} />
-                {c.name} <span className="tab-count">{c.count}</span>
-              </Link>
-            ))}
-          </nav>
-        )}
-
-        <LadderTable rows={rows.slice(0, 20)} />
+        <LadderTable rows={rows.slice(0, 10)} />
       </section>
 
       {/*
         Two ways into the ladder that are not "be in the global top hundred".
-        Eighty of a hundred and thirty-nine characters sit on one realm, so the
-        global list is, in practice, the American list — and a French founder
-        who will never appear on it has no reason to come back. A realm of
-        fourteen is a ladder they can actually place in.
+        A quarter of the corpus sits on one realm, so the global list is, in
+        practice, the American list — and a French founder who will never appear
+        on it has no reason to come back. A realm of seventy-eight is a ladder
+        they can actually place in, and so is a class of nine.
+
+        Eleven classes against ten realms, which is why they are the pair: two
+        columns of the same height, each a plain list of the same shape.
       */}
-      {(factions.length > 0 || realms.length > 0) && (
+      {(classes.length > 0 || realms.length > 0) && (
         <section className="worlds">
-          {factions.length > 0 && (
+          {classes.length > 0 && (
             <div className="worlds-col">
               <header className="section-head">
-                <h2 className="serif">FACTIONS</h2>
-                <span className="label">Who they sell to</span>
+                <h2 className="serif">CLASSES</h2>
+                <Link href="/rules#the-class-tree" className="label">
+                  How they are decided →
+                </Link>
               </header>
-              <ul className="faction-list">
-                {factions.map((f) => {
-                  const def = FACTIONS_BY_KEY.get(f.value)
-                  if (!def) return null
-                  return (
-                    <li key={f.value}>
-                      <Link
-                        href={`/ladder?faction=${f.value}`}
-                        className="faction-card"
-                        style={{ '--faction-color': def.color } as React.CSSProperties}
-                      >
-                        <span className="qsquare faction-icon">
-                          <Icon name={def.key} size={20} />
-                        </span>
-                        <span className="faction-body">
-                          <span className="serif faction-name">{def.key}</span>
-                          <span className="label">{def.tagline}</span>
-                        </span>
-                        <span className="serif faction-count">{f.count}</span>
-                      </Link>
-                    </li>
-                  )
-                })}
+              <ul className="realm-list">
+                {classes.map((c) => (
+                  <li key={c.name}>
+                    <Link
+                      href={`/ladder?class=${encodeURIComponent(c.name)}`}
+                      className="realm-row"
+                      style={
+                        { '--row-color': CLASS_COLORS[c.name as CharacterClass] } as CSSProperties
+                      }
+                    >
+                      <span className="qsquare realm-code class-mark">
+                        <Icon name={c.name as CharacterClass} size={15} />
+                      </span>
+                      <span className="realm-name class-name">{c.name}</span>
+                      <span className="realm-count label">{c.count}</span>
+                    </Link>
+                  </li>
+                ))}
               </ul>
             </div>
           )}
@@ -174,7 +219,7 @@ export default async function Home() {
                 </Link>
               </header>
               <ul className="realm-list">
-                {realms.slice(0, 10).map((r) => (
+                {realms.slice(0, 11).map((r) => (
                   <li key={r.value}>
                     <Link href={`/ladder?realm=${r.value}`} className="realm-row">
                       <span className="qsquare realm-code serif">{r.value}</span>
