@@ -46,29 +46,28 @@ import {
 } from '../lib/trustmrr'
 
 /**
- * Seconds a slug actually costs, measured rather than derived.
+ * Seconds a slug actually costs.
  *
- * THROTTLE_MS is 4s, and the obvious arithmetic says a slug therefore costs 4s.
- * It costs ten. Two separate runs agree: the scheduled crawl of 2026-08-09 did
- * 200 slugs in 32.7 minutes, and a 2,400-slug dispatch was averaging 9.4s an
- * hour in. The gap is request latency plus a Postgres round trip per snapshot,
- * neither of which the throttle knows about.
+ * The API allows 10 requests a minute and says so in its headers, so a slug
+ * cannot cost less than six seconds however the client is written. Add the
+ * request itself and a Postgres round trip and it lands near seven.
  *
- * Budget arithmetic that uses 4 rather than this number overruns the workflow
- * ceiling by a factor of two and gets the job killed mid-run.
+ * It used to be ten, measured, and the extra three seconds were pure waste: the
+ * client paced at 4s, ran 50% over quota, and paid a 65-second backoff every
+ * time it tripped. Obeying the published limit made the crawl faster.
  */
-const SECONDS_PER_SLUG = 10
+const SECONDS_PER_SLUG = 7
 
 /**
  * How many slugs one nightly run may collect.
  *
- * 900 × 10s is 150 minutes, inside the workflow's 180-minute ceiling with room
- * for install, schema and the compute trigger. The corpus is ~9,000, so full
- * coverage takes about a fortnight of nights and then keeps rotating — which is
- * the right trade: a run that tried to take all of it in one night would need
- * twenty-five hours, be killed at three, and never reach the compute step.
+ * 1,250 × 7s is about 145 minutes, inside the workflow's 180-minute ceiling
+ * with room for install, schema and the compute trigger. The corpus is ~9,000,
+ * so full coverage takes a week of nights and then keeps rotating — a run that
+ * tried to take all of it at once would need eighteen hours, be killed at
+ * three, and never reach the compute step.
  */
-const DEFAULT_BUDGET = 900
+const DEFAULT_BUDGET = 1_250
 
 interface Options {
   limit?: number

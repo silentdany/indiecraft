@@ -2,7 +2,8 @@
  * TrustMRR API v1 client.
  *
  * Non-negotiable constraints:
- *   - 20 requests/minute. We throttle to 3.5s to keep headroom.
+ *   - 10 requests/minute, which the API states in x-ratelimit-* on every
+ *     response. We pace off those headers, not off a guess; see THROTTLE_MS.
  *   - On 429: exponential backoff, 3 attempts, then skip and log. One failed
  *     slug must never abort the run.
  *
@@ -24,8 +25,25 @@ export const TRUSTMRR_BASE = 'https://trustmrr.com/api/v1'
 /** Named in TrustMRR's robots.txt, which allows every agent. */
 const SITEMAP_URL = 'https://trustmrr.com/startup-sitemap.xml'
 
-/** 4s per request: 15 req/min, comfortably under the limit of 20. */
-export const THROTTLE_MS = 4_000
+/**
+ * 6s per request: 10 per minute, which is exactly what the API allows.
+ *
+ * This was 4s, on a comment claiming "15 req/min, comfortably under the limit
+ * of 20". The limit is 10, and TrustMRR says so on every single response:
+ *
+ *   x-ratelimit-limit: 10
+ *   x-ratelimit-remaining: 6
+ *   x-ratelimit-reset: 1786382400000   (epoch ms, on the minute)
+ *
+ * So the crawler ran 50% over quota all night, every night, and paid for it
+ * with a 65-second backoff each time it tripped. That is the whole explanation
+ * for a slug costing 9.4 seconds against a 4-second throttle: mostly 4s, punctuated
+ * by minute-long stalls. Slowing down to 6s makes the crawl *faster*.
+ *
+ * The floor matters less than the headers below, which are now read and obeyed;
+ * it is here so the first request of a run is paced before any header is seen.
+ */
+export const THROTTLE_MS = 6_000
 
 /**
  * The quota is per minute, so the only backoff that actually clears a 429 is
@@ -40,7 +58,7 @@ const SERVER_ERROR_BACKOFF_MS = 5_000
 /** Server-side cap on `limit`. Asking for more still returns 10. */
 export const PAGE_SIZE = 10
 
-/** Safety stop. The corpus is ~200 startups, i.e. ~20 pages. */
+/** Safety stop. The ranked list caps out at 200, i.e. 20 pages. */
 const MAX_PAGES = 500
 
 interface ListMeta {
@@ -91,6 +109,9 @@ export interface TrustmrrStartup {
 
 export class TrustmrrClient {
   private lastRequestAt = 0
+  /** From x-ratelimit-*, so pacing follows the server rather than a guess. */
+  private rateLimitRemaining: number | null = null
+  private rateLimitResetAt = 0
 
   constructor(
     private readonly apiKey: string,
@@ -191,6 +212,7 @@ export class TrustmrrClient {
         },
       })
 
+      this.noteRateLimit(res.headers)
       if (res.ok) return (await res.json()) as T
 
       // 429 and 5xx are transient; nothing else gets better on the third try.
@@ -207,10 +229,35 @@ export class TrustmrrClient {
     throw new Error(`TrustMRR: failed after 3 attempts on ${path}`)
   }
 
+  /**
+   * Pace by what the server says is left, not only by a constant.
+   *
+   * A fixed delay is a guess about someone else's quota, and this one was wrong
+   * by a factor of two for the life of the project. The headers are exact: when
+   * the remaining count reaches zero, the only thing that helps is waiting for
+   * the window to roll over, so wait precisely that long instead of tripping a
+   * 429 and taking a 65-second penalty.
+   */
   private async throttle(): Promise<void> {
+    if (this.rateLimitRemaining !== null && this.rateLimitRemaining <= 0) {
+      // A small cushion past the reset: the boundary is the server's clock,
+      // not ours, and arriving a few milliseconds early wastes a whole window.
+      const wait = this.rateLimitResetAt - Date.now() + 500
+      if (wait > 0) await sleep(wait)
+      this.rateLimitRemaining = null
+    }
+
     const elapsed = Date.now() - this.lastRequestAt
     if (elapsed < THROTTLE_MS) await sleep(THROTTLE_MS - elapsed)
     this.lastRequestAt = Date.now()
+  }
+
+  /** Remember what the last response said about the quota. */
+  private noteRateLimit(headers: Headers): void {
+    const remaining = Number(headers.get('x-ratelimit-remaining'))
+    const reset = Number(headers.get('x-ratelimit-reset'))
+    if (Number.isFinite(remaining)) this.rateLimitRemaining = remaining
+    if (Number.isFinite(reset) && reset > 0) this.rateLimitResetAt = reset
   }
 }
 
