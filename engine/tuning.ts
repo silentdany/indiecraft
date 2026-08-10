@@ -420,24 +420,32 @@ export interface FactionDef {
 }
 
 /*
- * Cool, warm, and the one in between — a deliberately smaller idea than the
- * class wheel, because there are only three of them and the pair is the whole
- * message.
+ * The two factions, in the two colours the word "faction" already means: blue
+ * for the one that answers to institutions, red for the one that sells to
+ * people. Nobody who has played the game needs the mapping explained, and it is
+ * the same joke the rest of the site is telling.
  *
- * None of the three may sit near amber. The first pass put B2C at #e0954f and
- * it landed a few degrees off the interface gold, so a faction name read as a
- * button next to its own count. Sharing a hue *family* with a class is fine and
- * unavoidable at ten classes — B2B is a cousin of Mage's blue — because the two
- * never occupy the same slot: a class is a word in one column, a faction is a
- * sigil in another. Sitting near the interface colour is not fine, because that
- * one does share slots with everything.
+ * Neither is the crest colour. Horde red is #B30000 and Alliance blue is
+ * #0078FF, and on #170e09 those measure 2.6:1 and 4.7:1 — the red is unreadable
+ * at the 13px this is actually set in. Both are lifted until they clear 4.5:1
+ * against the page, which keeps the hue and buys the legibility. Colour naming
+ * a real thing has to survive being small.
+ *
+ * Neutral is the third, and it is the one place the game's own answer does not
+ * transfer: neutral in WoW is yellow, and yellow here is the interface. So it
+ * is parchment — clearly not either side, clearly not amber, and light enough
+ * not to be mistaken for the muted grey that means "no data".
+ *
+ * Sharing a hue *family* with a class is fine and unavoidable at ten classes —
+ * B2B is a cousin of Mage's blue — because the two never occupy the same slot:
+ * a class is a word in one column, a faction is a sigil in another.
  */
 export const FACTIONS: readonly FactionDef[] = [
-  { key: 'B2B', tagline: 'Sells to businesses', color: '#4f9ae8' },
-  { key: 'B2C', tagline: 'Sells to people', color: '#ef7f5c' },
+  { key: 'B2B', tagline: 'Sells to businesses', color: '#3b8ae0' },
+  { key: 'B2C', tagline: 'Sells to people', color: '#e04b45' },
   // Not a hedge: serving both is a genuinely harder position to hold, and the
   // ten founders who do it should not be filed under "unknown".
-  { key: 'Both', tagline: 'Sells to both', color: '#38c8b4' },
+  { key: 'Both', tagline: 'Sells to both', color: '#c9bba0' },
 ]
 
 export const FACTIONS_BY_KEY: ReadonlyMap<Faction, FactionDef> = new Map(
