@@ -1,12 +1,12 @@
 import type { Metadata } from 'next'
 import { ComparePicker } from '@/components/compare-picker'
-import { getComparableFounders } from '@/lib/queries'
+import { getComparableFounders, getPickerFounder } from '@/lib/queries'
 
 export const revalidate = 300
 
 /**
  * `noindex`, on the same grounds as the comparison pages it leads to: this is a
- * tool, and it names every founder in the corpus on one page. The ladder
+ * tool, and searching it surfaces any founder in the corpus. The ladder
  * already carries that exposure once and is left as it was; a second listing of
  * the same people is not something to hand a crawler because it happened to be
  * cheap to build.
@@ -23,15 +23,16 @@ export default async function Compare({
 }: {
   searchParams: Promise<{ a?: string; b?: string }>
 }) {
-  const [{ a, b }, founders] = await Promise.all([searchParams, getComparableFounders()])
+  const { a, b } = await searchParams
 
-  // A handle in the query string only pre-fills a slot if it belongs to
-  // somebody comparable — an opted-out or misspelled one leaves the slot empty
-  // rather than showing a name the picker cannot resolve.
-  const known = (handle?: string) =>
-    handle && founders.some((f) => f.handle === handle.toLowerCase())
-      ? handle.toLowerCase()
-      : undefined
+  // A handle in the query string is resolved individually rather than looked up
+  // in the browse list: the browse list is the strongest eight, and anybody
+  // arriving from a ladder row is almost never in it.
+  const [initial, pickedA, pickedB] = await Promise.all([
+    getComparableFounders(),
+    a ? getPickerFounder(a.toLowerCase()) : null,
+    b ? getPickerFounder(b.toLowerCase()) : null,
+  ])
 
   return (
     <main className="page">
@@ -43,7 +44,11 @@ export default async function Compare({
         </p>
       </header>
 
-      <ComparePicker founders={founders} initialA={known(a)} initialB={known(b)} />
+      <ComparePicker
+        initial={initial}
+        initialA={pickedA ?? undefined}
+        initialB={pickedB ?? undefined}
+      />
     </main>
   )
 }

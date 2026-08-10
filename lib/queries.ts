@@ -579,17 +579,26 @@ export interface PickerFounder {
   rarity: Rarity
 }
 
+/** The picker never shows more than a handful, so nothing larger is ever sent. */
+const PICKER_LIMIT = 8
+
 /**
- * Everybody who can be compared, for the picker on /compare.
+ * Founders for the compare picker: the strongest few, or those matching a query.
  *
- * The whole list rather than the top hundred: comparing is the one place where
- * the founder ranked 130th matters as much as the first, since they are exactly
- * who somebody ranked 128th wants to measure against. At 142 rows this is a
- * few kilobytes of JSON and filtering happens in the browser — a search
- * round trip per keystroke would be slower and worse.
+ * This used to return the whole corpus and filter in the browser, on the
+ * reasoning that 142 rows are a few kilobytes and a round trip per keystroke
+ * would be slower. That reasoning was right and is now wrong: discovering the
+ * rest of TrustMRR takes the corpus past a thousand, and shipping all of it to
+ * every visitor of /compare to render eight rows is hundreds of kilobytes spent
+ * on data nobody sees.
+ *
+ * Matching is server-side and prefix-weighted: somebody typing "zach" wants
+ * @zachly before @seanzachary, and ranking by level alone would bury them.
  */
-export async function getComparableFounders(): Promise<PickerFounder[]> {
+export async function getComparableFounders(query?: string): Promise<PickerFounder[]> {
   const sql = db()
+  const q = query?.trim().replace(/^@/, '').toLowerCase() ?? ''
+
   const rows = await sql<
     { handle: string; display_name: string | null; level: number; class: string }[]
   >`
@@ -597,7 +606,37 @@ export async function getComparableFounders(): Promise<PickerFounder[]> {
     from characters c
     join founders f on f.handle = c.handle
     where f.opted_out_at is null
-    order by c.level desc, c.ilvl desc nulls last, c.handle
+      ${q ? sql`and (c.handle ilike ${`%${q}%`} or f.display_name ilike ${`%${q}%`})` : sql``}
+    order by
+      ${q ? sql`(c.handle ilike ${`${q}%`} or f.display_name ilike ${`${q}%`}) desc,` : sql``}
+      c.level desc, c.ilvl desc nulls last, c.handle
+    limit ${PICKER_LIMIT}
+  `
+  return rows.map((row) => ({
+    handle: row.handle,
+    displayName: row.display_name ?? row.handle,
+    level: row.level,
+    characterClass: row.class as CharacterClass,
+    rarity: rarityFor(row.level),
+  }))
+}
+
+/** One founder by handle, so a `?a=` slot can pre-fill without loading a list. */
+export async function getPickerFounder(handle: string): Promise<PickerFounder | null> {
+  const [row] = await getComparableFoundersByHandles([handle])
+  return row ?? null
+}
+
+async function getComparableFoundersByHandles(handles: string[]): Promise<PickerFounder[]> {
+  if (handles.length === 0) return []
+  const sql = db()
+  const rows = await sql<
+    { handle: string; display_name: string | null; level: number; class: string }[]
+  >`
+    select c.handle, f.display_name, c.level, c.class
+    from characters c
+    join founders f on f.handle = c.handle
+    where f.opted_out_at is null and c.handle = any(${handles})
   `
   return rows.map((row) => ({
     handle: row.handle,

@@ -1,7 +1,7 @@
 'use client'
 
 import { useRouter } from 'next/navigation'
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Icon } from '@/components/icon'
 import { CLASS_COLORS } from '@/engine'
 import type { PickerFounder } from '@/lib/queries'
@@ -15,35 +15,37 @@ import type { PickerFounder } from '@/lib/queries'
  * else on the ladder — the person you actually want to measure against — was
  * unreachable without hand-editing a URL.
  *
- * The list is filtered in the browser rather than on the server. All 142 rows
- * are a few kilobytes, and a round trip per keystroke would be slower and worse
- * than the thing it replaced.
+ * Matching happens on the server. The first version shipped the whole corpus to
+ * the browser and filtered locally, which was right at 142 founders and wrong
+ * the moment the crawler could see the rest of TrustMRR: hundreds of kilobytes
+ * sent to every visitor so that eight rows could be drawn.
  *
  * Rows look like ladder rows on purpose: this is the same population, sorted
  * the same way, and a second visual language for it would be a second thing to
  * learn.
  */
 export function ComparePicker({
-  founders,
+  initial,
   initialA,
   initialB,
 }: {
-  founders: PickerFounder[]
-  initialA?: string
-  initialB?: string
+  /** The strongest few, rendered on the server so the page is never empty. */
+  initial: PickerFounder[]
+  initialA?: PickerFounder
+  initialB?: PickerFounder
 }) {
   const router = useRouter()
-  const [a, setA] = useState<string | null>(initialA ?? null)
-  const [b, setB] = useState<string | null>(initialB ?? null)
+  const [a, setA] = useState<PickerFounder | null>(initialA ?? null)
+  const [b, setB] = useState<PickerFounder | null>(initialB ?? null)
 
-  const ready = a !== null && b !== null && a !== b
+  const ready = a !== null && b !== null && a.handle !== b.handle
 
   return (
     <div className="picker">
       <div className="picker-slots">
         <Slot
           label="First"
-          founders={founders}
+          initial={initial}
           selected={a}
           other={b}
           onPick={setA}
@@ -52,7 +54,7 @@ export function ComparePicker({
         <div className="picker-vs serif">VS</div>
         <Slot
           label="Second"
-          founders={founders}
+          initial={initial}
           selected={b}
           other={a}
           onPick={setB}
@@ -65,7 +67,7 @@ export function ComparePicker({
           type="button"
           className="share-x"
           disabled={!ready}
-          onClick={() => ready && router.push(`/c/${a}/vs/${b}`)}
+          onClick={() => ready && router.push(`/c/${a.handle}/vs/${b.handle}`)}
         >
           Compare
         </button>
@@ -77,32 +79,57 @@ export function ComparePicker({
 
 function Slot({
   label,
-  founders,
+  initial,
   selected,
   other,
   onPick,
   onClear,
 }: {
   label: string
-  founders: PickerFounder[]
-  selected: string | null
+  initial: PickerFounder[]
+  selected: PickerFounder | null
   /** The other side's pick, hidden from this list — nobody compares with themselves. */
-  other: string | null
-  onPick: (handle: string) => void
+  other: PickerFounder | null
+  onPick: (founder: PickerFounder) => void
   onClear: () => void
 }) {
   const [query, setQuery] = useState('')
+  const [results, setResults] = useState<PickerFounder[]>(initial)
 
-  const matches = useMemo(() => {
-    const q = query.trim().toLowerCase().replace(/^@/, '')
-    const pool = founders.filter((f) => f.handle !== other)
-    if (!q) return pool.slice(0, 8)
-    return pool
-      .filter((f) => f.handle.includes(q) || f.displayName.toLowerCase().includes(q))
-      .slice(0, 8)
-  }, [founders, other, query])
+  /*
+   * Debounced, and every stale response is discarded.
+   *
+   * Without the generation check, a slow request for "z" can land after a fast
+   * one for "zach" and repopulate the list with the wrong answer — the classic
+   * typeahead race, and one that only shows up on a bad connection.
+   */
+  useEffect(() => {
+    const q = query.trim()
+    if (!q) {
+      setResults(initial)
+      return
+    }
+    let live = true
+    const timer = setTimeout(async () => {
+      try {
+        const response = await fetch(`/api/founders?q=${encodeURIComponent(q)}`)
+        if (!response.ok) return
+        const data = (await response.json()) as { founders: PickerFounder[] }
+        if (live) setResults(data.founders)
+      } catch {
+        // A failed lookup leaves the previous list in place, which is a better
+        // answer than an empty one.
+      }
+    }, 180)
+    return () => {
+      live = false
+      clearTimeout(timer)
+    }
+  }, [query, initial])
 
-  const picked = selected ? founders.find((f) => f.handle === selected) : undefined
+  const matches = useMemo(() => results.filter((f) => f.handle !== other?.handle), [results, other])
+
+  const picked = selected
 
   if (picked) {
     return (
@@ -146,7 +173,7 @@ function Slot({
       <ul className="picker-list">
         {matches.map((f) => (
           <li key={f.handle}>
-            <button type="button" onClick={() => onPick(f.handle)}>
+            <button type="button" onClick={() => onPick(f)}>
               <span className="qsquare picker-level serif" style={{ color: f.rarity.hex }}>
                 {f.level}
               </span>
