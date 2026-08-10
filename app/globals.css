@@ -81,7 +81,20 @@ body {
 }
 
 body {
-  background: var(--ic-bg);
+  /*
+   * A warm light over the top of the page, so the crest sits in something
+   * rather than floating on an aplat.
+   *
+   * Two layers on the element rather than a fixed pseudo-element, which is what
+   * this wants to be and is not: the glow belongs to the top of the DOCUMENT,
+   * not to the top of the viewport, so it should scroll away with the crest it
+   * lights. A body background is positioned against the body box and does
+   * exactly that, and the solid colour underneath means the canvas is painted
+   * everywhere the gradient has already faded out.
+   */
+  background:
+    radial-gradient(125% 640px at 50% -90px, rgba(248, 183, 0, 0.085), transparent 70%),
+    var(--ic-bg);
   color: var(--ic-text);
   font-family: var(--ic-sans);
   /* Alegreya Sans defaults to oldstyle figures, where 0, 1 and 2 sit at
@@ -185,8 +198,16 @@ a:hover {
 .frame {
   position: relative;
   border: 1px solid #4a3a1c;
-  background: var(--ic-bg);
+  /* Transparent, not --ic-bg. It was the same colour as the page, so it made no
+     visible difference and did one invisible thing: paint the body's glow out
+     of its own interior, leaving the crest lit everywhere except on itself. */
+  background: transparent;
   padding: 18px;
+  /* Spilled outward and heavily inset, so the gold reads as lit rather than
+     drawn — a border with light coming off it is metal, a border without is a
+     rectangle. Only the frame gets this, which is the whole point: it is the
+     device that marks the subject, and it earns the one glow on the page. */
+  box-shadow: 0 0 44px -14px rgba(248, 183, 0, 0.3);
 }
 .frame::before {
   content: "";
