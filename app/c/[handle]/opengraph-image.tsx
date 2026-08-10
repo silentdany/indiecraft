@@ -1,5 +1,3 @@
-import { readFile } from 'node:fs/promises'
-import { join } from 'node:path'
 import { ImageResponse } from '@vercel/og'
 import { BrandMark } from '@/components/brand-mark'
 import { ACHIEVEMENT_ICONS, Icon, type IconName } from '@/components/icon'
@@ -10,6 +8,8 @@ import {
   FACTIONS_BY_KEY,
   rarityFor,
 } from '@/engine'
+import { remoteImage } from '@/lib/og-fetch'
+import { ogFonts } from '@/lib/og-fonts'
 import { ogImageId } from '@/lib/og-image'
 import type { CharacterPage } from '@/lib/queries'
 import { getCharacter } from '@/lib/queries'
@@ -87,20 +87,6 @@ export async function generateImageMetadata({ params }: { params: { handle: stri
     },
   ]
 }
-
-// Loaded once, as an ArrayBuffer, from the repo. Never fetch Google Fonts at
-// runtime: slow, fragile, and it breaks on edge.
-const fonts = (async () => {
-  const dir = join(process.cwd(), 'public', 'fonts')
-  const [regular, medium] = await Promise.all([
-    readFile(join(dir, 'Cinzel-Regular.ttf')),
-    readFile(join(dir, 'Cinzel-Medium.ttf')),
-  ])
-  return [
-    { name: 'Cinzel', data: regular, weight: 400 as const, style: 'normal' as const },
-    { name: 'Cinzel', data: medium, weight: 500 as const, style: 'normal' as const },
-  ]
-})()
 
 const BG = '#170e09'
 const PANEL = '#1a120c'
@@ -366,7 +352,7 @@ export default async function Image({ params }: { params: Promise<{ handle: stri
         </div>
       </div>
     </div>,
-    { ...size, fonts: await fonts },
+    { ...size, fonts: await ogFonts },
   )
 }
 
@@ -606,33 +592,6 @@ function statCells(character: CharacterPage) {
   )
 
   return cells
-}
-
-/**
- * A remote image, inlined, or null.
- *
- * Satori will happily fetch a URL itself, and that is exactly the problem: its
- * fetch has no timeout and no content-type check, so a slow CDN hangs the
- * render and TrustMRR's 403-as-XML answer for a missing logo throws inside the
- * renderer. Either one turns the single most important image in the product
- * into a 500 for that founder. Fetching here means every failure has the same
- * shape — null — and the card falls back to a letter nobody will notice.
- */
-async function remoteImage(url: string | null): Promise<string | null> {
-  if (!url) return null
-  try {
-    const response = await fetch(url, { signal: AbortSignal.timeout(2500) })
-    if (!response.ok) return null
-    const type = response.headers.get('content-type') ?? ''
-    if (!type.startsWith('image/')) return null
-    const bytes = Buffer.from(await response.arrayBuffer())
-    // An empty body renders as nothing; an enormous one is a decode nobody
-    // asked for on a card that is 1200px wide.
-    if (bytes.byteLength === 0 || bytes.byteLength > 3_000_000) return null
-    return `data:${type};base64,${bytes.toString('base64')}`
-  } catch {
-    return null
-  }
 }
 
 /**
