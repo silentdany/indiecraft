@@ -1914,49 +1914,104 @@ a:hover {
    The one action the whole product is measured on, so it gets the solid amber
    block and sits directly under the identity block rather than in a footer. */
 
-/* The card first, the words beside it, the buttons under those. Nobody shares
-   a thing they cannot see, and the card is the reason this product exists. */
+/* --- Share ----------------------------------------------------------------
+   Drawn as the post it becomes: avatar, name, handle, the words, the card.
+   The previous version put a miniature of the page beside a floating sentence
+   and labelled neither — the thumbnail read as a duplicate of the sheet
+   directly above it, and the sentence read as a stray statistic rather than as
+   text somebody was about to publish. Shaping it like the output removed the
+   need to explain any of it. */
+
 .share {
-  display: flex;
-  align-items: flex-start;
-  flex-wrap: wrap;
-  gap: 18px;
-  margin-top: 16px;
+  margin-top: 26px;
 }
 
-.share-preview {
-  flex: 0 0 auto;
-  width: 300px;
-  max-width: 100%;
-  border: 1px solid var(--ic-line-2);
-  line-height: 0;
-}
-.share-preview:hover {
-  border-color: var(--ic-gold);
-}
-.share-preview img {
-  width: 100%;
-  height: auto;
-}
-
-.share-compose {
+.share-head {
   display: flex;
-  flex-direction: column;
+  align-items: baseline;
   justify-content: space-between;
   gap: 16px;
-  flex: 1 1 300px;
-  min-width: 0;
-  /* Matches the preview so the two columns end level at desktop width. */
-  min-height: 157px;
+  margin-bottom: 12px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--ic-line-2);
+}
+.share-head h2 {
+  margin: 0;
+  font-size: 16px;
+  letter-spacing: 0.14em;
 }
 
-/* Set as the post will read, not as interface chrome: this is a sentence
-   somebody is about to put their name to. */
+/* Narrower than the page: a post is a column, and stretching it to full width
+   would stop it reading as one. */
+.share-post {
+  max-width: 520px;
+  padding: 14px 16px;
+  border: 1px solid var(--ic-line);
+  background: var(--ic-surface);
+}
+
+.share-author {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  margin-bottom: 10px;
+}
+/* The one round element in the entire interface, and deliberately so: it is
+   quoting somebody else's design, not proposing a new one here. */
+.share-avatar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  flex-shrink: 0;
+  overflow: hidden;
+  border-radius: 50%;
+  background: var(--ic-well);
+  color: var(--ic-text-muted);
+}
+.share-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.share-author-name {
+  font-size: 14px;
+  color: var(--ic-text);
+}
+.share-author-handle {
+  font-size: 13px;
+}
+
 .share-text {
-  margin: 0;
+  margin: 0 0 12px;
   font-size: 16px;
   line-height: 1.45;
   color: var(--ic-text);
+}
+
+.share-card {
+  display: block;
+  border: 1px solid var(--ic-line-2);
+  line-height: 0;
+}
+.share-card:hover {
+  border-color: var(--ic-gold);
+}
+.share-card img {
+  width: 100%;
+  height: auto;
+}
+/* The URL strip X prints under a card image. It is here because it is the part
+   that tells a reader where the link goes. */
+.share-card-url {
+  display: block;
+  padding: 7px 10px;
+  border-top: 1px solid var(--ic-line-2);
+  font-size: 11.5px;
+  line-height: 1.3;
+  color: var(--ic-text-muted);
+  word-break: break-all;
 }
 
 .share-actions {
@@ -1964,18 +2019,7 @@ a:hover {
   align-items: center;
   flex-wrap: wrap;
   gap: 16px;
-}
-
-@media (max-width: 620px) {
-  /* The preview goes full width rather than shrinking into a stamp — at 300px
-     it is already at the edge of showing the level, and below that it stops
-     being a preview and becomes decoration. */
-  .share-preview {
-    width: 100%;
-  }
-  .share-compose {
-    min-height: 0;
-  }
+  margin-top: 14px;
 }
 
 /* --- The badge block ------------------------------------------------------

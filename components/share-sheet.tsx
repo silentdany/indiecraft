@@ -7,29 +7,32 @@ import { type ShareFacts, sharePosts } from '@/lib/share-text'
 import { capture } from './posthog-provider'
 
 /**
- * The share affordance, which is the one thing the whole product is measured
- * on: whether people post their sheet unprompted.
+ * The share block, which is the one thing the whole product is measured on:
+ * whether people post their sheet unprompted.
  *
- * It used to be a button and a fixed sentence. Two things were wrong with that.
+ * It is drawn as the post it will become — avatar, name, handle, the words, the
+ * card underneath — because the previous version was a miniature of the page
+ * next to a floating sentence and nothing said what either was for. The
+ * thumbnail read as a redundant copy of the sheet directly above it, and "Top
+ * 10% of 140 indie founders, apparently." read as a stray statistic rather than
+ * as draft text somebody was about to publish under their own name.
  *
- * The sentence was a system notification — "Level 56 Paladin, rank #13 on the
- * World of Indiecraft armory" — identical for all 142 founders, and nobody
- * posts a system notification on purpose. lib/share-text.ts now writes it from
- * what is actually true about this person, and offers several angles because
- * the one that appeals is not something this code can know.
- *
- * And it asked for a leap of faith. The card is the reason anybody shares this
- * at all, and it was invisible until after posting. It is now shown, at the
- * shape X renders it, next to the words that will go with it.
+ * Nothing here needed explaining once it was shaped like the thing it produces.
+ * Anybody who has used X knows what this is at a glance, which is worth more
+ * than any caption we could have written above it.
  */
 export function ShareSheet({
   handle,
+  displayName,
+  avatarUrl,
   level,
   ilvl,
   characterClass,
   facts,
 }: {
   handle: string
+  displayName: string
+  avatarUrl: string | null
   level: number
   ilvl: number | null
   characterClass: string
@@ -51,6 +54,8 @@ export function ShareSheet({
   const origin = typeof window === 'undefined' ? '' : window.location.origin
   const url = `${origin}/c/${handle}?s=${ogImageId(level, ilvl)}`
   const card = ogImagePath(handle, level, ilvl)
+  // Shown the way X shows it in a post: the host and path, no scheme.
+  const displayUrl = `${origin.replace(/^https?:\/\//, '')}/c/${handle}`
 
   async function copy() {
     try {
@@ -65,62 +70,76 @@ export function ShareSheet({
   }
 
   return (
-    <div className="share">
-      {/* The card, at the shape X gives it. Lazy because it is a 1200×630 PNG
-          rendered on demand and the sheet above it is the reason people came. */}
-      <a
-        className="share-preview"
-        href={card}
-        target="_blank"
-        rel="noreferrer"
-        title="Open the full card"
-      >
-        {/* biome-ignore lint/performance/noImgElement: the same endpoint X fetches, shown exactly as X will render it. */}
-        <img
-          src={card}
-          alt={`Level ${level} ${characterClass} card`}
-          loading="lazy"
-          width={1200}
-          height={630}
-        />
-      </a>
+    <section className="share" aria-label="Share this sheet">
+      <header className="share-head">
+        <h2 className="serif">SHARE</h2>
+        <span className="label">This is what gets posted</span>
+      </header>
 
-      <div className="share-compose">
+      <div className="share-post">
+        <div className="share-author">
+          <span className="share-avatar">
+            {avatarUrl ? (
+              // biome-ignore lint/performance/noImgElement: matches the sheet portrait, which shares no pipeline with next/image.
+              <img src={avatarUrl} alt="" width={40} height={40} />
+            ) : (
+              <span className="serif">{handle.slice(0, 1).toUpperCase()}</span>
+            )}
+          </span>
+          <span className="share-author-name">{displayName}</span>
+          <span className="share-author-handle muted">@{handle}</span>
+        </div>
+
         <p className="share-text">{post?.text}</p>
 
-        <div className="share-actions">
-          <a
-            className="share-x"
-            href={`https://x.com/intent/tweet?text=${encodeURIComponent(post?.text ?? '')}&url=${encodeURIComponent(url)}`}
-            target="_blank"
-            rel="noreferrer"
-            onClick={() => capture('share_clicked', { handle, target: 'x', angle: post?.key })}
-          >
-            Share on X
-          </a>
-
-          {/* Only when there is somewhere to cycle to. A founder with one
-              candidate gets a button that visibly does nothing otherwise. */}
-          {posts.length > 1 && (
-            <button
-              type="button"
-              className="share-copy label"
-              onClick={() => {
-                setAngle((a) => a + 1)
-                capture('share_angle_changed', { handle })
-              }}
-            >
-              <Icon name="rising" size={13} />
-              Another angle
-            </button>
-          )}
-
-          <button type="button" className="share-copy label" onClick={copy}>
-            <Icon name="gear" size={13} />
-            {copied ? 'Copied' : 'Copy link'}
-          </button>
-        </div>
+        <a className="share-card" href={card} target="_blank" rel="noreferrer">
+          {/* The same endpoint X fetches, at the shape X renders it. Lazy: it is
+              a 1200×630 PNG rendered on demand, and the sheet above it is what
+              people came for. */}
+          {/* biome-ignore lint/performance/noImgElement: the exact bytes X will attach. */}
+          <img
+            src={card}
+            alt={`Level ${level} ${characterClass} card`}
+            loading="lazy"
+            width={1200}
+            height={630}
+          />
+          <span className="share-card-url">{displayUrl}</span>
+        </a>
       </div>
-    </div>
+
+      <div className="share-actions">
+        <a
+          className="share-x"
+          href={`https://x.com/intent/tweet?text=${encodeURIComponent(post?.text ?? '')}&url=${encodeURIComponent(url)}`}
+          target="_blank"
+          rel="noreferrer"
+          onClick={() => capture('share_clicked', { handle, target: 'x', angle: post?.key })}
+        >
+          Post on X
+        </a>
+
+        {/* Only when there is somewhere to cycle to: a founder with a single
+            candidate would otherwise get a button that visibly does nothing. */}
+        {posts.length > 1 && (
+          <button
+            type="button"
+            className="share-copy label"
+            onClick={() => {
+              setAngle((a) => a + 1)
+              capture('share_angle_changed', { handle })
+            }}
+          >
+            <Icon name="rising" size={13} />
+            Different wording
+          </button>
+        )}
+
+        <button type="button" className="share-copy label" onClick={copy}>
+          <Icon name="gear" size={13} />
+          {copied ? 'Copied' : 'Copy link'}
+        </button>
+      </div>
+    </section>
   )
 }

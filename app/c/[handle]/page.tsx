@@ -208,37 +208,6 @@ export default async function CharacterSheet({ params }: Props) {
         </div>
       </Frame>
 
-      <ShareSheet
-        handle={character.handle}
-        level={character.level}
-        ilvl={character.ilvl}
-        characterClass={character.characterClass}
-        facts={{
-          level: character.level,
-          ilvl: character.ilvl,
-          characterClass: character.characterClass,
-          rank: character.rank,
-          total: character.rankContext?.total ?? 0,
-          classRank: character.rankContext?.classRank ?? 0,
-          classTotal: character.rankContext?.classTotal ?? 0,
-          realm: character.rankContext?.realmRank
-            ? {
-                name: realmLabel(character.rankContext.realmRank.realm),
-                rank: character.rankContext.realmRank.rank,
-                total: character.rankContext.realmRank.total,
-              }
-            : null,
-          achievements: character.achievements.length,
-          achievementsTotal: ACHIEVEMENTS.length,
-          recentLevelUp: character.recentLevelUp?.level ?? null,
-          recentAchievement: character.recentAchievement
-            ? (ACHIEVEMENTS_BY_CODE.get(character.recentAchievement.code)?.label ?? null)
-            : null,
-          growthMrr30d: character.stats.growthMrr30d,
-          mrrUsd: character.mrrUsd,
-        }}
-      />
-
       {character.rankContext && (
         <RankPanel
           context={character.rankContext}
@@ -307,9 +276,50 @@ export default async function CharacterSheet({ params }: Props) {
         </Section>
       )}
 
-      {/* Down here rather than in the share row under the header: this is a
-          thing a founder sets up once, and everybody else came to read a
-          sheet. */}
+      {/*
+        Share and Badge together at the foot: the two things you do WITH a
+        sheet, after the sheet itself.
+
+        Share used to sit directly under the header, as the primary action.
+        Drawing it as an actual post is what made it legible and also what made
+        it 496px tall — enough to push the rank panel below the fold on a laptop
+        and bury every number a visitor came for. A call to action nobody has
+        read the page for yet is just an obstacle; a founder who wants to post
+        their sheet will scroll.
+      */}
+      <ShareSheet
+        handle={character.handle}
+        displayName={character.displayName}
+        avatarUrl={character.avatarUrl}
+        level={character.level}
+        ilvl={character.ilvl}
+        characterClass={character.characterClass}
+        facts={{
+          level: character.level,
+          ilvl: character.ilvl,
+          characterClass: character.characterClass,
+          rank: character.rank,
+          total: character.rankContext?.total ?? 0,
+          classRank: character.rankContext?.classRank ?? 0,
+          classTotal: character.rankContext?.classTotal ?? 0,
+          realm: character.rankContext?.realmRank
+            ? {
+                name: realmLabel(character.rankContext.realmRank.realm),
+                rank: character.rankContext.realmRank.rank,
+                total: character.rankContext.realmRank.total,
+              }
+            : null,
+          achievements: character.achievements.length,
+          achievementsTotal: ACHIEVEMENTS.length,
+          recentLevelUp: character.recentLevelUp?.level ?? null,
+          recentAchievement: character.recentAchievement
+            ? (ACHIEVEMENTS_BY_CODE.get(character.recentAchievement.code)?.label ?? null)
+            : null,
+          growthMrr30d: character.stats.growthMrr30d,
+          mrrUsd: character.mrrUsd,
+        }}
+      />
+
       <Section title="Badge">
         <BadgeBlock
           handle={character.handle}
