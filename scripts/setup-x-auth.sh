@@ -232,9 +232,8 @@ say "This is the stage that decides whether sign-in works at all."
 open_url "https://developer.x.com/en/portal/dashboard"
 step "Open your app → 'User authentication settings' → Set up."
 step "App permissions: 'Read' is enough."
-step "Type of App: choose 'Web App, Automated App or Bot' (a confidential"
-step "  client). This is what makes X issue a Client Secret — a 'Native App'"
-step "  gets none, and the sign-in will fail at the token exchange."
+step "Type of App: choose 'Web App, Automated App or Bot'."
+step "Make sure 'Request email from users' is OFF — we never ask for it."
 say ""
 step "Callback URI / Redirect URL — add BOTH of these, exactly:"
 printf '      %s%s%s\n' "$BOLD" "$PROD_CALLBACK" "$RESET"
@@ -245,21 +244,26 @@ step "Save."
 pause "Saved? Press Enter."
 
 # ──────────────────────────────────────────────────────────────────────────
-stage "Copy the OAuth 2.0 credentials"
-say "Saving those settings shows the Client ID and Client Secret once."
-warn "The secret is shown ONCE. If this screen is gone, use Regenerate."
-step "Copy the OAuth 2.0 Client ID."
-ask X_CLIENT_ID "Paste the Client ID:"
-step "Copy the OAuth 2.0 Client Secret."
-ask_secret X_CLIENT_SECRET "Paste the Client Secret (hidden):"
+stage "Copy the API Key and Secret"
+say "These are the OAuth 1.0a consumer keys, on the 'Keys and tokens' tab."
+say "Not the Client ID/Secret, and not the Bearer Token."
+note "1.0a is what this site signs in with, because its final response carries"
+note "the username directly. OAuth 2.0 needs GET /2/users/me, which an app has"
+note "to be entitled to reach — and being refused there looks exactly like a"
+note "bug in the site rather than a permission you do not have."
+open_url "https://developer.x.com/en/portal/dashboard"
+step "Open your app → Keys and tokens → 'API Key and Secret' → Regenerate if"
+step "  you no longer have them (the secret is only ever shown once)."
+ask X_API_KEY "Paste the API Key:"
+ask_secret X_API_SECRET "Paste the API Key Secret (hidden):"
 
-if [[ -z "$X_CLIENT_ID" || -z "$X_CLIENT_SECRET" ]]; then
+if [[ -z "$X_API_KEY" || -z "$X_API_SECRET" ]]; then
   warn "Both values are required — re-run when you have them."
   exit 1
 fi
 
-write_env X_CLIENT_ID "$X_CLIENT_ID"
-write_env X_CLIENT_SECRET "$X_CLIENT_SECRET"
+write_env X_API_KEY "$X_API_KEY"
+write_env X_API_SECRET "$X_API_SECRET"
 
 # ──────────────────────────────────────────────────────────────────────────
 stage "Generate the session signing secret"
@@ -280,12 +284,12 @@ write_env AUTH_SECRET "$AUTH_SECRET"
 stage "Send the three values to Vercel"
 say "Production reads these from Vercel, not from your .env."
 note "GitHub Actions does NOT need them: the nightly crawler never signs anyone in."
-if confirm "Write X_CLIENT_ID, X_CLIENT_SECRET and AUTH_SECRET to Vercel production?"; then
-  vercel_env X_CLIENT_ID "$X_CLIENT_ID"
-  vercel_env X_CLIENT_SECRET "$X_CLIENT_SECRET"
+if confirm "Write X_API_KEY, X_API_SECRET and AUTH_SECRET to Vercel production?"; then
+  vercel_env X_API_KEY "$X_API_KEY"
+  vercel_env X_API_SECRET "$X_API_SECRET"
   vercel_env AUTH_SECRET "$AUTH_SECRET"
 else
-  SKIPPED+=("Vercel production vars X_CLIENT_ID, X_CLIENT_SECRET, AUTH_SECRET")
+  SKIPPED+=("Vercel production vars X_API_KEY, X_API_SECRET, AUTH_SECRET")
   warn "skipped — claiming stays switched off in production until these are set"
 fi
 

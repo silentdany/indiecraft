@@ -1,5 +1,6 @@
 import { createHash, createHmac, randomBytes, timingSafeEqual } from 'node:crypto'
 import { cookies } from 'next/headers'
+import { xConsumer } from '@/lib/auth-oauth1'
 
 /**
  * Proving that @someone is @someone.
@@ -95,10 +96,26 @@ function verify(payload: string, signature: string): boolean {
 // ---------------------------------------------------------------------------
 
 export interface FlowState {
+  /** OAuth 2.0 PKCE verifier, or the OAuth 1.0a request-token secret. */
   verifier: string
+  /** OAuth 2.0 CSRF state, or the OAuth 1.0a request token. */
   state: string
   /** Where to send them back to once they are known. */
   next: string
+}
+
+/**
+ * Which handshake to run.
+ *
+ * 1.0a when the consumer keys are present, because it is the one that works
+ * without a v2 entitlement: its access-token response carries `screen_name`
+ * directly, so no API endpoint is involved and no project enrollment can
+ * refuse it. 2.0 stays as the path for an app that does have v2 access.
+ */
+export function authMode(): 'oauth1' | 'oauth2' | null {
+  if (xConsumer()) return 'oauth1'
+  if (xCredentials()) return 'oauth2'
+  return null
 }
 
 export function newFlow(next: string): FlowState {

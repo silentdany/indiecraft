@@ -29,7 +29,10 @@ import { createHmac } from 'node:crypto'
  * honoured, so anyone already removed stays removed.
  */
 export const consentActionsEnabled = (): boolean =>
-  Boolean(process.env.X_CLIENT_ID && process.env.X_CLIENT_SECRET)
+  Boolean(
+    (process.env.X_API_KEY && process.env.X_API_SECRET) ||
+      (process.env.X_CLIENT_ID && process.env.X_CLIENT_SECRET),
+  )
 
 /**
  * Requests allowed per IP per hour.

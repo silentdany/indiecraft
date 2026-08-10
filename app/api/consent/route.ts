@@ -1,5 +1,5 @@
 import { revalidatePath } from 'next/cache'
-import { sessionHandle, xCredentials } from '@/lib/auth'
+import { authMode, sessionHandle } from '@/lib/auth'
 import { clientIp, hashIp, OPT_OUT_MAX_PER_HOUR } from '@/lib/consent'
 import { db } from '@/lib/db'
 
@@ -26,7 +26,7 @@ export const runtime = 'nodejs'
 type Action = 'claim' | 'unclaim' | 'opt_out'
 
 export async function POST(request: Request) {
-  if (!xCredentials()) return Response.json({ error: 'not found' }, { status: 404 })
+  if (!authMode()) return Response.json({ error: 'not found' }, { status: 404 })
 
   const handle = await sessionHandle()
   if (!handle) return Response.json({ error: 'sign in first' }, { status: 401 })
