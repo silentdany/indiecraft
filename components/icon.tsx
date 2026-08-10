@@ -80,8 +80,14 @@ const PATHS: Record<IconName, React.ReactNode> = {
       <path d="M12 7.5c2.5 2 3.5 3.4 3.5 5a3.5 3.5 0 01-7 0c0-1 .4-1.9 1.2-2.8.3 1 .8 1.5 1.5 1.7-.3-1.5-.1-2.8.8-3.9z" />
     </g>
   ),
-  /** A sound wave. Their audience is their channel. */
-  Bard: <path d="M3 12h2.5M8 6.5v11M12 3.5v17M16 7.5v9M20.5 12H21" />,
+  /** Totems: a following you called together, standing where you put them. */
+  Shaman: (
+    <g>
+      <path d="M6 21v-6.5M12 21v-11M18 21v-8" />
+      <path d="M4 14.5h4M10 10h4M16 13h4" />
+      <path d="M12 3.5l1.6 3.2 3.4.5-2.5 2.4.6 3.4-3.1-1.6-3.1 1.6.6-3.4L7 7.2l3.4-.5z" />
+    </g>
+  ),
   /** A pulse that does not stop. Their customers stay. */
   Priest: <path d="M2 12.5h4.5l2-5 3.5 10 2.5-7 1.8 2h5.7" />,
   /** A ring closed by a single line: paid in full, nothing left to renew. */
@@ -96,14 +102,14 @@ const PATHS: Record<IconName, React.ReactNode> = {
   /** Crossed blades. Volume, earned one dollar at a time. */
   Warrior: <path d="M4 3l11 14M20 3L9 17M5.5 16.5l3 3M18.5 16.5l-3 3" />,
   /**
-   * A path with the first marker planted on it. Earning already, still finding
-   * the shape of it — the ground ahead is unmapped, but the first stake is in.
+   * A wing just opening. Earning already, still finding the shape of it —
+   * the newest thing in the roster, and not yet at full span.
    */
-  Ranger: (
+  Evoker: (
     <g>
-      <path d="M4 20.5c3.5-1.5 5-4.5 5-8" />
-      <path d="M9 12.5V3.5l7 2.5-7 2.5" />
-      <path d="M13.5 20.5h7" />
+      <path d="M3 18.5c4.5 0 8-2.2 10-6.5" />
+      <path d="M13 12c2.2-4.3 4.9-6.5 8-6.5 0 5.5-2.7 9.2-8 11" />
+      <path d="M13 12l-2.5 6.5" />
     </g>
   ),
   /** A shield. Holds the line. */

@@ -9,7 +9,7 @@ import {
   rarityFor,
   xpFrom,
 } from './character'
-import { CLASS_RULES, LEVEL_THRESHOLDS, MAX_LEVEL } from './tuning'
+import { CLASS_COLORS, CLASS_RULES, LEVEL_THRESHOLDS, MAX_LEVEL } from './tuning'
 import type { FounderAggregate } from './types'
 
 /**
@@ -192,8 +192,8 @@ describe('class', () => {
   it('uses the real channel slugs, not the invented ones', () => {
     // `x-twitter` was guessed and does not exist; the slug is `twitter`. The
     // old rule looked correct and matched nobody.
-    expect(classFrom(founder({ nProducts: 1, channels: ['twitter'] }), 20)).toBe('Bard')
-    expect(classFrom(founder({ nProducts: 1, channels: ['x-twitter'] }), 20)).not.toBe('Bard')
+    expect(classFrom(founder({ nProducts: 1, channels: ['twitter'] }), 20)).toBe('Shaman')
+    expect(classFrom(founder({ nProducts: 1, channels: ['x-twitter'] }), 20)).not.toBe('Shaman')
   })
 
   describe('Hunter', () => {
@@ -295,7 +295,7 @@ describe('class', () => {
   it('gives anyone still earning a class, however little the corpus says', () => {
     // MRR but no customer count at all — a very common shape outside the top
     // 200, and one that used to land in "we do not know".
-    expect(classFrom(founder({ nProducts: 1, mrrUsd: 39, revenueTotalUsd: 0 }), 20)).toBe('Ranger')
+    expect(classFrom(founder({ nProducts: 1, mrrUsd: 39, revenueTotalUsd: 0 }), 20)).toBe('Evoker')
     // Lifetime revenue only, with no recurring, is Monk and stays Monk.
     expect(classFrom(founder({ nProducts: 1, mrrUsd: 0, revenueTotalUsd: 4_000 }), 20)).toBe('Monk')
   })
@@ -310,7 +310,7 @@ describe('class', () => {
     // Cheap, and enough of them to be volume.
     expect(classFrom(founder({ nProducts: 1, customers: 40, mrrUsd: 600 }), 20)).toBe('Warrior')
     // Cheap, but three customers is not volume — that is somebody starting.
-    expect(classFrom(founder({ nProducts: 1, customers: 3, mrrUsd: 45 }), 20)).toBe('Ranger')
+    expect(classFrom(founder({ nProducts: 1, customers: 3, mrrUsd: 45 }), 20)).toBe('Evoker')
   })
 
   it('never leaves a class that could read as an insult', () => {
@@ -412,5 +412,45 @@ describe('gear', () => {
 
   it('gives no item level to a product that does not bill monthly', () => {
     expect(itemLevelFor(0)).toBeNull()
+  })
+})
+
+describe('the class roster', () => {
+  /**
+   * Bard and Ranger shipped for a day and are not classes anybody has played.
+   * The point of borrowing this vocabulary is that it needs no explaining, and
+   * an invented class explains nothing to the audience it was borrowed for.
+   */
+  it('only uses classes that exist in the reference', () => {
+    const real = new Set([
+      'Death Knight',
+      'Demon Hunter',
+      'Druid',
+      'Evoker',
+      'Hunter',
+      'Mage',
+      'Monk',
+      'Paladin',
+      'Priest',
+      'Rogue',
+      'Shaman',
+      'Warlock',
+      'Warrior',
+    ])
+    for (const rule of CLASS_RULES) {
+      // Adventurer is the one exception, and deliberately not a class: it is
+      // the state of having none yet.
+      if (rule.class === 'Adventurer') continue
+      expect(real.has(rule.class)).toBe(true)
+    }
+  })
+
+  it('gives every class a colour, and the canonical one', () => {
+    for (const rule of CLASS_RULES) {
+      expect(CLASS_COLORS[rule.class]).toMatch(/^#[0-9A-Fa-f]{6}$/)
+    }
+    expect(CLASS_COLORS.Paladin).toBe('#F48CBA')
+    expect(CLASS_COLORS.Priest).toBe('#FFFFFF')
+    expect(CLASS_COLORS.Mage).toBe('#3FC7EB')
   })
 })

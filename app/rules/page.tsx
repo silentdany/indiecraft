@@ -156,11 +156,11 @@ export default async function Rules() {
           })}
         </ol>
         <p className="muted rules-note">
-          Anyone still earning falls through to Ranger, so Adventurer means one thing only: shipped,
+          Anyone still earning falls through to Evoker, so Adventurer means one thing only: shipped,
           and nothing coming in yet. It is never a verdict — every founder here has launched
-          something, which most people never do. The colours are ours and they are load-bearing: a
-          class is a colour before it is a word, which is what lets a hundred-row ladder be read
-          without being parsed.
+          something, which most people never do. The colours are the canonical ones, not ours: a
+          class is a colour before it is a word, and there is no point inventing a vocabulary that
+          millions of people already read fluently.
         </p>
       </Section>
 

@@ -95,7 +95,7 @@ export const RARITY_BANDS: readonly { minLevel: number; rarity: Rarity }[] = [
  * guessed. `pnpm crawl --dump-slugs` reprints them.
  *
  * The guessed lists were worse than useless: they contained `x-twitter`, which
- * does not exist — the slug is `twitter` — so the Bard rule matched nothing at
+ * does not exist — the slug is `twitter` — so the audience rule matched nothing at
  * all while looking perfectly reasonable.
  *
  * marketingChannels (35): affiliate, app-store-optimization, blog,
@@ -205,12 +205,12 @@ export const FUNDING_POLICY: 'mark' | 'exclude' | 'ignore' = 'mark'
  * ten. Four subscribers at $139 is a business, and the tree called it unknown.
  *
  * Two changes, both measured against the live corpus rather than guessed: the
- * base-size floors came down (see PALADIN_MIN_CUSTOMERS), and Ranger was added
+ * base-size floors came down (see PALADIN_MIN_CUSTOMERS), and Evoker was added
  * as the last rule that can see anything — because "we don't know" is the wrong
  * answer for somebody with money coming in.
  *
- * Resulting spread over 619 founders: Monk 23%, Ranger 16%, Adventurer 15%,
- * Paladin 9%, Mage 8%, Warrior 8%, Hunter 7%, Bard 6%, Warlock 3%, Rogue 3%,
+ * Resulting spread over 619 founders: Monk 23%, Evoker 16%, Adventurer 15%,
+ * Paladin 9%, Mage 8%, Warrior 8%, Hunter 7%, Shaman 6%, Warlock 3%, Rogue 3%,
  * Priest 1%.
  *
  * Adventurer is now exactly what it claims to be: 93 founders who have shipped
@@ -258,7 +258,7 @@ export const CLASS_RULES: readonly ClassRule[] = [
     // rule almost never fires: a single product grants 500 XP, which is level
     // 17, so `level < 5` is unreachable for anyone with something shipped. The
     // count on /rules comes from the fallback at the end of the tree, and since
-    // Ranger now takes everyone with revenue, the fallback means exactly one
+    // Evoker now takes everyone with revenue, the fallback means exactly one
     // thing — shipped, earning nothing yet.
     condition: 'No products yet, or nothing earned yet',
     test: (a, { level }) => a.nProducts === 0 || level < 5,
@@ -288,7 +288,7 @@ export const CLASS_RULES: readonly ClassRule[] = [
     test: (a) => hasAny(a.channels, PAID_CHANNELS),
   },
   {
-    class: 'Bard',
+    class: 'Shaman',
     reason: 'Their audience is their channel.',
     condition: 'Runs on an audience they built — X, YouTube, a newsletter',
     test: (a) => hasAny(a.channels, AUDIENCE_CHANNELS),
@@ -333,7 +333,7 @@ export const CLASS_RULES: readonly ClassRule[] = [
     test: (a, { arpu }) => a.effectiveCustomers >= PALADIN_MIN_CUSTOMERS && arpu >= 30,
   },
   {
-    class: 'Ranger',
+    class: 'Evoker',
     // The last rule that can see anything. Everyone here is earning; what the
     // corpus does not say is the shape of it — a handful of customers, or a
     // price too low to read as either volume or premium, or a listing with
@@ -348,47 +348,48 @@ export const CLASS_RULES: readonly ClassRule[] = [
 ]
 
 /**
- * One colour per class.
+ * The canonical class colours, and the canonical classes.
  *
- * Drawn here, not sampled: the reference's class colours are its own, and this
- * palette is built for a warm black background it never had to sit on. What is
- * borrowed is the idea — that a class is a colour before it is a word, so a
- * ladder of a hundred rows can be read by hue alone.
+ * An earlier version invented both: a soft palette of our own, plus Bard and
+ * Ranger, which are not classes anybody has ever played. That was the wrong
+ * call. These thirteen hexes are the single most recognised piece of shared
+ * vocabulary the genre has — every armory, every log site, every addon uses
+ * them, and somebody who plays reads "Mage" off #3FC7EB before the word
+ * arrives. Inventing a palette threw away the one thing that needed no
+ * explaining, in exchange for tidiness nobody asked for.
  *
- * The rule that keeps this from fighting the rarity palette, which is also
- * colour and also everywhere: rarity is saturated, classes are soft. Both
- * appear in the same ladder row, a level square beside a class name, and the
- * eye separates them by intensity before it separates them by hue. Break that
- * and epic purple becomes indistinguishable from a Warlock.
+ * They are values, not assets: thirteen numbers that function as names. The
+ * no-Blizzard-assets rule is about fonts, icons and images, and it still holds
+ * everywhere — every glyph in this project is drawn here.
  *
- * Amber (roughly 40–60°) is missing on purpose. It belongs to the interface and
- * to the character's own name, and a class wearing it would read as a button.
- * Paladin, the most ordinary class on the ladder and the one that would have
- * claimed it, gets plate silver instead.
+ * Two collisions with the rarity palette are real and deliberate, because
+ * fidelity beats tidiness for both:
+ *
+ *   Rogue #FFF468 is the butter yellow otherwise reserved for a character's own
+ *   name. On a sheet they are far apart; on a ladder row a Rogue's class label
+ *   wears the name colour. That is what a Rogue looks like.
+ *
+ *   Shaman #0070DD is exactly the rare-quality blue. A level-25-to-39 Shaman
+ *   shows the same blue twice in one row, in a square and in a word.
+ *
+ * Adventurer is not a class in the reference either — it is the state of having
+ * none yet — so it keeps a bronze that sits outside the palette rather than
+ * pretending to belong.
  */
 export const CLASS_COLORS: Record<CharacterClass, string> = {
-  /** Dim bronze: deliberately the least saturated. It is the class of no answer yet. */
+  /** Not a class in the reference at all — the state of having none yet. Bronze
+      keeps it out of the palette below rather than pretending to belong. */
   Adventurer: '#8f8069',
-  /** Arcane blue, the oldest colour in the genre for the one who builds with new things. */
-  Mage: '#63a8f2',
-  /** Green: found without looking, the colour of things that grow on their own. */
-  Hunter: '#84c65a',
-  /** Orchid, pushed pinker than epic purple so the two never trade places. */
-  Warlock: '#bb7cf0',
-  /** Stage magenta. Their audience is the channel. */
-  Bard: '#df7fd0',
-  /** Ice: calm, and the class whose customers stay. */
-  Priest: '#79cfd8',
-  /** Jade. Takes no rent. */
-  Monk: '#4ccfa0',
-  /** Blood rose: few marks, big scores. */
-  Rogue: '#e06a80',
-  /** Rust: volume, earned a dollar at a time. */
-  Warrior: '#dd8b5e',
-  /** Plate silver. Holds the line, and never mistakes itself for gold. */
-  Paladin: '#b6c0cb',
-  /** Periwinkle: the one hue the other ten left free, for the newest class. */
-  Ranger: '#8f93d6',
+  Mage: '#3FC7EB',
+  Hunter: '#AAD372',
+  Warlock: '#8788EE',
+  Shaman: '#0070DD',
+  Priest: '#FFFFFF',
+  Monk: '#00FF98',
+  Rogue: '#FFF468',
+  Warrior: '#C69B6D',
+  Paladin: '#F48CBA',
+  Evoker: '#33937F',
 }
 
 /** Safety net: never demeaning, always reachable. */
