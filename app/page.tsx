@@ -32,22 +32,27 @@ export const revalidate = 300
  *
  *   1. who are you        — the crest and the inspect box
  *   2. how big is this    — five figures across the realm strip
- *   3. who sells to whom  — the three factions, the coarsest cut there is
- *   4. who is winning     — the top of the ladder
+ *   3. who is winning     — the ladder
+ *   4. who sells to whom  — the three factions
  *   5. where do you fit   — classes and realms, the two ladders somebody who
  *                           will never be in the global top can place in
  *
- * Twenty rows of ladder used to sit at (4) and the answers to (5) were beneath
- * them, which is precisely backwards: the top of a ladder is its least
- * differentiated part — the first nine rows are all level 60 — so it was
- * spending four hundred pixels saying one thing, and burying the two sections
- * that exist for people who are not on it. Ten rows now, and the whole ladder
- * is one link away from the heading above them.
+ * Only two things on this page get the frame: the crest and the ladder. It is
+ * the device the whole site uses to say "this is the subject" — the character
+ * sheet spends it on the character — and spending it here is the difference
+ * between a ladder that is on the page and a ladder that is the page. Between
+ * them sits nothing but five numbers, so the answer to "who is winning" is
+ * above the fold on any real screen.
  *
- * The class tabs moved out of the ladder section for a different reason. They
- * sat between its heading and its rows, in the same tab styling the ladder page
- * uses for its live facets, so they read as filtering the twenty rows below
- * them. They never did — every one of them navigates away.
+ * Twelve rows, not twenty. The top of a ladder is its least differentiated
+ * part — the first nine are all level 60 — so rows thirteen to twenty were
+ * spending the tallest block on the page repeating the first ten. Twelve
+ * reaches down into 57 and 56, where the numbers start to move.
+ *
+ * The class tabs used to sit between the ladder's heading and its rows, in the
+ * same tab styling /ladder uses for its live facets, so they read as filtering
+ * the rows below them. They never did — every one navigates away. They are a
+ * list now, beside the realms.
  */
 export default async function Home() {
   const [ladder, stats, classes, factions, realms] = await Promise.all([
@@ -112,6 +117,24 @@ export default async function Home() {
         </section>
       )}
 
+      {/* The one section that gets the crest's treatment. A heading and a list
+          made the ladder a section like any other on a page where it is meant
+          to be the reason anybody came. */}
+      <Frame className="ladderblock">
+        <header className="section-head ladderblock-head">
+          <h2 className="serif gold">THE LADDER</h2>
+          {/* Says the number, because "Full top 100" was a link that named a
+              limit the ladder no longer has, and nobody clicks through to find
+              a bigger list than the one they were promised. Twelve rows here,
+              everybody through the link. */}
+          <Link href="/ladder" className="label">
+            {ladder ? `All ${ladder.total.toLocaleString('en-US')} founders →` : 'The ladder →'}
+          </Link>
+        </header>
+
+        <LadderTable rows={rows.slice(0, 12)} />
+      </Frame>
+
       {/* Three of them, splitting the whole corpus, so they get a band of their
           own rather than a column: as one of two columns the list was three
           cards tall next to ten realms and left two hundred pixels of nothing
@@ -152,21 +175,6 @@ export default async function Home() {
           </div>
         </section>
       )}
-
-      <section style={{ marginTop: 30 }}>
-        <header className="section-head">
-          <h2 className="serif">THE LADDER</h2>
-          {/* Says the number, because "Full top 100" was a link that named a
-              limit the ladder no longer has, and nobody clicks through to find
-              a bigger list than the one they were promised. Ten rows here,
-              everybody through the link. */}
-          <Link href="/ladder" className="label">
-            {ladder ? `All ${ladder.total.toLocaleString('en-US')} founders →` : 'The ladder →'}
-          </Link>
-        </header>
-
-        <LadderTable rows={rows.slice(0, 10)} />
-      </section>
 
       {/*
         Two ways into the ladder that are not "be in the global top hundred".

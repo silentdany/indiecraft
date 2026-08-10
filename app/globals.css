@@ -819,6 +819,22 @@ a:hover {
 
 /* --- The ladder ----------------------------------------------------------- */
 
+/* The framed ladder on the front. Padded tighter at the bottom than the top,
+   because the last row's own border already draws the line the padding would
+   otherwise double. */
+.ladderblock {
+  margin-top: 22px;
+  padding: 18px 18px 8px;
+}
+.ladderblock-head {
+  margin-bottom: 8px;
+  padding: 0 12px;
+}
+.ladderblock-head h2 {
+  font-size: 20px;
+  letter-spacing: 0.18em;
+}
+
 /* Sits between the facets and the rows, because that is the order the two are
    used in: pick which ladder, then find yourself on it. */
 .laddersearch form {
