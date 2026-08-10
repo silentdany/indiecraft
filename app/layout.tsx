@@ -1,4 +1,5 @@
 import type { Metadata } from 'next'
+import { IBM_Plex_Sans } from 'next/font/google'
 import Link from 'next/link'
 import type { ReactNode } from 'react'
 import { BrandMark } from '@/components/brand-mark'
@@ -6,6 +7,27 @@ import { PostHogProvider } from '@/components/posthog-provider'
 import { SiteFooter } from '@/components/site-footer'
 import { SiteNav } from '@/components/site-nav'
 import './globals.css'
+
+/**
+ * Body text, self-hosted.
+ *
+ * `next/font/google` downloads at build time and serves the files from our own
+ * origin, so this keeps the rule Cinzel already follows: nothing fetches a font
+ * at runtime. It also emits the @font-face and a `font-display: swap` for free.
+ *
+ * Plex over the system stack because the system stack is whatever the reader
+ * happens to own — San Francisco on a Mac, Segoe on Windows, Roboto on Android
+ * — and a readout this dense should look the same to everybody. Plex is a
+ * technical face with slightly narrow figures, which suits a page that is
+ * mostly numbers, and it has enough character to sit under a Roman serif
+ * without vanishing.
+ */
+const plex = IBM_Plex_Sans({
+  subsets: ['latin'],
+  weight: ['400', '500', '600'],
+  display: 'swap',
+  variable: '--ic-font-sans',
+})
 
 export const metadata: Metadata = {
   metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000'),
@@ -34,7 +56,7 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
-    <html lang="en">
+    <html lang="en" className={plex.variable}>
       <body>
         <PostHogProvider>
           <header className="topbar">
