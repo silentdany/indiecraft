@@ -26,7 +26,7 @@ export const TRUSTMRR_BASE = 'https://trustmrr.com/api/v1'
 const SITEMAP_URL = 'https://trustmrr.com/startup-sitemap.xml'
 
 /**
- * 6s per request: 10 per minute, which is exactly what the API allows.
+ * 6.5s per request: nine a minute, just inside what the API allows.
  *
  * This was 4s, on a comment claiming "15 req/min, comfortably under the limit
  * of 20". The limit is 10, and TrustMRR says so on every single response:
@@ -37,13 +37,20 @@ const SITEMAP_URL = 'https://trustmrr.com/startup-sitemap.xml'
  *
  * So the crawler ran 50% over quota all night, every night, and paid for it
  * with a 65-second backoff each time it tripped. That is the whole explanation
- * for a slug costing 9.4 seconds against a 4-second throttle: mostly 4s, punctuated
- * by minute-long stalls. Slowing down to 6s makes the crawl *faster*.
+ * for a slug costing 9.4 seconds against a 4-second throttle: mostly 4s,
+ * punctuated by minute-long stalls.
+ *
+ * 6.5s and not 6.0s, which is the arithmetic answer. Exactly ten a minute sits
+ * on the boundary: the window resets on the wall clock, our requests do not,
+ * and the two drift into each other until the remaining count hits zero and the
+ * client waits out the rest of the minute. Measured in a live run, that cost a
+ * 60-second stall often enough to make the average slug 10.6s. Nine a minute
+ * leaves the headroom that a shared boundary needs.
  *
  * The floor matters less than the headers below, which are now read and obeyed;
  * it is here so the first request of a run is paced before any header is seen.
  */
-export const THROTTLE_MS = 6_000
+export const THROTTLE_MS = 6_500
 
 /**
  * The quota is per minute, so the only backoff that actually clears a 429 is

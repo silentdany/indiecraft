@@ -46,28 +46,29 @@ import {
 } from '../lib/trustmrr'
 
 /**
- * Seconds a slug actually costs. Measured: 20 slugs in 155s, no failures.
+ * Seconds a slug actually costs, measured over a sustained run rather than a
+ * short one.
  *
- * The API allows 10 requests a minute and says so in its headers, so a slug
- * cannot cost less than six seconds however the client is written. The request
- * and a Postgres round trip make up the rest.
+ * A 20-slug local test said 7.8s and that number was too kind: two minutes is
+ * not long enough to meet the rate-limit window boundary. Reading the gaps
+ * between `captured_at` timestamps in a live CI run gives 10.6s average with a
+ * 60s worst case, which is the boundary being waited out.
  *
- * It used to be ten, also measured, and the extra two seconds were pure waste:
- * the client paced at 4s, ran 50% over quota, and paid a 65-second backoff
- * every time it tripped. Obeying the published limit made the crawl faster.
+ * Budget on the sustained figure. A short benchmark that flatters the long run
+ * is how the previous estimate got the job killed.
  */
-const SECONDS_PER_SLUG = 7.8
+const SECONDS_PER_SLUG = 11
 
 /**
  * How many slugs one nightly run may collect.
  *
- * 1,100 × 7.8s is about 143 minutes, inside the workflow's 180-minute ceiling
- * with room for install, schema and the compute trigger. The corpus is ~9,000,
- * so full coverage takes a week of nights and then keeps rotating — a run that
- * tried to take all of it at once would need twenty hours, be killed at three,
- * and never reach the compute step.
+ * 800 × 11s is about 147 minutes, inside the workflow's 180-minute ceiling with
+ * room for install, schema and the compute trigger. The corpus is ~9,000, so
+ * full coverage takes a fortnight of nights and then keeps rotating — a run
+ * that tried to take all of it at once would need twenty-seven hours, be killed
+ * at three, and never reach the compute step.
  */
-const DEFAULT_BUDGET = 1_100
+const DEFAULT_BUDGET = 800
 
 interface Options {
   limit?: number
