@@ -31,10 +31,30 @@ export async function GET(request: Request) {
   const back = (path: string) => Response.redirect(`${siteOrigin()}${path}`, 302)
   const failed = () => back(`${flow?.next ?? '/'}?auth=failed`)
 
+  // X reports a refusal here rather than at the token endpoint — the person
+  // pressed Cancel, or the app lacks a permission. Worth separating from our
+  // own faults in the log.
+  const denied = url.searchParams.get('error')
+  if (denied) {
+    console.error('[auth] X refused at the authorize step:', denied)
+    return failed()
+  }
+
   // The state check is the CSRF defence: without it somebody can hand a victim
   // a callback URL carrying the attacker's authorization code, and the victim's
   // browser quietly ends up signed in as the attacker.
-  if (!flow || !code || !state || state !== flow.state) return failed()
+  if (!flow || !code || !state || state !== flow.state) {
+    // Which of the four is missing matters enormously and is invisible from the
+    // outside: no flow means the cookie did not survive the round trip, while a
+    // state mismatch means it did and something else is wrong.
+    console.error('[auth] callback preconditions failed:', {
+      hasFlow: Boolean(flow),
+      hasCode: Boolean(code),
+      hasState: Boolean(state),
+      stateMatches: Boolean(flow && state && state === flow.state),
+    })
+    return failed()
+  }
 
   const handle = await verifiedHandle(credentials, code, flow.verifier)
   if (!handle) return failed()

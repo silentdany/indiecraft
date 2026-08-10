@@ -239,25 +239,62 @@ export async function verifiedHandle(
       }),
       signal: AbortSignal.timeout(8000),
     })
-    if (!tokenResponse.ok) return null
+    if (!tokenResponse.ok) {
+      // X explains itself in the body and says nothing useful in the status.
+      // The person still only ever sees "sign-in failed"; this is for the log.
+      authLog('token exchange rejected', tokenResponse.status, await safeBody(tokenResponse))
+      return null
+    }
 
     const token = (await tokenResponse.json()) as { access_token?: unknown }
-    if (typeof token.access_token !== 'string') return null
+    if (typeof token.access_token !== 'string') {
+      authLog('token response carried no access_token')
+      return null
+    }
 
     const meResponse = await fetch(ME_URL, {
       headers: { Authorization: `Bearer ${token.access_token}` },
       signal: AbortSignal.timeout(8000),
     })
-    if (!meResponse.ok) return null
+    if (!meResponse.ok) {
+      authLog('users/me rejected', meResponse.status, await safeBody(meResponse))
+      return null
+    }
 
     const me = (await meResponse.json()) as { data?: { username?: unknown } }
     const username = me.data?.username
-    if (typeof username !== 'string' || username.length === 0) return null
+    if (typeof username !== 'string' || username.length === 0) {
+      authLog('users/me returned no username')
+      return null
+    }
 
     // Lowercased to match how handles are stored everywhere else. X treats
     // usernames case-insensitively; our primary key does not.
     return username.toLowerCase()
-  } catch {
+  } catch (error) {
+    authLog('token exchange threw', (error as Error).message)
     return null
+  }
+}
+
+/**
+ * Server-side only, and it must stay that way.
+ *
+ * Sign-in failed silently for every user and the code had deliberately thrown
+ * away every reason — good for the person looking at the screen, useless for
+ * anybody trying to fix it. These lines go to the platform log and never to a
+ * browser: an OAuth error body can name the client and the redirect it
+ * expected, which is not something to render back.
+ */
+function authLog(...parts: unknown[]): void {
+  console.error('[auth]', ...parts)
+}
+
+/** Error bodies are small; a runaway one must not become the log. */
+async function safeBody(response: Response): Promise<string> {
+  try {
+    return (await response.text()).slice(0, 300)
+  } catch {
+    return '<unreadable>'
   }
 }
