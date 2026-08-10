@@ -195,6 +195,42 @@ export class TrustmrrClient {
     return [...slugs].sort()
   }
 
+  /**
+   * Every product TrustMRR lists for one founder.
+   *
+   * The API has no founder endpoint, but the site has a founder page and the
+   * sitemap lists 5,207 of them. Scraping the links off it is the only way to
+   * ask "what else has this person shipped?" without crawling all 9,000 slugs
+   * first and reading xHandle off each.
+   *
+   * That question matters because of what it costs to get wrong: a sheet that
+   * says "1 product · $0 lifetime" for a founder with two products and $1,186
+   * is not incomplete, it is visibly WRONG, and it is wrong on the page that
+   * person is most likely to look at. The first founder to claim a sheet hit it
+   * within the hour.
+   *
+   * Not an API call, so no key and no quota — but a page fetch on somebody
+   * else's site, so callers keep it to a handful per run.
+   */
+  async founderSlugs(handle: string): Promise<string[]> {
+    const clean = handle.replace(/^@/, '').toLowerCase()
+    if (!/^[a-z0-9_]{1,20}$/.test(clean)) return []
+    try {
+      const response = await fetch(`https://trustmrr.com/founder/${clean}`, {
+        signal: AbortSignal.timeout(20_000),
+      })
+      if (!response.ok) return []
+      const html = await response.text()
+      const slugs = new Set<string>()
+      for (const match of html.matchAll(/\/startup\/([a-z0-9][a-z0-9-]{0,80})/g)) {
+        if (match[1]) slugs.add(match[1])
+      }
+      return [...slugs]
+    } catch {
+      return []
+    }
+  }
+
   async detail(slug: string): Promise<TrustmrrStartup> {
     const payload = await this.get<unknown>(`/startups/${encodeURIComponent(slug)}`)
     return unwrap(payload) as TrustmrrStartup

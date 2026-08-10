@@ -127,10 +127,35 @@ async function planRun(
     return ranked
   }
 
+  /*
+   * Claimed founders get completed first, before anything else is discovered.
+   *
+   * A sheet showing "1 product · $0" for somebody with two products and real
+   * revenue is not incomplete, it is wrong — and it is wrong on the one page
+   * that person will actually look at. Rotating through 9,000 slugs
+   * alphabetically would fix it eventually and by accident.
+   *
+   * One page fetch per claimed founder per night, capped, and their missing
+   * slugs go to the front of the queue. This is the whole reason claiming is
+   * worth anything: it tells us which sheets have somebody watching.
+   */
+  const claimed = await sql<{ handle: string }[]>`
+    select handle from founders where claimed_at is not null and opted_out_at is null
+    order by claimed_at limit 50
+  `
+  const owed = new Set<string>()
+  for (const { handle } of claimed) {
+    for (const slug of await client.founderSlugs(handle)) owed.add(slug)
+  }
+  if (owed.size > 0)
+    console.log(`  ${owed.size} product(s) across ${claimed.length} claimed sheet(s)`)
+
   const rankedSet = new Set(ranked)
+  const priority = [...owed].filter((slug) => !rankedSet.has(slug))
+  for (const slug of priority) rankedSet.add(slug)
   const rest = discovered.filter((slug) => !rankedSet.has(slug))
-  const room = Math.max(0, options.budget - ranked.length)
-  if (room === 0) return ranked
+  const room = Math.max(0, options.budget - ranked.length - priority.length)
+  if (room === 0) return [...ranked, ...priority]
 
   // Slugs we have never captured sort first (no row → null → nulls first),
   // then the ones we have not seen in longest.
@@ -147,7 +172,7 @@ async function planRun(
 
   const fresh = queued.filter((s) => !lastSeen.has(s)).length
   console.log(`  + ${queued.length} rotating (${fresh} never collected before)`)
-  return [...ranked, ...queued]
+  return [...ranked, ...priority, ...queued]
 }
 
 async function main() {
