@@ -80,6 +80,21 @@ create table if not exists startups (
 );
 create index if not exists startups_founder_idx on startups (founder_handle);
 
+-- When TrustMRR stopped listing this slug, and null while it still does.
+--
+-- The whole site rests on one claim: nothing is shown that TrustMRR does not
+-- already show. Until this column existed that claim was true on the day a
+-- listing was crawled and never checked again — a founder who withdrew from
+-- TrustMRR kept a character here forever, carrying their last known revenue,
+-- on the strength of a public listing that no longer existed.
+--
+-- Set from the sitemap and not from a staleness window, because most slugs are
+-- stale for a reason that has nothing to do with the founder: the crawl reaches
+-- a few hundred a night out of nine thousand. Absence from the sitemap is the
+-- only signal that means what it says.
+alter table startups add column if not exists delisted_at timestamptz;
+create index if not exists startups_delisted_idx on startups (delisted_at);
+
 create table if not exists founders (
   handle          text primary key,
   display_name    text,

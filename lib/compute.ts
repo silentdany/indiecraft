@@ -18,8 +18,22 @@ export interface ComputeReport {
   founders: number
   achievementsGranted: number
   edges: number
+  /** Characters dropped because TrustMRR no longer lists any of their products. */
+  charactersRemoved: number
   durationMs: number
 }
+
+/**
+ * Refuse to prune when this run accounts for less than this share of the
+ * characters already on record.
+ *
+ * Excluding delisted slugs means a bad reconciliation, an empty snapshot read
+ * or a half-finished migration can all present as "these founders no longer
+ * exist", and the prune below would act on it in one statement. Real attrition
+ * is a handful a night; anything that looks like a cliff is a bug, and the
+ * right response to a bug is to do nothing and say so.
+ */
+const PRUNE_MIN_SHARE = 0.5
 
 interface SnapshotRow {
   startup_slug: string
@@ -39,14 +53,28 @@ interface SnapshotRow {
 export async function computeAll(sql: postgres.Sql): Promise<ComputeReport> {
   const startedAt = Date.now()
 
-  // Latest known state of every startup, across all sources.
+  /*
+   * Latest known state of every startup TrustMRR still lists.
+   *
+   * The `delisted_at is null` clause is the one that keeps the site's promise
+   * honest. Without it a founder who withdrew from TrustMRR kept a character
+   * here forever, carrying their last known revenue, on the strength of a
+   * public listing that no longer existed — which is the whole justification
+   * for publishing any of this.
+   *
+   * A left join, not an inner one: a slug can have snapshots before `startups`
+   * has a row for it, and treating "not yet reconciled" as "delisted" would
+   * drop a startup for the crime of being new.
+   */
   const rows = await sql<SnapshotRow[]>`
-    select distinct on (source, startup_slug)
-      startup_slug, raw, mrr_cents, revenue_total_cents, customers,
-      active_subscriptions, growth_mrr_30d, domain_rating, visitors_30d,
-      funding_status, founded_date, founder_handle
-    from snapshots
-    order by source, startup_slug, captured_on desc
+    select distinct on (s.source, s.startup_slug)
+      s.startup_slug, s.raw, s.mrr_cents, s.revenue_total_cents, s.customers,
+      s.active_subscriptions, s.growth_mrr_30d, s.domain_rating, s.visitors_30d,
+      s.funding_status, s.founded_date, s.founder_handle
+    from snapshots s
+    left join startups st on st.slug = s.startup_slug
+    where st.delisted_at is null
+    order by s.source, s.startup_slug, s.captured_on desc
   `
 
   const usable = rows.filter(
@@ -95,6 +123,7 @@ export async function computeAll(sql: postgres.Sql): Promise<ComputeReport> {
   )
 
   let achievementsGranted = 0
+  let charactersRemoved = 0
 
   await sql.begin(async (tx) => {
     // Rebuild `startups` from the snapshots.
@@ -256,6 +285,37 @@ export async function computeAll(sql: postgres.Sql): Promise<ComputeReport> {
       `
     }
 
+    /*
+     * Drop characters whose products TrustMRR no longer lists.
+     *
+     * The upsert above can only ever add and update, so without this a founder
+     * removed from the source keeps their sheet forever — which is the exact
+     * failure the delisting work exists to fix, half-fixed. `characters` is
+     * derived and rebuildable, so deleting from it costs nothing;
+     * `character_achievements` hangs off `founders` rather than off this table,
+     * so badges survive and come back with them if they relist.
+     */
+    const [existing] = await tx<{ n: number }[]>`select count(*)::int as n from characters`
+    const before = existing?.n ?? 0
+    const live = sheets.map((s) => s.handle)
+
+    if (before > 0 && live.length < before * PRUNE_MIN_SHARE) {
+      console.warn(
+        `compute: ${live.length} founders against ${before} characters on record — ` +
+          `below the ${PRUNE_MIN_SHARE * 100}% floor, refusing to prune.`,
+      )
+    } else {
+      // founder_startups first: a delisted product must leave the gear list
+      // even when its founder still has others and keeps their character.
+      await tx`
+        delete from founder_startups fs
+        using startups st
+        where st.slug = fs.startup_slug and st.delisted_at is not null
+      `
+      const pruned = await tx`delete from characters where not (handle = any(${live}))`
+      charactersRemoved = pruned.count
+    }
+
     // Append-only: an earned achievement is never lost, even if the condition
     // becomes false again. Hence do nothing — never a delete.
     const achievementRows = sheets.flatMap((sheet) =>
@@ -409,6 +469,7 @@ export async function computeAll(sql: postgres.Sql): Promise<ComputeReport> {
     startups: usable.length,
     founders: sheets.length,
     achievementsGranted,
+    charactersRemoved,
     edges: edges.size,
     durationMs: Date.now() - startedAt,
   }

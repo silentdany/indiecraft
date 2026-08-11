@@ -18,8 +18,9 @@ async function main() {
     const report = await computeAll(sql)
     console.log(
       `✓ ${report.founders} founders, ${report.startups} startups, ` +
-        `${report.achievementsGranted} new achievements, ${report.edges} guild edges ` +
-        `(${report.durationMs} ms)`,
+        `${report.achievementsGranted} new achievements, ${report.edges} guild edges` +
+        (report.charactersRemoved > 0 ? `, ${report.charactersRemoved} delisted` : '') +
+        ` (${report.durationMs} ms)`,
     )
   } finally {
     await sql.end()

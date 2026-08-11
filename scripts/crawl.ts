@@ -100,6 +100,65 @@ function parseArgs(argv: string[]): Options {
 }
 
 /**
+ * Mark what TrustMRR no longer lists, and unmark what came back.
+ *
+ * The site's one promise is that it shows nothing TrustMRR does not already
+ * show. That was true the day each listing was crawled and unchecked ever
+ * after: somebody who withdrew from TrustMRR kept a character here, carrying
+ * their last known revenue, justified by a public listing that no longer
+ * existed. Reversible, because delisting is not a decision anybody made about
+ * US — a slug that reappears is simply listed again. A founder who asks to be
+ * removed is a different thing entirely and lives in consent_events.
+ *
+ * SAFETY RAIL, and the reason this function is not four lines.
+ *
+ * A truncated sitemap — a partial response, a CDN error page that still parses,
+ * TrustMRR shipping a bug — would delist most of the corpus in one statement
+ * and blank the ladder. The write is refused unless the sitemap accounts for
+ * most of what we already know about, which is the shape of every real
+ * sitemap and of no plausible failure.
+ */
+const RECONCILE_MIN_COVERAGE = 0.8
+
+async function reconcileListings(
+  sql: ReturnType<typeof directDb>,
+  listed: string[],
+): Promise<void> {
+  if (listed.length === 0) return
+
+  const [counts] = await sql<{ known: number; matched: number }[]>`
+    select
+      count(*)::int as known,
+      count(*) filter (where slug = any(${listed}))::int as matched
+    from startups
+  `
+  const known = counts?.known ?? 0
+  const matched = counts?.matched ?? 0
+  if (known === 0) return
+
+  const coverage = matched / known
+  if (coverage < RECONCILE_MIN_COVERAGE) {
+    console.warn(
+      `  ✗ listings — sitemap covers ${(coverage * 100).toFixed(1)}% of ${known} known slugs, ` +
+        `below the ${RECONCILE_MIN_COVERAGE * 100}% floor. Refusing to delist ${known - matched}.`,
+    )
+    return
+  }
+
+  const gone = await sql`
+    update startups set delisted_at = now()
+    where delisted_at is null and not (slug = any(${listed}))
+  `
+  const back = await sql`
+    update startups set delisted_at = null
+    where delisted_at is not null and slug = any(${listed})
+  `
+  if (gone.count > 0 || back.count > 0) {
+    console.log(`  listings — ${gone.count} delisted, ${back.count} relisted`)
+  }
+}
+
+/**
  * What to collect tonight: the ranked list first, then the stalest of the rest.
  *
  * The ranked 200 are the ladder and are refreshed every night without fail.
@@ -127,6 +186,8 @@ async function planRun(
     console.warn(`  ✗ sitemap — ${(error as Error).message}`)
     return ranked
   }
+
+  await reconcileListings(sql, discovered)
 
   /*
    * Claimed founders get completed first, before anything else is discovered.
