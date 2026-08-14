@@ -60,10 +60,31 @@ const globalForDb = globalThis as { __indiecraftDb?: postgres.Sql }
  * minutes on a page that had been instant, looking exactly like a saturated
  * database while the database sat at eleven connections out of sixty.
  *
- * So: 20, with real headroom, and the rule stated rather than the number
- * defended. Add a parallel query to a page and this ceiling is the thing to
- * check. Twenty per instance is still small for the serverless shape the spec
- * was protecting.
+ * So: headroom, and the rule stated rather than the number defended. Add a
+ * parallel query to a page and this ceiling is the thing to check.
+ *
+ * ---------------------------------------------------------------------------
+ * Lowered 20 -> 10 after it took production down. Read this before raising it.
+ *
+ * "Twenty per instance is still small for the serverless shape" was the line
+ * that was wrong, and it was wrong about the wrong limit. Postgres was never
+ * the constraint — it sat at 30 of 60 throughout the outage. Supavisor caps
+ * CLIENT connections at 200, and a frozen Vercel instance keeps its sockets, so
+ * the arithmetic is instances x max. At 20, ten instances is the whole budget,
+ * and a handful of people clicking around a character sheet reaches it:
+ * EMAXCONN on every route that touches the database, for four minutes, then
+ * again as soon as traffic resumed.
+ *
+ * 10 is not a guess against the measurement above; it is the same rule applied
+ * to a number that changed. The peak is one render's concurrent queries, and
+ * that peak is getCharacter's Promise.all — six. The comment's "roughly double
+ * what the source suggests" came from generateMetadata and the page body each
+ * reading the sheet, and that stopped being true when getCharacter was wrapped
+ * in React `cache`: both callers now share one invocation. Six, not twelve, so
+ * ten carries the same 60% headroom twenty was chosen for.
+ *
+ * If this saturates again, the honest next move is Supabase's client limit, not
+ * another notch off this number — below six it deadlocks, and that is measured.
  * ---------------------------------------------------------------------------
  */
 export function db(): postgres.Sql {
@@ -72,8 +93,10 @@ export function db(): postgres.Sql {
     if (!url) throw new Error('DATABASE_URL is not set')
     globalForDb.__indiecraftDb = postgres(url, {
       prepare: false,
-      max: 20,
-      idle_timeout: 20,
+      max: 10,
+      // 5s, not 20: a socket returned four times faster is four times less of
+      // the pooler's client budget held by an instance between renders.
+      idle_timeout: 5,
       connect_timeout: 10,
     })
   }
