@@ -1,4 +1,5 @@
-import { Icon } from '@/components/icon'
+import { WowIcon } from '@/components/wow-icon'
+import { UI_ICONS } from '@/engine'
 import type { EquipmentPiece } from '@/lib/queries'
 
 /**
@@ -79,7 +80,7 @@ export function GearItem({ piece, linked }: { piece: EquipmentPiece; linked: boo
 
         {piece.stack.length > 0 && (
           <div className="tooltip-ench">
-            <Icon name="gear" size={13} />
+            <WowIcon slug={UI_ICONS.enchant} glyph="gear" size={16} bare />
             <span>Enchanted: {piece.stack.slice(0, 6).join(', ')}</span>
           </div>
         )}

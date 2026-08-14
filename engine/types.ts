@@ -22,6 +22,8 @@ export interface ProductInput {
   stack: string[]
   /** cofounders[].xHandle */
   cofounders: string[]
+  /** raw.xFollowerCount. Feeds the Neck slot, and through it the item level. */
+  followers: number | null
   /** ISO 3166-1 alpha-2, the realm this product is registered on. */
   country: string | null
   /** startupInsights.businessType, falling back to targetAudience. */
@@ -78,6 +80,18 @@ export interface FounderAggregate {
   growthMrr30d: number
   /** Best domainRating across the founder's products. */
   domainRating: number | null
+  /**
+   * Best xFollowerCount across the products.
+   *
+   * This deliberately used to live OUTSIDE the aggregate, on the grounds that
+   * it comes from X rather than TrustMRR and fed no level, class or rank. That
+   * reasoning expired the moment item level became the average of the worn
+   * gear: the Neck slot is followers, and a slot that counts toward the score
+   * cannot be read from a field the scoring object does not have — compute and
+   * the sheet would average different numbers of slots and disagree about the
+   * same founder.
+   */
+  followers: number | null
   /** Earliest foundedDate, ISO. */
   foundedFirst: string | null
   channels: string[]
@@ -160,6 +174,15 @@ export type RarityName = 'common' | 'uncommon' | 'rare' | 'epic' | 'legendary'
 
 export interface AchievementDef {
   code: string
+  /**
+   * Blizzard icon slug. Checked in bulk by `pnpm verify-icons`, same as items.
+   *
+   * Chosen for meaning wherever the reference has a picture for the same idea —
+   * Exalted is a reputation rank and wears the reputation icon, Bloodlust is a
+   * real spell and wears its own. That is the whole reason these are worth
+   * borrowing: a player recognises the badge before reading its name.
+   */
+  icon: string
   label: string
   /** Always phrased positively. Test: would this person be happy to screenshot it? */
   description: string
@@ -197,6 +220,220 @@ export interface Rarity {
   hex: string
 }
 
+/* ---------------------------------------------------------------------------
+ * Equipment — the paper doll
+ *
+ * A product used to be a piece of gear, which meant a founder with one product
+ * had one item and an armory that was 94% empty. The slots are the STATS now:
+ * every founder has an MRR, a domain rating, a customer count, so every founder
+ * has something in most slots and the sheet reads as a character rather than a
+ * list of one.
+ * ------------------------------------------------------------------------- */
+
+/**
+ * The seventeen scored slots, in the reference's own order.
+ *
+ * Shirt and Tabard are deliberately absent: they would carry realm and faction,
+ * which have no quality — you do not out-earn your way to a better country. The
+ * `Standing` panel already renders both, and a slot with no rarity in a grid
+ * whose whole language is rarity would read as broken.
+ */
+export type SlotKey =
+  | 'head'
+  | 'neck'
+  | 'shoulders'
+  | 'back'
+  | 'chest'
+  | 'wrist'
+  | 'hands'
+  | 'waist'
+  | 'legs'
+  | 'feet'
+  | 'ring1'
+  | 'ring2'
+  | 'trinket1'
+  | 'trinket2'
+  | 'mainHand'
+  | 'offHand'
+  | 'ranged'
+
+/**
+ * The drawn fallback, one per shape of thing rather than per slot: both rings
+ * share a band and both trinkets share a talisman, as the reference does.
+ *
+ * No longer what the sheet shows. Items carry a real Blizzard icon now (see
+ * ItemDef.icon) and these fifteen sit behind them, for the two cases a remote
+ * JPEG cannot serve: an image that fails to load, and the OG card, where Satori
+ * would otherwise fetch seventeen icons over the network to render one PNG.
+ *
+ * They inherit their quality colour through `currentColor` like every other
+ * icon in the set, which the JPEGs cannot do — a fallback that is legible but
+ * plainly not the real thing is the right shape for a fallback.
+ */
+export type EquipmentGlyph =
+  | 'helm'
+  | 'pendant'
+  | 'pauldron'
+  | 'cloak'
+  | 'cuirass'
+  | 'bracer'
+  | 'gauntlet'
+  | 'girdle'
+  | 'legplate'
+  | 'sabaton'
+  | 'band'
+  | 'talisman'
+  | 'blade'
+  | 'buckler'
+  | 'longbow'
+
+/**
+ * What a class wears and what it swings.
+ *
+ * The reference's oldest rule, and the one a player notices being broken before
+ * any other: a Mage does not wear plate, and a Priest does not carry an axe. An
+ * armory that hands every class the same breastplate is a spreadsheet wearing a
+ * costume — the gear is supposed to say what you ARE, and it cannot do that if
+ * it says the same thing to everyone.
+ */
+export type ArmorType = 'cloth' | 'leather' | 'mail' | 'plate'
+
+/** The main hand only. Off hands key off ArmorType, which is how the game does it. */
+export type WeaponFamily = 'sword' | 'axe' | 'hammer' | 'dagger' | 'staff' | 'mace' | 'fist'
+
+/** A per-class swap of the three things that carry the joke. */
+export interface ItemVariant {
+  name: string
+  after: string
+  icon: string
+}
+
+export interface ItemDef {
+  rarity: RarityName
+  /** The name the sheet shows. */
+  name: string
+  /**
+   * Blizzard's icon slug for the item this derives from, e.g. `inv_axe_09`.
+   *
+   * Resolved to a URL by lib/wow-icon.ts and verified in bulk by
+   * `pnpm verify-icons`, which HEADs every one of them — a slug that has been
+   * guessed rather than checked renders as a hole in the grid, and there are
+   * eighty-five chances to guess wrong.
+   */
+  icon: string
+  /**
+   * The Classic item it derives from. Never rendered anywhere.
+   *
+   * It earns its place as the thing a contributor checks a rename against: the
+   * whole gag only works if the original is recognisable in half a second, and
+   * without this field beside the name there is no way to review whether a
+   * proposed item still is one.
+   */
+  after: string
+  /** Lowest stat value that wears this item. */
+  min: number
+  /**
+   * What this item becomes for a class that wears something else.
+   *
+   * Keyed by ArmorType on an armour slot and by WeaponFamily on the main hand;
+   * the fields above are the fallback when a key is absent, which is how a slot
+   * that genuinely does not vary — a ring, a trinket, a cloak — stays one entry
+   * instead of five identical ones.
+   *
+   * The threshold never varies, only the picture and the noun. A Mage and a
+   * Warrior on the same MRR hold the same rung of the same ladder; what differs
+   * is that one of them is holding a staff.
+   */
+  variants?: Partial<Record<ArmorType | WeaponFamily, ItemVariant>>
+}
+
+/**
+ * Why a slot is empty. The distinction is the same one the rest of the engine
+ * makes everywhere — see `ilvlFrom` and the retention guards — and it is the
+ * difference between "we were never told" and "not yet".
+ */
+export type EmptyReason = 'unreported' | 'unearned'
+
+export interface SlotDef {
+  key: SlotKey
+  /**
+   * Which axis this slot's `variants` are keyed on, if any.
+   *
+   * Stated per slot rather than inferred from the key so that adding a slot
+   * cannot silently get the wrong axis: an armour slot reads the class's
+   * ArmorType, the main hand reads its WeaponFamily, and a slot with no axis
+   * never looks at either.
+   */
+  varyBy?: 'armor' | 'weapon'
+  /** 'Main Hand'. */
+  label: string
+  /** The stat this slot IS, in the words the sheet uses: 'Monthly revenue'. */
+  stat: string
+  glyph: EquipmentGlyph
+  /**
+   * Null when the corpus never answered, which is most of TrustMRR on most
+   * fields. Returning 0 instead would dress a founder in grey for a blank.
+   */
+  read: (input: EquipmentInput) => number | null
+  format: (value: number) => string
+  /** Exactly five, ascending by `min`. */
+  items: readonly ItemDef[]
+}
+
+export interface EquippedItem {
+  name: string
+  /**
+   * This piece's own item level, 1–60.
+   *
+   * Where the stat sits on its own ladder, not where it sits against every
+   * other founder: a legendary belt and a legendary blade are both near 60
+   * because both are the top rung of their slot. The character's iLvl is the
+   * mean of these, exactly as the game does it — see `ilvlFromDoll`.
+   */
+  itemLevel: number
+  /**
+   * The icon slug, not a URL.
+   *
+   * Building the address is lib/wow-icon.ts's job: the engine is pure and has
+   * no business knowing which CDN is serving us this week, and a slug survives
+   * the host changing while a baked URL does not.
+   */
+  icon: string
+  rarity: Rarity
+  /** The raw stat, and the same number written the way the slot writes it. */
+  value: number
+  valueLabel: string
+  /**
+   * The next item up, when there is one. This is the slot's answer to "what do
+   * I do about it" — a paper doll that only reports is a table with pictures.
+   */
+  next: { name: string; rarity: Rarity; min: number; minLabel: string } | null
+}
+
+export interface EquippedSlot {
+  slot: SlotKey
+  label: string
+  stat: string
+  glyph: EquipmentGlyph
+  /** Null when nothing is worn; `empty` then says which kind of nothing. */
+  item: EquippedItem | null
+  empty: EmptyReason | null
+}
+
+/**
+ * What the paper doll reads: the aggregate, plus the one thing that decides
+ * which variant of each item gets worn.
+ */
+export interface EquipmentInput extends FounderAggregate {
+  /**
+   * Decides which variant of each item they wear. Not derived here: `classFrom`
+   * owns that decision, compute writes it down, and the sheet reads the same
+   * answer the ladder does — the doll must never disagree with the class printed
+   * above it on the same page.
+   */
+  characterClass: CharacterClass
+}
+
 /** The engine's output. Pure function: no database access, no side effects. */
 export interface CharacterSheet {
   handle: string
@@ -204,8 +441,16 @@ export interface CharacterSheet {
   level: number
   /** Null when the founder has no recurring revenue: the metric does not apply. */
   ilvl: number | null
-  /** ilvl - level. The one number actually worth showing, when there is one. */
-  ilvlDelta: number | null
+  /**
+   * How much of the doll is filled.
+   *
+   * Replaces `ilvlDelta`, which was `ilvl - level` and stopped meaning anything
+   * the moment iLvl became the mean of the worn gear: the two numbers no longer
+   * share a scale, and the reference never subtracts them either. Slots filled
+   * is what a player actually reads off a paper doll, and unlike a delta it
+   * points at something to go and do.
+   */
+  equipped: { worn: number; total: number }
   class: CharacterClass
   rarity: Rarity
   nProducts: number

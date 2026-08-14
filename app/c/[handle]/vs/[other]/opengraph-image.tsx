@@ -1,8 +1,8 @@
 import { ImageResponse } from '@vercel/og'
 import { BrandMark } from '@/components/brand-mark'
-import { Icon } from '@/components/icon'
-import { CLASS_COLORS } from '@/engine'
-import { remoteImage } from '@/lib/og-fetch'
+import { OgIcon } from '@/components/og-card'
+import { CLASS_COLORS, CLASS_ICONS, STAT_ICONS } from '@/engine'
+import { remoteImage, wowIcons } from '@/lib/og-fetch'
 import { ogFonts } from '@/lib/og-fonts'
 import type { CharacterPage } from '@/lib/queries'
 import { getCharacter } from '@/lib/queries'
@@ -46,14 +46,19 @@ export default async function Image({
   const [a, b] = await Promise.all([getCharacter(handle), getCharacter(other)])
   if (!a || !b) return new Response('Not found', { status: 404 })
 
+  // Five rows: enough to be a comparison, few enough to stay legible at the
+  // ~500px a timeline actually gives this.
+  const rows = versusRows(a, b).slice(0, 5)
+  const icons = await wowIcons([
+    CLASS_ICONS[a.characterClass],
+    CLASS_ICONS[b.characterClass],
+    ...rows.map((r) => STAT_ICONS[r.icon]),
+  ])
+
   const [portraitA, portraitB] = await Promise.all([
     remoteImage(a.avatarUrl),
     remoteImage(b.avatarUrl),
   ])
-
-  // Five rows: enough to be a comparison, few enough to stay legible at the
-  // ~500px a timeline actually gives this.
-  const rows = versusRows(a, b).slice(0, 5)
 
   return new ImageResponse(
     <div
@@ -80,9 +85,18 @@ export default async function Image({
         }}
       >
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-          <Head character={a} portrait={portraitA} />
+          <Head
+            character={a}
+            portrait={portraitA}
+            classIcon={icons.get(CLASS_ICONS[a.characterClass])}
+          />
           <div style={{ display: 'flex', fontSize: 40, color: FRAME, letterSpacing: 6 }}>VS</div>
-          <Head character={b} portrait={portraitB} align="right" />
+          <Head
+            character={b}
+            portrait={portraitB}
+            classIcon={icons.get(CLASS_ICONS[b.characterClass])}
+            align="right"
+          />
         </div>
 
         <div style={{ display: 'flex', flexDirection: 'column' }}>
@@ -116,7 +130,12 @@ export default async function Image({
                   color: MUTED,
                 }}
               >
-                <Icon name={row.icon} size={17} color={MUTED} />
+                <OgIcon
+                  src={icons.get(STAT_ICONS[row.icon] ?? '')}
+                  glyph={row.icon}
+                  size={19}
+                  color={MUTED}
+                />
                 <div style={{ display: 'flex', marginLeft: 9, fontSize: 15, letterSpacing: 3 }}>
                   {row.label.toUpperCase()}
                 </div>
@@ -156,10 +175,13 @@ export default async function Image({
 function Head({
   character,
   portrait,
+  classIcon,
   align = 'left',
 }: {
   character: CharacterPage
   portrait: string | null
+  /** The class emblem, when the CDN answered. The drawing is the fallback. */
+  classIcon: string | undefined
   align?: 'left' | 'right'
 }) {
   const name =
@@ -210,9 +232,10 @@ function Head({
       >
         <div style={{ display: 'flex', fontSize: 30, color: BUTTER, lineHeight: 1.1 }}>{name}</div>
         <div style={{ display: 'flex', alignItems: 'center', marginTop: 6 }}>
-          <Icon
-            name={character.characterClass}
-            size={17}
+          <OgIcon
+            src={classIcon}
+            glyph={character.characterClass}
+            size={19}
             color={CLASS_COLORS[character.characterClass]}
           />
           <div

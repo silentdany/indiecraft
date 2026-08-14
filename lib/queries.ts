@@ -1,8 +1,25 @@
 import { cache } from 'react'
-import { ACHIEVEMENTS_BY_CODE, itemLevelFor, levelBounds, rarityFor } from '@/engine'
-import type { AchievementProgressInput, CharacterClass, Faction, Rarity } from '@/engine/types'
+import {
+  ACHIEVEMENTS_BY_CODE,
+  aggregateFounder,
+  equipmentFor,
+  equipmentInput,
+  equipmentScore,
+  itemLevelFor,
+  levelBounds,
+  rarityFor,
+} from '@/engine'
+import type {
+  AchievementProgressInput,
+  CharacterClass,
+  EquippedSlot,
+  Faction,
+  Rarity,
+} from '@/engine/types'
+import { toProduct } from '@/lib/compute'
 import { db } from '@/lib/db'
 import { normalizeRealm } from '@/lib/realm'
+import type { TrustmrrStartup } from '@/lib/trustmrr'
 
 /**
  * Every public read goes through here, and therefore through the server.
@@ -107,7 +124,8 @@ export interface CharacterPage {
   claimed: boolean
   level: number
   ilvl: number | null
-  ilvlDelta: number | null
+  /** How much of the paper doll is filled. See CharacterSheet.equipped. */
+  equipped: { worn: number; total: number }
   characterClass: CharacterClass
   rarity: Rarity
   xp: number
@@ -125,6 +143,12 @@ export interface CharacterPage {
   history: HistoryPoint[]
   progress: { current: number; next: number | null; ratio: number }
   achievements: { code: string; earnedOn: string }[]
+  /**
+   * The paper doll: seventeen slots, one per stat, always in table order and
+   * always all seventeen — an empty slot is part of the answer.
+   */
+  doll: EquippedSlot[]
+  /** The founder's products. Gear in the older sense, and a different section. */
   equipment: EquipmentPiece[]
   cofounders: string[]
   /** The live numbers every locked achievement measures itself against. */
@@ -214,7 +238,14 @@ export const getCharacter = cache(async (rawHandle: string): Promise<CharacterPa
         domain_rating: number | null
         // postgres.js hands back a Date for a `date` column, not a string.
         founded_date: Date | string | null
-        raw: Record<string, unknown> | null
+        raw: TrustmrrStartup | null
+        /* The four below are read by nothing on this page directly. They are
+           here so `toProduct` can run over these rows and hand the engine a
+           real aggregate for the paper doll — see the `doll` field. */
+        revenue_total_cents: string | null
+        active_subscriptions: number | null
+        growth_mrr_30d: string | null
+        visitors_30d: number | null
       }[]
     >`
       -- Through founder_startups, not startups.founder_handle: a cofounded
@@ -225,11 +256,14 @@ export const getCharacter = cache(async (rawHandle: string): Promise<CharacterPa
       -- pricing model, tech stack.
       select s.slug, s.name, s.website, s.icon_url, s.funding_status,
              snap.mrr_cents, snap.last30d_cents, snap.customers,
-             snap.domain_rating, snap.founded_date, snap.raw
+             snap.domain_rating, snap.founded_date, snap.raw,
+             snap.revenue_total_cents, snap.active_subscriptions,
+             snap.growth_mrr_30d, snap.visitors_30d
       from founder_startups fs
       join startups s on s.slug = fs.startup_slug
       left join lateral (
-        select mrr_cents, last30d_cents, customers, domain_rating, founded_date, raw
+        select mrr_cents, last30d_cents, customers, domain_rating, founded_date, raw,
+               revenue_total_cents, active_subscriptions, growth_mrr_30d, visitors_30d
         from snapshots
         where startup_slug = s.slug
         order by captured_on desc limit 1
@@ -366,6 +400,40 @@ export const getCharacter = cache(async (rawHandle: string): Promise<CharacterPa
    * single OG image show an achievement toast on day one. An achievement only
    * counts as an event if it landed after we already knew the founder.
    */
+  const followers = maxOf(products.map((p) => asInt(p.raw?.xFollowerCount)))
+
+  /*
+   * The paper doll, from the same aggregate the ladder was computed from.
+   *
+   * Re-derived here rather than stored: it is a pure function of the products
+   * we have already loaded, and a `doll` column would be a cache of something
+   * cheaper to recompute than to invalidate. Going through `toProduct` and
+   * `aggregateFounder` rather than assembling an input by hand is what keeps
+   * this honest — the doll cannot disagree with the stats panel above it,
+   * because both sides read the same object.
+   */
+  const doll = equipmentFor(
+    equipmentInput(
+      aggregateFounder(
+        handle,
+        products.map((p) =>
+          toProduct({
+            ...p,
+            startup_slug: p.slug,
+            // postgres.js returns a Date for a `date` column while compute.ts
+            // reads that column as a string. Both are right about their own
+            // query; normalising here is what lets the two share a mapper.
+            founded_date: asDay(p.founded_date),
+          }),
+        ),
+      ),
+      // The class as compute wrote it, never re-derived here: the doll decides
+      // whether this founder holds a staff or an axe, and it must agree with
+      // the class printed at the top of the same page.
+      row.class as CharacterClass,
+    ),
+  )
+
   const knownSince = new Date(asIso(row.first_seen_at) ?? 0).getTime()
   // Normalised once, here, so no caller ever has to know what postgres.js
   // hands back.
@@ -383,7 +451,7 @@ export const getCharacter = cache(async (rawHandle: string): Promise<CharacterPa
     claimed: row.claimed_at !== null,
     level,
     ilvl: row.ilvl,
-    ilvlDelta: row.ilvl === null ? null : row.ilvl - level,
+    equipped: equipmentScore(doll),
     characterClass: row.class as CharacterClass,
     rarity: rarityFor(level),
     xp,
@@ -434,7 +502,7 @@ export const getCharacter = cache(async (rawHandle: string): Promise<CharacterPa
       // Derived from the products payload rather than asked for separately:
       // every extra parallel query pushes the peak concurrency this file has to
       // stay under, and xFollowerCount was already in the raw we fetch.
-      followers: maxOf(products.map((p) => asInt(p.raw?.xFollowerCount))),
+      followers,
       age: earliest ? (Date.now() - new Date(earliest).getTime()) / (365.25 * 864e5) : null,
       customers: customers > 0 ? customers : null,
       retention: hasRetentionSignal ? retention : null,
@@ -473,6 +541,7 @@ export const getCharacter = cache(async (rawHandle: string): Promise<CharacterPa
       ratio: next === null ? 1 : Math.min(Math.max((xp - current) / (next - current), 0), 1),
     },
     achievements: earned,
+    doll,
     equipment: products.map((p) => {
       const productMrr = Number(p.mrr_cents ?? 0) / 100
       const itemLevel = itemLevelFor(productMrr)
@@ -542,7 +611,25 @@ export interface LadderFilter {
 }
 
 /** What a page of the ladder asks for, on top of the three facets. */
+/**
+ * What the ladder is ordered by.
+ *
+ * `level` is lifetime output — revenue banked plus products shipped — and it is
+ * the default because it is the one number nobody can lose. `ilvl` is the mean
+ * of the gear worn right now, so it reorders the board toward whoever is
+ * currently best equipped rather than whoever has been at it longest. The two
+ * genuinely disagree, which is the reason both exist.
+ */
+export type LadderSort = 'level' | 'ilvl'
+
+export const LADDER_SORTS: readonly { key: LadderSort; label: string }[] = [
+  { key: 'level', label: 'Level' },
+  { key: 'ilvl', label: 'Item level' },
+]
+
 export interface LadderQuery extends LadderFilter {
+  /** Defaults to 'level'. */
+  sort?: LadderSort | null
   /**
    * Free text over handle and display name. It never changes anybody's rank:
    * the point of finding yourself on the ladder is seeing where you actually
@@ -554,6 +641,7 @@ export interface LadderQuery extends LadderFilter {
 }
 
 export interface LadderPage {
+  sort: LadderSort
   rows: LadderRow[]
   /** Rows matching the facets and the search — what the pager counts. */
   total: number
@@ -589,6 +677,10 @@ export async function getLadder(query: LadderQuery = {}): Promise<LadderPage> {
   const like = `%${q}%`
   const perPage = LADDER_PAGE_SIZE
   const page = Math.max(Math.trunc(query.page ?? 1) || 1, 1)
+  // Anything unrecognised falls back to the default rather than erroring: this
+  // arrives from a query string, and a hand-typed `?sort=lvl` should show the
+  // ladder, not a 500.
+  const sort: LadderSort = query.sort === 'ilvl' ? 'ilvl' : 'level'
 
   // The facets decide which ladder this is, and therefore what a rank means.
   const facets = sql`
@@ -644,8 +736,22 @@ export async function getLadder(query: LadderQuery = {}): Promise<LadderPage> {
           c.handle, c.level, c.ilvl, c.class, c.n_products, c.realm, c.faction,
           f.display_name,
           (row_number() over (
-            -- nulls last: no recurring revenue is "not measured", never "worst".
-            order by c.level desc, c.ilvl desc nulls last, c.handle
+            /*
+             * nulls last on either axis: an unmeasured stat is "not measured",
+             * never "worst". A founder wearing nothing has no item level, and
+             * sorting them below everybody is right — sorting them below
+             * everybody because null sorts high would not be.
+             *
+             * The secondary key is the other axis, not the handle: two founders
+             * tied on item level should be split by what they have built, and
+             * alphabetical order is not a tiebreak, it is a coin toss with a
+             * permanent winner.
+             */
+            ${
+              sort === 'ilvl'
+                ? sql`order by c.ilvl desc nulls last, c.level desc, c.handle`
+                : sql`order by c.level desc, c.ilvl desc nulls last, c.handle`
+            }
           ))::int as rank
         from characters c
         join founders f on f.handle = c.handle
@@ -661,6 +767,7 @@ export async function getLadder(query: LadderQuery = {}): Promise<LadderPage> {
 
   const total = counted?.total ?? 0
   return {
+    sort,
     total,
     page,
     perPage,

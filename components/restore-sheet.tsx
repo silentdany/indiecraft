@@ -1,7 +1,8 @@
 'use client'
 
 import { useState } from 'react'
-import { Icon } from '@/components/icon'
+import { WowIcon } from '@/components/wow-icon'
+import { UI_ICONS } from '@/engine'
 import { capture } from './posthog-provider'
 
 /**
@@ -38,7 +39,7 @@ export function RestoreSheet({ handle, viewer }: { handle: string; viewer: strin
   return (
     <div className="restore">
       <p className="consent-status">
-        <Icon name="crest" size={15} />
+        <WowIcon slug={UI_ICONS.signedIn} glyph="crest" size={19} bare />
         <span>
           Signed in as <strong>@{viewer}</strong>. You removed this sheet, so nobody else can see
           it.
@@ -55,7 +56,7 @@ export function RestoreSheet({ handle, viewer }: { handle: string; viewer: strin
           disabled={state === 'working'}
           className="consent-claim serif"
         >
-          <Icon name="crest" size={16} />
+          <WowIcon slug={UI_ICONS.restore} glyph="crest" size={20} bare />
           {state === 'working' ? 'Restoring…' : 'Put my sheet back'}
         </button>
         {state === 'error' && <span className="muted">Failed. Try again.</span>}

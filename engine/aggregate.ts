@@ -32,6 +32,9 @@ export function aggregateFounder(handle: string, products: ProductInput[]): Foun
     retention: hasRetentionSignal ? Math.min(activeSubscriptions / customers, 1) : 0,
     growthMrr30d: weightedGrowth(products),
     domainRating: maxOrNull(products.map((p) => p.domainRating)),
+    // The best of them, not the sum: a founder has one audience, listed once
+    // against each of their products.
+    followers: maxOrNull(products.map((p) => p.followers)),
     foundedFirst: earliest(products.map((p) => p.foundedDate)),
     channels: distinct(products.flatMap((p) => p.channels)),
     stack: distinct(products.flatMap((p) => p.stack)),

@@ -1,3 +1,5 @@
+import { wowIconUrl } from '@/lib/wow-icon'
+
 /**
  * A remote image, inlined as a data URI, or null.
  *
@@ -72,4 +74,27 @@ export async function remoteImage(rawUrl: string | null): Promise<string | null>
   } catch {
     return null
   }
+}
+
+/**
+ * A batch of Blizzard icons for a Satori card, keyed by slug.
+ *
+ * Every OG route that draws a class, a stat or a badge needs the same three
+ * lines: dedupe the slugs, fetch them in parallel, and survive the ones that do
+ * not answer. Written once here because five routes were about to write it five
+ * times, and because a missing icon must degrade to the drawn glyph rather than
+ * to a hole — see OgIcon.
+ *
+ * Deduplicated on purpose: a ladder card showing five founders of the same
+ * class would otherwise fetch the same picture five times.
+ */
+export async function wowIcons(slugs: (string | null | undefined)[]): Promise<Map<string, string>> {
+  const unique = [...new Set(slugs.filter((s): s is string => Boolean(s)))]
+  const fetched = await Promise.all(unique.map((slug) => remoteImage(wowIconUrl(slug))))
+  const out = new Map<string, string>()
+  unique.forEach((slug, i) => {
+    const src = fetched[i]
+    if (src) out.set(slug, src)
+  })
+  return out
 }

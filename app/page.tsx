@@ -2,11 +2,12 @@ import Link from 'next/link'
 import type { CSSProperties } from 'react'
 import { BrandMark } from '@/components/brand-mark'
 import { Frame } from '@/components/frame'
-import { Icon, type IconName } from '@/components/icon'
+import type { IconName } from '@/components/icon'
 import { InspectSearch } from '@/components/inspect-search'
 import { JsonLd } from '@/components/json-ld'
 import { LadderTable } from '@/components/ladder-table'
-import { CLASS_COLORS, FACTIONS_BY_KEY } from '@/engine'
+import { WowIcon } from '@/components/wow-icon'
+import { CLASS_COLORS, CLASS_ICONS, FACTIONS_BY_KEY, STAT_ICONS } from '@/engine'
 import type { CharacterClass } from '@/engine/types'
 import {
   getClassCounts,
@@ -161,9 +162,7 @@ export default async function Home() {
                   className="faction-card"
                   style={{ '--faction-color': def.color } as React.CSSProperties}
                 >
-                  <span className="qsquare faction-icon">
-                    <Icon name={def.key} size={20} />
-                  </span>
+                  <WowIcon slug={def.icon} glyph={def.key} size={34} className="faction-icon" />
                   <span className="faction-body">
                     <span className="serif faction-name">{def.key}</span>
                     <span className="label">{def.tagline}</span>
@@ -206,9 +205,13 @@ export default async function Home() {
                         { '--row-color': CLASS_COLORS[c.name as CharacterClass] } as CSSProperties
                       }
                     >
-                      <span className="qsquare realm-code class-mark">
-                        <Icon name={c.name as CharacterClass} size={15} />
-                      </span>
+                      <WowIcon
+                        slug={CLASS_ICONS[c.name as CharacterClass]}
+                        glyph={c.name as CharacterClass}
+                        size={22}
+                        bare
+                        className="class-mark"
+                      />
                       <span className="realm-name class-name">{c.name}</span>
                       <span className="realm-count label">{c.count}</span>
                     </Link>
@@ -254,9 +257,7 @@ export default async function Home() {
 function Stat({ icon, label, value }: { icon: IconName; label: string; value: string }) {
   return (
     <div className="realm-cell">
-      <span className="qsquare realm-icon">
-        <Icon name={icon} size={18} />
-      </span>
+      <WowIcon slug={STAT_ICONS[icon] ?? null} glyph={icon} size={34} className="realm-icon" />
       <span className="realm-figures">
         <span className="serif">{value}</span>
         <span className="stat-name">{label}</span>

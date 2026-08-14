@@ -20,6 +20,7 @@
     "crawl": "node --env-file-if-exists=.env --import tsx scripts/crawl.ts",
     "compute": "node --env-file-if-exists=.env --import tsx scripts/compute.ts",
     "schema:apply": "node --env-file-if-exists=.env --import tsx scripts/apply-schema.ts",
+    "verify-icons": "node --import tsx scripts/verify-icons.ts",
     "test": "vitest run",
     "test:watch": "vitest",
     "lint": "biome check .",

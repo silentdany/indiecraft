@@ -1,6 +1,6 @@
 import Link from 'next/link'
-import { Icon } from '@/components/icon'
-import { CLASS_COLORS } from '@/engine'
+import { WowIcon } from '@/components/wow-icon'
+import { CLASS_COLORS, CLASS_ICONS, STAT_ICONS } from '@/engine'
 import type { CharacterPage } from '@/lib/queries'
 import { versusRows } from '@/lib/versus-rows'
 
@@ -32,7 +32,7 @@ export function Versus({ a, b }: { a: CharacterPage; b: CharacterPage }) {
               {row.a}
             </span>
             <span className="versus-label label">
-              <Icon name={row.icon} size={14} />
+              <WowIcon slug={STAT_ICONS[row.icon] ?? null} glyph={row.icon} size={18} bare />
               {row.label}
             </span>
             <span className={`versus-value serif${row.winner === 'b' ? ' is-ahead' : ''}`}>
@@ -63,7 +63,12 @@ function Head({ character }: { character: CharacterPage }) {
         className="versus-class label"
         style={{ color: CLASS_COLORS[character.characterClass] }}
       >
-        <Icon name={character.characterClass} size={13} />
+        <WowIcon
+          slug={CLASS_ICONS[character.characterClass]}
+          glyph={character.characterClass}
+          size={16}
+          bare
+        />
         {character.characterClass}
       </span>
       <span className="muted versus-handle">@{character.handle}</span>

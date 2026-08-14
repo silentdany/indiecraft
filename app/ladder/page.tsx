@@ -1,13 +1,15 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
 import { redirect } from 'next/navigation'
-import { Icon } from '@/components/icon'
+import { ACHIEVEMENT_ICONS } from '@/components/icon'
 import { JsonLd } from '@/components/json-ld'
 import { LadderTable } from '@/components/ladder-table'
+import { WowIcon } from '@/components/wow-icon'
 import {
   ACHIEVEMENTS_BY_CODE,
   achievementRarityHex,
   CLASS_COLORS,
+  CLASS_ICONS,
   FACTIONS,
   FACTIONS_BY_KEY,
 } from '@/engine'
@@ -18,6 +20,7 @@ import {
   getFactionCounts,
   getLadder,
   getRealmCounts,
+  LADDER_SORTS,
   type LadderFilter,
   type LadderQuery,
 } from '@/lib/queries'
@@ -32,6 +35,7 @@ type Search = {
   ach?: string
   q?: string
   page?: string
+  sort?: string
 }
 
 /**
@@ -71,7 +75,7 @@ export default async function Ladder({ searchParams }: { searchParams: Promise<S
     getFactionCounts(),
     getAchievementCounts(),
   ])
-  const { rows, total, page, perPage, pageCount } = ladder
+  const { rows, total, page, perPage, pageCount, sort } = ladder
 
   /*
    * `?page=999` on a twelve-page ladder is not an error state worth designing.
@@ -81,6 +85,56 @@ export default async function Ladder({ searchParams }: { searchParams: Promise<S
    * costs one redirect and no extra query.
    */
   if (total > 0 && page > pageCount) redirect(href(search, { page: pageStr(pageCount) }))
+
+  /*
+   * Every facet currently on, each with the link that removes it.
+   *
+   * Built here rather than in the markup because the four sources have nothing
+   * in common but the shape: a class is its own name, a realm needs looking up,
+   * a badge is a code that means nothing until it is resolved, and a search is
+   * not a facet at all but reads as one to whoever typed it.
+   */
+  const active: { key: string; label: string; title?: string; remove: string }[] = []
+  if (filter.characterClass) {
+    active.push({
+      key: 'class',
+      label: filter.characterClass,
+      remove: href(search, { class: undefined }),
+    })
+  }
+  if (filter.faction) {
+    active.push({
+      key: 'faction',
+      label: filter.faction,
+      // By value, like `describe` does: the query string is a string until a
+      // definition vouches for it.
+      title: FACTIONS.find((f) => f.key === filter.faction)?.tagline,
+      remove: href(search, { faction: undefined }),
+    })
+  }
+  if (filter.realm) {
+    active.push({
+      key: 'realm',
+      label: realmLabel(filter.realm),
+      remove: href(search, { realm: undefined }),
+    })
+  }
+  if (filter.achievement) {
+    const def = ACHIEVEMENTS_BY_CODE.get(filter.achievement)
+    active.push({
+      key: 'ach',
+      label: def?.label ?? filter.achievement,
+      title: def?.description,
+      remove: href(search, { ach: undefined }),
+    })
+  }
+  if (search.q?.trim()) {
+    active.push({
+      key: 'q',
+      label: `"${search.q.trim()}"`,
+      remove: href(search, { q: undefined }),
+    })
+  }
 
   const site = process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000'
   const { title, heading, description } = describe(search)
@@ -117,6 +171,32 @@ export default async function Ladder({ searchParams }: { searchParams: Promise<S
       </header>
 
       <div className="facets">
+        {/*
+          What is currently on, and how to turn it off.
+          
+          Four tab strips with one chip lit somewhere in each is a puzzle: the
+          state of the page was only legible by scanning every row for the
+          highlighted item. This says it in one line, and every chip is its own
+          undo — which is also the only way to remove one filter without
+          hunting for the "All" that belongs to it.
+        */}
+        {active.length > 0 && (
+          <div className="facets-active">
+            <span className="facet-label label">On</span>
+            <nav className="tabs" aria-label="Active filters">
+              {active.map((a) => (
+                <Link key={a.key} href={a.remove} className="tab activechip" title={a.title}>
+                  {a.label}
+                  <span aria-hidden="true">×</span>
+                </Link>
+              ))}
+              <Link href="/ladder" className="tab activeclear">
+                Clear all
+              </Link>
+            </nav>
+          </div>
+        )}
+
         <Facet
           label="Class"
           all={href(search, { class: undefined })}
@@ -130,7 +210,12 @@ export default async function Ladder({ searchParams }: { searchParams: Promise<S
               count={c.count}
               color={CLASS_COLORS[c.name as CharacterClass]}
             >
-              <Icon name={c.name as CharacterClass} size={13} />
+              <WowIcon
+                slug={CLASS_ICONS[c.name as CharacterClass]}
+                glyph={c.name as CharacterClass}
+                size={16}
+                bare
+              />
               {c.name}
             </FacetLink>
           ))}
@@ -148,45 +233,12 @@ export default async function Ladder({ searchParams }: { searchParams: Promise<S
                 color={def?.color}
                 title={def?.tagline}
               >
-                <Icon name={f.value} size={13} />
+                <WowIcon slug={def?.icon ?? null} glyph={f.value} size={16} bare />
                 {f.value}
               </FacetLink>
             )
           })}
         </Facet>
-
-        {/*
-          Thirty-five badges, so twelve then the rest behind a disclosure — the
-          same shape the sheet uses for its locked grid, and for the same
-          reason: a facet row five lines deep pushes the ladder off the screen.
-
-          Ordered by rarity rather than by size, unlike every other facet here.
-          "Who has Legendary" is the question somebody filters on; "who has Lone
-          Wolf" is 1,142 people and answers nothing. Each chip wears its quality
-          colour, which is what makes thirty-five of them scannable at all.
-        */}
-        {badges.length > 0 && (
-          <Facet label="Badge" all={href(search, { ach: undefined })} active={!!filter.achievement}>
-            {badges.slice(0, 12).map((b) => (
-              <BadgeLink key={b.value} badge={b} search={search} current={filter.achievement} />
-            ))}
-            {badges.length > 12 && (
-              <details className="facet-more">
-                <summary className="label">{badges.length - 12} more</summary>
-                <span className="tabs">
-                  {badges.slice(12).map((b) => (
-                    <BadgeLink
-                      key={b.value}
-                      badge={b}
-                      search={search}
-                      current={filter.achievement}
-                    />
-                  ))}
-                </span>
-              </details>
-            )}
-          </Facet>
-        )}
 
         {/* Twelve realms, not twenty-eight: the tail is realms of one, and a
             row of them would bury the eight that hold most of the corpus. The
@@ -210,6 +262,58 @@ export default async function Ladder({ searchParams }: { searchParams: Promise<S
             </FacetLink>
           )}
         </Facet>
+        {/*
+          Sort is not a filter and is deliberately last: every facet above
+          narrows WHICH founders are on the board, this one changes what their
+          rank means. Same tab strip because it is the same gesture, and it has
+          no "All" — a ladder is always ordered by something.
+        */}
+        <div className="facet">
+          <span className="facet-label label">Sort</span>
+          <nav className="tabs" aria-label="Sort the ladder">
+            {LADDER_SORTS.map((s) => (
+              <Link
+                key={s.key}
+                href={href(search, { sort: s.key === 'level' ? undefined : s.key })}
+                className="tab"
+                aria-current={sort === s.key ? 'page' : undefined}
+              >
+                {s.label}
+              </Link>
+            ))}
+          </nav>
+        </div>
+
+        {/*
+          Badges, out of the tab pile and into a grid that says what they are.
+
+          They were thirty-five chips in a fifth strip, twelve visible and the
+          rest behind a nested disclosure — a wall of bare names. "Summoned",
+          "Companion" and "Dual Spec" mean nothing to somebody who has not read
+          the rules page, and a filter you cannot understand is a filter nobody
+          uses. Each one now carries the art it already has on every sheet, the
+          sentence that defines it, and how many founders hold it.
+
+          Open when a badge is on, shut otherwise: it is the largest control
+          here and the least often wanted.
+        */}
+        {badges.length > 0 && (
+          <details className="badgepicker" open={Boolean(filter.achievement)}>
+            <summary>
+              <span className="facet-label label">Badge</span>
+              <span className="label">
+                {filter.achievement
+                  ? (ACHIEVEMENTS_BY_CODE.get(filter.achievement)?.label ?? 'Badge')
+                  : `${badges.length} to filter by`}
+              </span>
+            </summary>
+            <ul className="badgegrid">
+              {badges.map((b) => (
+                <BadgeCard key={b.value} badge={b} search={search} current={filter.achievement} />
+              ))}
+            </ul>
+          </details>
+        )}
       </div>
 
       {/* A plain GET form, like every facet above it is a plain link: the
@@ -226,6 +330,7 @@ export default async function Ladder({ searchParams }: { searchParams: Promise<S
           {filter.realm && <input type="hidden" name="realm" value={filter.realm} />}
           {filter.faction && <input type="hidden" name="faction" value={filter.faction} />}
           {filter.achievement && <input type="hidden" name="ach" value={filter.achievement} />}
+          {sort === 'ilvl' && <input type="hidden" name="sort" value="ilvl" />}
           <input
             type="search"
             name="q"
@@ -343,7 +448,7 @@ function caption({
 }
 
 /** A badge chip, in its own quality colour, named by its label not its code. */
-function BadgeLink({
+function BadgeCard({
   badge,
   search,
   current,
@@ -354,16 +459,24 @@ function BadgeLink({
 }) {
   const def = ACHIEVEMENTS_BY_CODE.get(badge.value)
   if (!def) return null
+  const on = current === badge.value
   return (
-    <FacetLink
-      href={href(search, { ach: badge.value })}
-      current={current === badge.value}
-      count={badge.count}
-      color={achievementRarityHex(def.rarity)}
-      title={def.description}
+    <li
+      className={`badgecard ${on ? 'is-on' : ''}`}
+      style={{ '--ach-color': achievementRarityHex(def.rarity) } as React.CSSProperties}
     >
-      {def.label}
-    </FacetLink>
+      {/* Clicking the one already on turns it off. A selected filter that links
+          to itself is a dead control, and every other facet here has an "All"
+          to fall back to — this grid does not. */}
+      <Link href={href(search, { ach: on ? undefined : badge.value })}>
+        <WowIcon slug={def.icon} glyph={ACHIEVEMENT_ICONS[def.code] ?? 'achievement'} size={30} />
+        <span className="badgecard-body">
+          <span className="badgecard-name serif">{def.label}</span>
+          <span className="badgecard-desc">{def.description}</span>
+        </span>
+        <span className="badgecard-count label">{badge.count}</span>
+      </Link>
+    </li>
   )
 }
 
@@ -428,6 +541,9 @@ function href(search: Search, patch: Partial<Search>): string {
   if (next.realm) params.set('realm', next.realm)
   if (next.ach) params.set('ach', next.ach)
   if (next.q?.trim()) params.set('q', next.q.trim())
+  // 'level' is the default and stays out of the URL: a canonical that carries a
+  // parameter meaning "the way it already was" splits one page into two.
+  if (next.sort === 'ilvl') params.set('sort', 'ilvl')
   // Read off the patch and never off `search`: changing a facet changes which
   // ladder this is, and page 7 of the old one is meaningless on the new one.
   // Only the pager passes a page, and it always passes the one it means.
@@ -448,7 +564,12 @@ function toFilter(search: Search): LadderFilter {
 }
 
 function toQuery(search: Search): LadderQuery {
-  return { ...toFilter(search), q: search.q ?? null, page: pageNum(search.page) }
+  return {
+    ...toFilter(search),
+    q: search.q ?? null,
+    page: pageNum(search.page),
+    sort: search.sort === 'ilvl' ? 'ilvl' : 'level',
+  }
 }
 
 /** A junk `?page=` is page one, not a crash and not an empty ladder. */
@@ -499,6 +620,14 @@ function describe(search: Search): {
 
   const page = pageNum(search.page)
   const q = search.q?.trim() ?? ''
+  // The description has to say which ladder this is: the two orderings put
+  // different people at the top, and a page that claims to rank by one while
+  // showing the other is the kind of thing nobody notices and everybody
+  // half-distrusts.
+  const ranked =
+    search.sort === 'ilvl'
+      ? 'the average item level of their gear'
+      : 'lifetime revenue and current MRR'
   // A page number belongs in the title or two hundred pages compete for the
   // same one, and a searcher who lands on page 8 should know that is where
   // they are.
@@ -514,9 +643,9 @@ function describe(search: Search): {
     heading: plain ? withBadge.toUpperCase() : 'THE LADDER',
     description: plain
       ? badge
-        ? `Indie ${sentence} who earned ${badge.label} — ${badge.description.toLowerCase()} Ranked by lifetime revenue and current MRR.`
-        : `Indie ${sentence}, ranked by lifetime revenue and current MRR.`
-      : 'Every indie founder on TrustMRR, ranked by lifetime revenue and current MRR. Filter by class, faction, realm or badge, or search for a handle.',
+        ? `Indie ${sentence} who earned ${badge.label} — ${badge.description.toLowerCase()} Ranked by ${ranked}.`
+        : `Indie ${sentence}, ranked by ${ranked}.`
+      : `Every indie founder on TrustMRR, ranked by ${ranked}. Filter by class, faction, realm or badge, or search for a handle.`,
     canonical: href(search, { page: pageStr(page) }),
     /*
      * Narrowed in any way at all: a facet, a search, or a page past the first.
@@ -529,6 +658,12 @@ function describe(search: Search): {
      * never asked to be listed anywhere. The pages work, they are linked, and
      * anybody can read or share them. They are just not submitted.
      */
-    filtered: Boolean(plain) || page > 1 || q !== '',
+    /*
+     * A re-sorted ladder counts as narrowed too, and for a reason none of the
+     * others have: it is the SAME founders in a different order. Left
+     * indexable it would be duplicate content against the bare ladder, with a
+     * canonical of its own asking a crawler to keep both.
+     */
+    filtered: Boolean(plain) || page > 1 || q !== '' || search.sort === 'ilvl',
   }
 }

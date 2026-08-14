@@ -1,6 +1,7 @@
 import { ImageResponse } from '@vercel/og'
-import { Icon } from '@/components/icon'
-import { OG, OG_SIZE, OgCard } from '@/components/og-card'
+import { OG, OG_SIZE, OgCard, OgIcon } from '@/components/og-card'
+import { CLASS_ICONS } from '@/engine'
+import { wowIcons } from '@/lib/og-fetch'
 import { ogFonts } from '@/lib/og-fonts'
 import { getLadder } from '@/lib/queries'
 
@@ -19,6 +20,8 @@ export default async function Image() {
   const { rows, total } = await getLadder()
     .then((page) => ({ rows: page.rows.slice(0, 5), total: page.total }))
     .catch(() => ({ rows: [], total: 0 }))
+
+  const icons = await wowIcons(rows.map((r) => CLASS_ICONS[r.characterClass]))
 
   return new ImageResponse(
     <OgCard>
@@ -59,7 +62,12 @@ export default async function Image() {
                 @{row.handle}
               </div>
               <div style={{ display: 'flex', alignItems: 'center', marginLeft: 18 }}>
-                <Icon name={row.characterClass} size={20} color={OG.frame} />
+                <OgIcon
+                  src={icons.get(CLASS_ICONS[row.characterClass])}
+                  glyph={row.characterClass}
+                  size={22}
+                  color={OG.frame}
+                />
                 <div style={{ display: 'flex', marginLeft: 8, fontSize: 18, color: OG.muted }}>
                   {row.characterClass.toUpperCase()}
                 </div>

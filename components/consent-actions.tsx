@@ -1,7 +1,8 @@
 'use client'
 
 import { useState } from 'react'
-import { Icon } from '@/components/icon'
+import { WowIcon } from '@/components/wow-icon'
+import { UI_ICONS } from '@/engine'
 import { capture } from './posthog-provider'
 
 /**
@@ -71,7 +72,7 @@ export function ConsentActions({
           onClick={() => capture('claim_started', { handle })}
           className="consent-claim serif"
         >
-          <Icon name="crest" size={16} />
+          <WowIcon slug={UI_ICONS.claim} glyph="crest" size={20} bare />
           {claimed ? 'Sign in with X' : 'This is me — claim this sheet'}
         </a>
         <span className="muted consent-note">
@@ -101,7 +102,7 @@ export function ConsentActions({
           has just signed in should not have to infer either from the fact that
           a "Remove" button appeared. */}
       <p className="consent-status">
-        <Icon name="crest" size={15} />
+        <WowIcon slug={UI_ICONS.signedIn} glyph="crest" size={19} bare />
         <span>
           Signed in as <strong>@{viewer}</strong> — this is your sheet
           {claimed ? (
@@ -134,7 +135,7 @@ export function ConsentActions({
             disabled={state === 'working'}
             className="consent-claim serif"
           >
-            <Icon name="crest" size={16} />
+            <WowIcon slug={UI_ICONS.claim} glyph="crest" size={20} bare />
             This is me — claim this sheet
           </button>
         )}

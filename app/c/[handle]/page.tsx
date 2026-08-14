@@ -6,26 +6,29 @@ import { BadgeBlock } from '@/components/badge-block'
 import { ConsentActions } from '@/components/consent-actions'
 import { Frame } from '@/components/frame'
 import { GearItem } from '@/components/gear-item'
-import { ACHIEVEMENT_ICONS, Icon } from '@/components/icon'
+import { ACHIEVEMENT_ICONS } from '@/components/icon'
 import { JsonLd } from '@/components/json-ld'
+import { PaperDoll } from '@/components/paper-doll'
 import { RestoreSheet } from '@/components/restore-sheet'
 import { ShareSheet } from '@/components/share-sheet'
 import {
   HistoryPanel,
   LockedAchievements,
   RankPanel,
-  Standing,
   StatsPanel,
   Timeline,
   type TimelineEvent,
 } from '@/components/sheet-panels'
 import { ViewTracker } from '@/components/view-tracker'
+import { WowIcon } from '@/components/wow-icon'
 import {
   ACHIEVEMENTS,
   ACHIEVEMENTS_BY_CODE,
   achievementRarityHex,
   CLASS_COLORS,
+  CLASS_ICONS,
   CLASS_REASONS,
+  FACTIONS_BY_KEY,
 } from '@/engine'
 import { sessionHandle } from '@/lib/auth'
 import { consentActionsEnabled } from '@/lib/consent'
@@ -92,6 +95,9 @@ export default async function CharacterSheet({ params }: Props) {
   }
 
   const { rarity, claimed } = character
+  const faction = character.profile.faction
+    ? FACTIONS_BY_KEY.get(character.profile.faction)
+    : undefined
   const earnedCodes = new Set(character.achievements.map((a) => a.code))
 
   /*
@@ -152,219 +158,402 @@ export default async function CharacterSheet({ params }: Props) {
         />
       )}
 
-      <Frame>
-        <div className="sheet-head">
-          {/* Portrait: the rarity square at its largest. */}
-          <div className="qsquare sheet-portrait" style={{ color: rarity.hex }}>
+      {/*
+        The armory itself: an identity bar, then the character standing inside
+        their own gear.
+
+        This used to be two things a screen apart — a portrait card at the top
+        and an "Equipment" section far below it — which is a profile page with a
+        table attached, not an armory. The single gesture that makes the
+        reference read as the reference is that the person is IN the grid. Every
+        other change on this page is downstream of that one.
+      */}
+      <Frame className="armory">
+        {/*
+          The identity line, then a strip of headline numbers.
+
+          Both lifted from the reference, which runs `Name <Guild>` and a
+          level/race/spec/class/realm line, then a row of standalone figures —
+          achievement points, gearscore, item level, honorable kills. The strip
+          is what makes a header read as an armory rather than as a blog byline,
+          and ours carries the four numbers that mean the same things here.
+        */}
+        <header className="armory-bar">
+          <div className="armory-who">
+            <h1 className="sheet-name serif">
+              {character.displayName}
+              {character.cofounders.length > 0 && (
+                <span className="armory-guild">&lt;{character.cofounders.length + 1}&gt;</span>
+              )}
+            </h1>
+            <p className="armory-line">
+              Level <b>{character.level}</b>{' '}
+              {/* The class in its own colour, and the only place on the sheet
+                  where it is spelled out — everywhere else the colour does the
+                  work on its own. */}
+              <Link
+                href={`/ladder?class=${character.characterClass}`}
+                style={{ color: CLASS_COLORS[character.characterClass] }}
+              >
+                <WowIcon
+                  slug={CLASS_ICONS[character.characterClass]}
+                  glyph={character.characterClass}
+                  size={20}
+                  bare
+                />
+                {character.characterClass}
+              </Link>
+              {character.profile.realm && (
+                <>
+                  {' — '}
+                  <Link href={`/ladder?realm=${character.profile.realm}`}>
+                    {realmLabel(character.profile.realm)}
+                  </Link>
+                </>
+              )}
+            </p>
+            {/* The reason was written alongside the rule and never shown, which
+                is backwards for a product whose answer to "why did you call me
+                that" is "the formula is public, go read it". */}
+            <p className="sheet-why">{CLASS_REASONS.get(character.characterClass)}</p>
+          </div>
+
+          <div className="armory-figures">
+            <Figure value={`#${character.rank}`} label="Rank" />
+            <Figure
+              value={character.ilvl === null ? '—' : String(character.ilvl)}
+              label="Item level"
+              color={character.ilvl === null ? undefined : rarity.hex}
+            />
+            <Figure
+              value={String(character.achievements.length)}
+              label="Achievements"
+              color="var(--ic-gold)"
+            />
+            <Figure value={formatUsd(character.mrrUsd)} label="MRR" />
+          </div>
+        </header>
+
+        <PaperDoll
+          doll={character.doll}
+          tabard={
+            faction && {
+              label: 'Tabard',
+              value: faction.key,
+              href: `/ladder?faction=${faction.key}`,
+              glyph: faction.key,
+              icon: faction.icon,
+            }
+          }
+          shirt={
+            character.profile.realm
+              ? {
+                  label: 'Shirt',
+                  value: realmLabel(character.profile.realm),
+                  href: `/ladder?realm=${character.profile.realm}`,
+                  glyph: 'realm',
+                  icon: null,
+                }
+              : null
+          }
+        >
+          {/* Portrait: the rarity square at its largest, and now where the
+              reference puts the character model. */}
+          <div className="qsquare doll-portrait" style={{ color: rarity.hex }}>
             {character.avatarUrl ? (
               // biome-ignore lint/performance/noImgElement: Satori and next/image share no pipeline; visual consistency wins.
-              <img src={character.avatarUrl} alt="" width={96} height={96} />
+              <img src={character.avatarUrl} alt="" width={128} height={128} />
             ) : (
-              <span className="serif" style={{ fontSize: 34 }}>
-                {character.handle.slice(0, 1).toUpperCase()}
-              </span>
+              <span className="serif">{character.handle.slice(0, 1).toUpperCase()}</span>
             )}
           </div>
 
-          <div className="sheet-identity">
-            <div className="sheet-topline">
-              <div>
-                {/* The class in its own colour, and the only place on the sheet
-                    where it is spelled out — everywhere else the colour does
-                    the work on its own. */}
-                <Link
-                  href={`/ladder?class=${character.characterClass}`}
-                  className="sheet-eyebrow"
-                  style={{ color: CLASS_COLORS[character.characterClass] }}
-                >
-                  <Icon name={character.characterClass} size={15} />
-                  {character.characterClass}
-                </Link>
-                {/* The reason was written alongside the rule and never shown,
-                    which is backwards for a product whose answer to "why did
-                    you call me that" is "the formula is public, go read it". */}
-                <p className="sheet-why">{CLASS_REASONS.get(character.characterClass)}</p>
-                <h1 className="sheet-name serif">{character.displayName}</h1>
-              </div>
-
-              {/* The two numbers the sheet exists to state. */}
-              <div className="sheet-readouts">
-                <span className="sheet-readout">
-                  <span className="serif" style={{ color: 'var(--ic-butter)' }}>
-                    {character.level}
-                  </span>
-                  <span className="stat-name">Level</span>
-                </span>
-                <span className="sheet-readout">
-                  <span
-                    className="serif"
-                    style={{ color: character.ilvl === null ? 'var(--ic-text-muted)' : rarity.hex }}
-                    title={
-                      character.ilvl === null
-                        ? 'No recurring revenue, so there is no monthly score to give.'
-                        : undefined
-                    }
-                  >
-                    {character.ilvl ?? '—'}
-                  </span>
-                  <span className="stat-name">iLvl</span>
-                  <IlvlDelta delta={character.ilvlDelta} claimed={claimed} />
-                </span>
-              </div>
-            </div>
-
-            <p className="sheet-meta">
-              @{character.handle} · rank <span className="gold">#{character.rank}</span> ·{' '}
-              {character.nProducts} product
-              {character.nProducts === 1 ? '' : 's'} · {formatUsd(character.mrrUsd)} MRR ·{' '}
-              {formatUsd(character.revenueTotalUsd)} lifetime
-            </p>
-
-            <div className="sheet-progress">
-              <div className="bar">
-                <span style={{ width: `${Math.round(character.progress.ratio * 100)}%` }} />
-              </div>
-              <span className="label">
-                {character.progress.next === null
-                  ? 'Max level reached'
-                  : `${formatUsd(character.progress.next - character.xp)} of XP to level ${character.level + 1}`}
+          {/* The two numbers the sheet exists to state, under the portrait
+              exactly where level and item level sit in the reference. */}
+          <div className="doll-readouts">
+            <span className="sheet-readout">
+              <span className="serif" style={{ color: 'var(--ic-butter)' }}>
+                {character.level}
               </span>
-            </div>
-
-            <Standing profile={character.profile} />
+              <span className="stat-name">Level</span>
+            </span>
+            <span className="sheet-readout">
+              <span
+                className="serif"
+                style={{ color: character.ilvl === null ? 'var(--ic-text-muted)' : rarity.hex }}
+                title={
+                  character.ilvl === null
+                    ? 'No recurring revenue, so there is no monthly score to give.'
+                    : undefined
+                }
+              >
+                {character.ilvl ?? '—'}
+              </span>
+              <span className="stat-name">iLvl</span>
+            </span>
           </div>
+
+          {/* What a player actually reads off a paper doll: how many slots are
+              filled. This replaced `ilvlDelta`, which compared the item level
+              against the character level — two scales that stopped being
+              comparable when iLvl became the mean of the worn gear. */}
+          <p className="doll-filled label">
+            {character.equipped.worn} of {character.equipped.total} slots filled
+          </p>
+
+          <div className="sheet-progress">
+            <div className="bar">
+              <span style={{ width: `${Math.round(character.progress.ratio * 100)}%` }} />
+            </div>
+            <span className="label">
+              {character.progress.next === null
+                ? 'Max level reached'
+                : `${formatUsd(character.progress.next - character.xp)} of XP to level ${character.level + 1}`}
+            </span>
+          </div>
+
+          {/* `Standing` used to render realm and faction here. They moved into
+              the tabard and shirt slots, which is where the reference puts
+              exactly those two facts.
+
+              The handle is a link out to X now. It was the one piece of
+              identity on this page that named a real account and did nothing
+              with it, and `rel="me"` is the same claim the JSON-LD `sameAs`
+              above already makes — so the markup and the link now agree. */}
+          <a
+            className="armory-handle label"
+            href={`https://x.com/${character.handle}`}
+            target="_blank"
+            rel="me noreferrer"
+          >
+            @{character.handle}
+          </a>
+        </PaperDoll>
+
+        {/*
+          Products, inside the frame and under the weapons.
+
+          They spent one revision buried third in a tab panel and one revision
+          behind a tab of their own, and the tab was the worse of the two: a tab
+          nobody opens is a feature that does not exist. They belong here on the
+          merits — the armour is what the numbers say about a founder, the
+          weapons are the same, and these are the actual businesses, the only
+          thing on the page a visitor can go and use.
+
+          Third register of one object, which is why they sit inside the frame
+          with the same rule the weapon rail uses rather than in a section
+          below it: gear you wear, weapons you swing, things you built.
+        */}
+        <div className="armory-works">
+          <h2 className="serif">
+            {character.equipment.length === 1 ? 'PRODUCT' : 'PRODUCTS'}
+            {character.equipment.length > 0 && (
+              <span className="armory-works-count">{character.equipment.length}</span>
+            )}
+          </h2>
+          {character.equipment.length === 0 ? (
+            <p className="muted">No products linked yet.</p>
+          ) : (
+            <ul className="gear">
+              {character.equipment.map((piece) => (
+                <GearItem key={piece.slug} piece={piece} linked={claimed} />
+              ))}
+            </ul>
+          )}
         </div>
       </Frame>
 
-      {character.rankContext && (
-        <RankPanel
-          context={character.rankContext}
-          characterClass={character.characterClass}
-          mrrUsd={character.mrrUsd}
-          handle={character.handle}
-        />
-      )}
+      {/*
+        Tabs, because the reference has tabs: Character, Talents, Raid
+        Progression, Achievements, PvP, Statistics, History. Ours are the four
+        of those we have anything to put in.
 
-      <Section title="Stats">
-        <StatsPanel stats={character.stats} />
-        <HistoryPanel history={character.history} />
-      </Section>
+        Radio inputs and `:checked`, not JavaScript and not routes. Same reason
+        the item tooltips are CSS — the sheet has to work with scripting off —
+        and it keeps every panel in the HTML, so a crawler reading this page
+        still sees the achievements. Routes would have been the other honest
+        answer and would have cost four URLs per founder for one page of
+        content.
+      */}
+      <div className="sheettabs">
+        <input type="radio" name="sheettab" id="tab-character" defaultChecked />
+        <input type="radio" name="sheettab" id="tab-ach" />
+        <input type="radio" name="sheettab" id="tab-history" />
+        <input type="radio" name="sheettab" id="tab-share" />
 
-      <Section title="Gear">
-        {character.equipment.length === 0 ? (
-          <p className="muted">No products linked yet.</p>
-        ) : (
-          <ul className="gear">
-            {character.equipment.map((piece) => (
-              <GearItem key={piece.slug} piece={piece} linked={claimed} />
-            ))}
-          </ul>
-        )}
-      </Section>
+        <nav className="tabs" aria-label="Sheet sections">
+          <label className="tab" htmlFor="tab-character">
+            Character
+          </label>
+          <label className="tab" htmlFor="tab-ach">
+            Achievements <span className="tab-count">{character.achievements.length}</span>
+          </label>
+          <label className="tab" htmlFor="tab-history">
+            History
+          </label>
+          <label className="tab" htmlFor="tab-share">
+            Share
+          </label>
+        </nav>
 
-      <Section title={`Achievements — ${character.achievements.length} of ${ACHIEVEMENTS.length}`}>
-        <ul className="ach">
-          {character.achievements.map((earned) => {
-            const def = ACHIEVEMENTS_BY_CODE.get(earned.code)
-            return (
-              <li
-                key={earned.code}
-                className="ach-card"
-                style={{ '--ach-color': achievementRarityHex(def?.rarity) } as CSSProperties}
-              >
-                {/* Every earned badge is a link to everybody else who holds it.
+        <div className="tabpanels">
+          <div className="tabpanel" data-tab="character">
+            {/*
+              Standing and Stats side by side rather than stacked.
+
+              They were two number grids one under the other, which read as the
+              same panel printed twice — a visitor scrolling past could not tell
+              which numbers placed this founder against everybody else and which
+              only described them. Splitting them across one row makes the
+              difference structural: position on the left, measurements on the
+              right, and the eye does not have to work it out.
+            */}
+            <div className="summary">
+              {character.rankContext && (
+                <section className="summary-panel">
+                  <h2 className="serif">STANDING</h2>
+                  <RankPanel
+                    context={character.rankContext}
+                    characterClass={character.characterClass}
+                    mrrUsd={character.mrrUsd}
+                    handle={character.handle}
+                  />
+                </section>
+              )}
+
+              <section className="summary-panel">
+                <h2 className="serif">STATISTICS</h2>
+                <StatsPanel
+                  stats={character.stats}
+                  mrrUsd={character.mrrUsd}
+                  revenueTotalUsd={character.revenueTotalUsd}
+                  nProducts={character.nProducts}
+                />
+              </section>
+            </div>
+
+            {character.cofounders.length > 0 && (
+              <Section title="Guild">
+                <div className="guild">
+                  {character.cofounders.map((mate) => (
+                    <Link key={mate} href={`/c/${mate}`}>
+                      <span className="qsquare serif" aria-hidden="true">
+                        {mate.slice(0, 1).toUpperCase()}
+                      </span>
+                      @{mate}
+                    </Link>
+                  ))}
+                </div>
+              </Section>
+            )}
+          </div>
+
+          <div className="tabpanel" data-tab="ach">
+            <Section
+              title={`Achievements — ${character.achievements.length} of ${ACHIEVEMENTS.length}`}
+            >
+              <ul className="ach">
+                {character.achievements.map((earned) => {
+                  const def = ACHIEVEMENTS_BY_CODE.get(earned.code)
+                  return (
+                    <li
+                      key={earned.code}
+                      className="ach-card"
+                      style={{ '--ach-color': achievementRarityHex(def?.rarity) } as CSSProperties}
+                    >
+                      {/* Every earned badge is a link to everybody else who holds it.
                     A ladder filter nobody can find is a query parameter, not a
                     feature, and the sheet is where somebody is already looking
                     at the badge they want the company of. */}
-                <Link href={`/ladder?ach=${earned.code}`} className="ach-link">
-                  <span className="qsquare ach-icon">
-                    <Icon name={ACHIEVEMENT_ICONS[earned.code] ?? 'achievement'} size={17} />
-                  </span>
-                  <span className="ach-body">
-                    <span className="ach-title serif">{def?.label ?? earned.code}</span>
-                    <span className="ach-desc">{def?.description}</span>
-                  </span>
-                </Link>
-              </li>
-            )
-          })}
-        </ul>
+                      <Link href={`/ladder?ach=${earned.code}`} className="ach-link">
+                        <WowIcon
+                          slug={def?.icon ?? null}
+                          glyph={ACHIEVEMENT_ICONS[earned.code] ?? 'achievement'}
+                          size={32}
+                          className="ach-icon"
+                        />
+                        <span className="ach-body">
+                          <span className="ach-title serif">{def?.label ?? earned.code}</span>
+                          <span className="ach-desc">{def?.description}</span>
+                        </span>
+                      </Link>
+                    </li>
+                  )
+                })}
+              </ul>
 
-        <LockedAchievements earned={earnedCodes} input={character.progressInput} />
-      </Section>
-
-      {character.cofounders.length > 0 && (
-        <Section title="Guild">
-          <div className="guild">
-            {character.cofounders.map((mate) => (
-              <Link key={mate} href={`/c/${mate}`}>
-                <span className="qsquare serif" aria-hidden="true">
-                  {mate.slice(0, 1).toUpperCase()}
-                </span>
-                @{mate}
-              </Link>
-            ))}
+              <LockedAchievements earned={earnedCodes} input={character.progressInput} />
+            </Section>
           </div>
-        </Section>
-      )}
 
-      {timeline.length > 0 && (
-        <Section title="History">
-          <Timeline events={timeline} backfilled={backfilled} />
-        </Section>
-      )}
+          <div className="tabpanel" data-tab="history">
+            <Section title="Watched">
+              <HistoryPanel history={character.history} />
+            </Section>
+            {timeline.length > 0 && (
+              <Section title="Career">
+                <Timeline events={timeline} backfilled={backfilled} />
+              </Section>
+            )}
+          </div>
 
-      {/*
-        Share and Badge together at the foot: the two things you do WITH a
-        sheet, after the sheet itself.
+          {/*
+            Share and Badge, together in a tab.
 
-        Share used to sit directly under the header, as the primary action.
-        Drawing it as an actual post is what made it legible and also what made
-        it 496px tall — enough to push the rank panel below the fold on a laptop
-        and bury every number a visitor came for. A call to action nobody has
-        read the page for yet is just an obstacle; a founder who wants to post
-        their sheet will scroll.
-      */}
-      <ShareSheet
-        handle={character.handle}
-        displayName={character.displayName}
-        avatarUrl={character.avatarUrl}
-        level={character.level}
-        ilvl={character.ilvl}
-        characterClass={character.characterClass}
-        facts={{
-          level: character.level,
-          ilvl: character.ilvl,
-          characterClass: character.characterClass,
-          rank: character.rank,
-          total: character.rankContext?.total ?? 0,
-          classRank: character.rankContext?.classRank ?? 0,
-          classTotal: character.rankContext?.classTotal ?? 0,
-          realm: character.rankContext?.realmRank
-            ? {
-                name: realmLabel(character.rankContext.realmRank.realm),
-                rank: character.rankContext.realmRank.rank,
-                total: character.rankContext.realmRank.total,
-              }
-            : null,
-          achievements: character.achievements.length,
-          achievementsTotal: ACHIEVEMENTS.length,
-          recentLevelUp: character.recentLevelUp?.level ?? null,
-          recentAchievement: character.recentAchievement
-            ? (ACHIEVEMENTS_BY_CODE.get(character.recentAchievement.code)?.label ?? null)
-            : null,
-          growthMrr30d: character.stats.growthMrr30d,
-          mrrUsd: character.mrrUsd,
-        }}
-      />
+            Share began under the header as the primary action, which pushed
+            every number a visitor came for below the fold — drawing it as a
+            real post is what made it legible and also what made it 496px tall.
+            It then moved to the foot, out of the way but still 500px of call to
+            action that everybody scrolled past to reach the end of the page.
 
-      <Section title="Badge">
-        <BadgeBlock
-          handle={character.handle}
-          level={character.level}
-          characterClass={character.characterClass}
-        />
-      </Section>
+            A tab is the honest answer: nothing to scroll past, and one click
+            away for the only person who wants it, which is the founder
+            themselves. The panel is still in the HTML either way.
+          */}
+          <div className="tabpanel" data-tab="share">
+            <ShareSheet
+              handle={character.handle}
+              displayName={character.displayName}
+              avatarUrl={character.avatarUrl}
+              level={character.level}
+              ilvl={character.ilvl}
+              characterClass={character.characterClass}
+              facts={{
+                level: character.level,
+                ilvl: character.ilvl,
+                characterClass: character.characterClass,
+                rank: character.rank,
+                total: character.rankContext?.total ?? 0,
+                classRank: character.rankContext?.classRank ?? 0,
+                classTotal: character.rankContext?.classTotal ?? 0,
+                realm: character.rankContext?.realmRank
+                  ? {
+                      name: realmLabel(character.rankContext.realmRank.realm),
+                      rank: character.rankContext.realmRank.rank,
+                      total: character.rankContext.realmRank.total,
+                    }
+                  : null,
+                achievements: character.achievements.length,
+                achievementsTotal: ACHIEVEMENTS.length,
+                recentLevelUp: character.recentLevelUp?.level ?? null,
+                recentAchievement: character.recentAchievement
+                  ? (ACHIEVEMENTS_BY_CODE.get(character.recentAchievement.code)?.label ?? null)
+                  : null,
+                growthMrr30d: character.stats.growthMrr30d,
+                mrrUsd: character.mrrUsd,
+              }}
+            />
+
+            <Section title="Badge">
+              <BadgeBlock
+                handle={character.handle}
+                level={character.level}
+                characterClass={character.characterClass}
+              />
+            </Section>
+          </div>
+        </div>
+      </div>
 
       {consentActionsEnabled() && (
         <>
@@ -381,38 +570,31 @@ export default async function CharacterSheet({ params }: Props) {
   )
 }
 
-/**
- * An unclaimed sheet shows nothing negative: no declining iLvl, no trend.
- * The negative only appears once someone has chosen to be here.
- *
- * The test for every derived label: would this person be happy to screenshot
- * it? If not, it's a bug.
- */
-function IlvlDelta({ delta, claimed }: { delta: number | null; claimed: boolean }) {
-  if (delta === null) return null
-  if (delta === 0 || (delta < 0 && !claimed)) return null
+/** One headline number in the identity strip, the way the reference sets them. */
+function Figure({ value, label, color }: { value: string; label: string; color?: string }) {
   return (
-    <span className={delta > 0 ? 'positive' : 'muted'} style={{ fontSize: 12 }}>
-      {delta > 0 ? `+${delta}` : delta}
-    </span>
+    <div className="armory-fig">
+      <span className="serif" style={color ? { color } : undefined}>
+        {value}
+      </span>
+      <span className="stat-name">{label}</span>
+    </div>
   )
 }
 
+/**
+ * A titled block. The rule under the heading is the reference's own section
+ * divider, and the uppercase serif is the same one the tab strip uses.
+ *
+ * The styling moved to globals.css rather than staying inline: `.sheet-section`
+ * is now used often enough on one page that six copies of the same object
+ * literal were shipping in the HTML, and a section heading is furniture, not a
+ * one-off.
+ */
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <section style={{ marginTop: 30 }}>
-      <h2
-        className="serif"
-        style={{
-          fontSize: 16,
-          letterSpacing: '0.14em',
-          margin: '0 0 12px',
-          paddingBottom: 8,
-          borderBottom: '1px solid var(--ic-line-2)',
-        }}
-      >
-        {title.toUpperCase()}
-      </h2>
+    <section className="sheet-section">
+      <h2 className="serif">{title.toUpperCase()}</h2>
       {children}
     </section>
   )

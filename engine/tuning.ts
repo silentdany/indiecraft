@@ -4,11 +4,11 @@
  * ============================================================================
  *
  * Level thresholds, rarity bands, the class decision tree, achievement
- * definitions. Nothing else. The rest of the engine is plumbing that reads
- * this file.
+ * definitions, the equipment table. Nothing else. The rest of the engine is
+ * plumbing that reads this file.
  *
  * This is an architectural constraint, not a style preference: the project is
- * open source, and these four objects are exactly what people will want to
+ * open source, and these five objects are exactly what people will want to
  * argue about. A contributor must be able to propose a rebalance by touching
  * one file. If you have to edit anything else to rebalance, the engine has a
  * bug.
@@ -16,11 +16,15 @@
 
 import type {
   AchievementDef,
+  ArmorType,
   CharacterClass,
+  EquipmentGlyph,
   Faction,
   FounderAggregate,
   Rarity,
   RarityName,
+  SlotDef,
+  WeaponFamily,
 } from './types'
 
 // ---------------------------------------------------------------------------
@@ -67,30 +71,69 @@ export const LEVEL_THRESHOLDS: readonly number[] = [
 export const MAX_LEVEL = LEVEL_THRESHOLDS.length // 60
 
 // ---------------------------------------------------------------------------
-// 3. iLvl modifiers
+// 3. Item levels
 // ---------------------------------------------------------------------------
 
-export const ILVL = {
-  /** growthMRR30d: +1 per 10% band, capped. */
-  growthStepPercent: 10,
-  growthMaxBonus: 5,
-  /** Below this retention, a penalty applies: -1 per band, capped. */
-  retentionFloor: 0.3,
-  retentionStep: 0.05,
-  retentionMaxMalus: 5,
-} as const
+/**
+ * What an item of each quality is worth, as an item level.
+ *
+ * The bands are contiguous and cover 1–60, so a piece's quality can be read off
+ * its number and back again. Inside a band the value interpolates on how far
+ * the stat has climbed toward the next rung — a domain rating of 51 and one of
+ * 69 are both epic Linkheart Helms, and the second is a better one.
+ *
+ * Legendary gets the narrowest band on purpose. Once a stat clears the top
+ * threshold the ladder has nothing left to say, and stretching three points
+ * across the whole open-ended tail would reward a founder at $10M MRR over one
+ * at $200K for a difference the rest of the sheet already states plainly.
+ */
+export const ITEM_LEVEL_BANDS: Record<RarityName, { from: number; to: number }> = {
+  common: { from: 1, to: 14 },
+  uncommon: { from: 15, to: 29 },
+  rare: { from: 30, to: 44 },
+  epic: { from: 45, to: 57 },
+  legendary: { from: 58, to: 60 },
+}
+
+/**
+ * How far above the top rung a stat has to climb to max its band.
+ *
+ * Only reachable in the legendary tier, which has no next threshold to
+ * interpolate against. Tripling is the whole span: $300K MRR is item level 60
+ * and so is $30M, because both are "the best weapon in the game" and the card
+ * has other places to say how far past it somebody is.
+ */
+export const ITEM_LEVEL_TOP_SPAN = 3
 
 // ---------------------------------------------------------------------------
 // 4. Rarity — indexed on the founder's level
 // ---------------------------------------------------------------------------
 
-/** Standard item colors. A purple border reads without a single word. */
+/**
+ * The item colours, and they are the reference's, not an approximation of them.
+ *
+ * Common is WHITE. It was #9d9d9d for a long time, which is a real colour in
+ * the palette but the wrong one — that is POOR, the grey the game paints on
+ * vendor trash and on nothing at all. Two consequences, both bad: a common item
+ * wore the colour of worthless, and once empty slots started rendering a greyed
+ * silhouette there was no longer any way to tell a common piece from an empty
+ * square at a glance.
+ *
+ * Poor is not a tier here, so the grey is free — it now means exactly one
+ * thing, which is "no item", and white means the bottom rung of five. That is
+ * the reference's own distinction and it is the one that was missing.
+ *
+ * This adds a third deliberate collision to the two CLASS_COLORS already
+ * documents: common white is also Priest white. They never occupy the same
+ * slot — a class is a word in an identity line, a quality is an item name in a
+ * grid — and the reference lives with exactly the same overlap.
+ */
 export const RARITY_BANDS: readonly { minLevel: number; rarity: Rarity }[] = [
   { minLevel: 55, rarity: { name: 'legendary', hex: '#ff8000' } },
   { minLevel: 40, rarity: { name: 'epic', hex: '#a335ee' } },
   { minLevel: 25, rarity: { name: 'rare', hex: '#0070dd' } },
   { minLevel: 10, rarity: { name: 'uncommon', hex: '#1eff00' } },
-  { minLevel: 1, rarity: { name: 'common', hex: '#9d9d9d' } },
+  { minLevel: 1, rarity: { name: 'common', hex: '#ffffff' } },
 ]
 
 /**
@@ -416,6 +459,31 @@ export const CLASS_COLORS: Record<CharacterClass, string> = {
   Evoker: '#33937F',
 }
 
+/**
+ * The class emblems, borrowed rather than drawn.
+ *
+ * Ten of the eleven are the reference's own `classicon_*`, which is the most
+ * recognisable single picture each class has — a player reads Mage off it
+ * faster than off the word, which is the entire argument for using them.
+ *
+ * Adventurer has no emblem to borrow, being the state of having no class yet.
+ * It gets a map: the journey before anybody has picked a direction, and the
+ * same idea the drawn compass behind it already carries.
+ */
+export const CLASS_ICONS: Record<CharacterClass, string> = {
+  Adventurer: 'inv_misc_map_01',
+  Mage: 'classicon_mage',
+  Hunter: 'classicon_hunter',
+  Warlock: 'classicon_warlock',
+  Shaman: 'classicon_shaman',
+  Priest: 'classicon_priest',
+  Monk: 'classicon_monk',
+  Rogue: 'classicon_rogue',
+  Warrior: 'classicon_warrior',
+  Paladin: 'classicon_paladin',
+  Evoker: 'classicon_evoker',
+}
+
 /** Safety net: never demeaning, always reachable. */
 export const DEFAULT_CLASS: CharacterClass = 'Adventurer'
 
@@ -438,6 +506,8 @@ export const DEFAULT_CLASS: CharacterClass = 'Adventurer'
  */
 export interface FactionDef {
   key: Faction
+  /** Blizzard icon slug: the PvP banners, which is what a faction has always been. */
+  icon: string
   /** Two words on what standing here actually means. */
   tagline: string
   color: string
@@ -465,11 +535,31 @@ export interface FactionDef {
  * a class is a word in one column, a faction is a sigil in another.
  */
 export const FACTIONS: readonly FactionDef[] = [
-  { key: 'B2B', tagline: 'Sells to businesses', color: '#3b8ae0' },
-  { key: 'B2C', tagline: 'Sells to people', color: '#e04b45' },
-  // Not a hedge: serving both is a genuinely harder position to hold, and the
-  // ten founders who do it should not be filed under "unknown".
-  { key: 'Both', tagline: 'Sells to both', color: '#c9bba0' },
+  /*
+   * The two PvP banners, and they land the same way round as the colours
+   * already did: Alliance for the side that answers to institutions, Horde for
+   * the side that sells to people.
+   *
+   * The slugs are named by number, not by faction, so which is which was
+   * checked by looking at the two files rather than assumed:
+   * `inv_bannerpvp_01` is the red Horde sigil and `inv_bannerpvp_02` is the
+   * blue-and-gold Alliance lion. Swapping them would be invisible to every
+   * test here and obvious to every player.
+   */
+  { key: 'B2B', icon: 'inv_bannerpvp_02', tagline: 'Sells to businesses', color: '#3b8ae0' },
+  { key: 'B2C', icon: 'inv_bannerpvp_01', tagline: 'Sells to people', color: '#e04b45' },
+  /*
+   * Not a hedge: serving both is a genuinely harder position to hold, and the
+   * ten founders who do it should not be filed under "unknown".
+   *
+   * `inv_bannerpvp_03` completes the set — the same banner as the other two, a
+   * third colour, belonging to neither side. The first attempt was
+   * `inv_misc_tournaments_banner_human`, which is a HUMAN tournament banner and
+   * so wears Alliance livery: a neutral faction flying one side's colours is
+   * worse than no picture at all. Checked by opening the file, like the other
+   * two — these slugs are numbered, not named.
+   */
+  { key: 'Both', icon: 'inv_bannerpvp_03', tagline: 'Sells to both', color: '#c9bba0' },
 ]
 
 export const FACTIONS_BY_KEY: ReadonlyMap<Faction, FactionDef> = new Map(
@@ -516,6 +606,7 @@ const ageInMs = (iso: string | null): number =>
 export const ACHIEVEMENTS: readonly AchievementDef[] = [
   {
     code: 'first_blood',
+    icon: 'inv_misc_gem_bloodstone_01',
     /** 76.1% of the corpus. */
     rarity: 'common',
     label: 'First Blood',
@@ -525,6 +616,7 @@ export const ACHIEVEMENTS: readonly AchievementDef[] = [
   },
   {
     code: 'the_thousand',
+    icon: 'inv_misc_coin_02',
     /** 41.3% of the corpus. */
     rarity: 'common',
     label: 'The Thousand',
@@ -536,6 +628,7 @@ export const ACHIEVEMENTS: readonly AchievementDef[] = [
   // scoring spine is lifetime revenue. Three more, to the top of the corpus.
   {
     code: 'ten_thousand',
+    icon: 'inv_misc_coin_01',
     /** 24.3% of the corpus. */
     rarity: 'uncommon',
     label: 'Ten Thousand',
@@ -545,6 +638,7 @@ export const ACHIEVEMENTS: readonly AchievementDef[] = [
   },
   {
     code: 'exalted',
+    icon: 'achievement_reputation_08',
     /** 14.1% of the corpus. */
     rarity: 'rare',
     label: 'Exalted',
@@ -554,6 +648,7 @@ export const ACHIEVEMENTS: readonly AchievementDef[] = [
   },
   {
     code: 'the_million',
+    icon: 'inv_misc_coinbag_special',
     /** 4.7% of the corpus. */
     rarity: 'epic',
     label: 'The Million',
@@ -563,6 +658,7 @@ export const ACHIEVEMENTS: readonly AchievementDef[] = [
   },
   {
     code: 'ramen',
+    icon: 'inv_misc_food_15',
     /** 16.5% of the corpus. */
     rarity: 'uncommon',
     label: 'Ramen Profitable',
@@ -572,6 +668,7 @@ export const ACHIEVEMENTS: readonly AchievementDef[] = [
   },
   {
     code: 'raid_boss',
+    icon: 'achievement_boss_ragnaros',
     /** 9.3% of the corpus. */
     rarity: 'rare',
     label: 'Raid Boss Slayer',
@@ -581,6 +678,7 @@ export const ACHIEVEMENTS: readonly AchievementDef[] = [
   },
   {
     code: 'mythic',
+    icon: 'achievement_challengemode_gold',
     /** 1.4% of the corpus. */
     rarity: 'epic',
     label: 'Mythic',
@@ -592,6 +690,7 @@ export const ACHIEVEMENTS: readonly AchievementDef[] = [
     // One founder in the corpus holds this. That is the point of a top rung:
     // it is not aspirational decoration, somebody is actually up there.
     code: 'legendary',
+    icon: 'inv_misc_head_dragon_01',
     /** 0.1% of the corpus. */
     rarity: 'legendary',
     label: 'Legendary',
@@ -601,6 +700,7 @@ export const ACHIEVEMENTS: readonly AchievementDef[] = [
   },
   {
     code: 'hundred_customers',
+    icon: 'achievement_reputation_01',
     /** 3.2% of the corpus. */
     rarity: 'epic',
     label: 'Centurion',
@@ -610,6 +710,7 @@ export const ACHIEVEMENTS: readonly AchievementDef[] = [
   },
   {
     code: 'thousand_customers',
+    icon: 'achievement_reputation_06',
     /** 1.6% of the corpus. */
     rarity: 'epic',
     label: 'Legion',
@@ -619,6 +720,7 @@ export const ACHIEVEMENTS: readonly AchievementDef[] = [
   },
   {
     code: 'multiboxer',
+    icon: 'achievement_guildperk_everybodysfriend',
     /** 1.2% of the corpus. */
     rarity: 'epic',
     label: 'Multiboxer',
@@ -628,6 +730,7 @@ export const ACHIEVEMENTS: readonly AchievementDef[] = [
   },
   {
     code: 'alt_king',
+    icon: 'achievement_guildperk_workingovertime',
     /** 0.3% of the corpus. */
     rarity: 'legendary',
     label: 'Alt King',
@@ -637,6 +740,7 @@ export const ACHIEVEMENTS: readonly AchievementDef[] = [
   },
   {
     code: 'unkillable',
+    icon: 'ability_warrior_shieldwall',
     /** 0.8% of the corpus. */
     rarity: 'legendary',
     label: 'Unkillable',
@@ -655,6 +759,7 @@ export const ACHIEVEMENTS: readonly AchievementDef[] = [
   },
   {
     code: 'ascension',
+    icon: 'ability_rogue_sprint',
     /** 8.2% of the corpus. */
     rarity: 'rare',
     label: 'Ascension',
@@ -664,6 +769,7 @@ export const ACHIEVEMENTS: readonly AchievementDef[] = [
   },
   {
     code: 'bloodlust',
+    icon: 'spell_nature_bloodlust',
     /** 2.9% of the corpus. */
     rarity: 'epic',
     label: 'Bloodlust',
@@ -673,6 +779,7 @@ export const ACHIEVEMENTS: readonly AchievementDef[] = [
   },
   {
     code: 'veteran',
+    icon: 'inv_misc_pocketwatch_01',
     /** 17.5% of the corpus. */
     rarity: 'uncommon',
     label: 'Veteran',
@@ -681,6 +788,7 @@ export const ACHIEVEMENTS: readonly AchievementDef[] = [
   },
   {
     code: 'old_guard',
+    icon: 'inv_misc_pocketwatch_02',
     /** 5.1% of the corpus. */
     rarity: 'rare',
     label: 'Old Guard',
@@ -689,6 +797,7 @@ export const ACHIEVEMENTS: readonly AchievementDef[] = [
   },
   {
     code: 'classic',
+    icon: 'inv_misc_pocketwatch_03',
     /** 0.9% of the corpus. */
     rarity: 'legendary',
     label: 'Classic',
@@ -697,6 +806,7 @@ export const ACHIEVEMENTS: readonly AchievementDef[] = [
   },
   {
     code: 'lone_wolf',
+    icon: 'spell_nature_spiritwolf',
     /** 98.7% of the corpus. */
     rarity: 'common',
     label: 'Lone Wolf',
@@ -705,6 +815,7 @@ export const ACHIEVEMENTS: readonly AchievementDef[] = [
   },
   {
     code: 'guilded',
+    icon: 'inv_shirt_guildtabard_01',
     /** 1.3% of the corpus. */
     rarity: 'epic',
     label: 'Guilded',
@@ -713,6 +824,7 @@ export const ACHIEVEMENTS: readonly AchievementDef[] = [
   },
   {
     code: 'authority',
+    icon: 'inv_misc_rune_01',
     /** 4.3% of the corpus. */
     rarity: 'epic',
     label: 'Authority',
@@ -722,6 +834,7 @@ export const ACHIEVEMENTS: readonly AchievementDef[] = [
   },
   {
     code: 'renowned',
+    icon: 'achievement_reputation_07',
     /** 1.6% of the corpus, and legendary above its band — see `rarity`. */
     rarity: 'legendary',
     label: 'Renowned',
@@ -731,6 +844,7 @@ export const ACHIEVEMENTS: readonly AchievementDef[] = [
   },
   {
     code: 'mercenary',
+    icon: 'inv_misc_bandana_01',
     /** 4.1% of the corpus. */
     rarity: 'epic',
     label: 'Mercenary',
@@ -741,6 +855,7 @@ export const ACHIEVEMENTS: readonly AchievementDef[] = [
   },
   {
     code: 'ironman',
+    icon: 'inv_misc_armorkit_17',
     /** 5.3% of the corpus. */
     rarity: 'rare',
     label: 'Ironman',
@@ -752,6 +867,7 @@ export const ACHIEVEMENTS: readonly AchievementDef[] = [
   },
   {
     code: 'companion',
+    icon: 'ability_hunter_beastcall',
     /** 13.5% of the corpus. */
     rarity: 'rare',
     label: 'Companion',
@@ -760,6 +876,7 @@ export const ACHIEVEMENTS: readonly AchievementDef[] = [
   },
   {
     code: 'dual_spec',
+    icon: 'achievement_general_stayclassy',
     /** 3.9% of the corpus. */
     rarity: 'epic',
     label: 'Dual Spec',
@@ -769,6 +886,7 @@ export const ACHIEVEMENTS: readonly AchievementDef[] = [
   },
   {
     code: 'tinker',
+    icon: 'trade_engineering',
     /** 3.9% of the corpus. */
     rarity: 'epic',
     label: 'Tinker',
@@ -778,6 +896,7 @@ export const ACHIEVEMENTS: readonly AchievementDef[] = [
   },
   {
     code: 'alchemist',
+    icon: 'trade_alchemy',
     /** 17.1% of the corpus. */
     rarity: 'uncommon',
     label: 'Alchemist',
@@ -790,6 +909,7 @@ export const ACHIEVEMENTS: readonly AchievementDef[] = [
   },
   {
     code: 'server_full',
+    icon: 'inv_misc_grouplooking',
     /** 2.1% of the corpus. */
     rarity: 'epic',
     label: 'Server Full',
@@ -799,6 +919,7 @@ export const ACHIEVEMENTS: readonly AchievementDef[] = [
   },
   {
     code: 'summoned',
+    icon: 'spell_shadow_demonicempathy',
     /** 0.3% of the corpus. */
     rarity: 'legendary',
     label: 'Summoned',
@@ -808,6 +929,7 @@ export const ACHIEVEMENTS: readonly AchievementDef[] = [
   },
   {
     code: 'auction_house',
+    icon: 'achievement_guildperk_cashflow',
     /** 24.9% of the corpus. */
     rarity: 'uncommon',
     label: 'Auction House',
@@ -818,6 +940,7 @@ export const ACHIEVEMENTS: readonly AchievementDef[] = [
   },
   {
     code: 'clean_sweep',
+    icon: 'spell_holy_championsbond',
     /** 1.4% of the corpus. */
     rarity: 'epic',
     label: 'Clean Sweep',
@@ -837,6 +960,7 @@ export const ACHIEVEMENTS: readonly AchievementDef[] = [
      * is not an achievement — it is a rounding error with a medal.
      */
     code: 'realm_first',
+    icon: 'inv_banner_02',
     /** 1.6% of the corpus, and legendary above its band — see `rarity`. */
     rarity: 'legendary',
     label: 'Realm First!',
@@ -845,6 +969,7 @@ export const ACHIEVEMENTS: readonly AchievementDef[] = [
   },
   {
     code: 'ding_sixty',
+    icon: 'achievement_level_60',
     /** 0.9% of the corpus. */
     rarity: 'legendary',
     label: 'Ding 60',
@@ -860,3 +985,1542 @@ export const REALM_FIRST_CODE = 'realm_first'
 export const REALM_FIRST_MIN_SIZE = 10
 
 export const ACHIEVEMENTS_BY_CODE = new Map(ACHIEVEMENTS.map((a) => [a.code, a]))
+
+// ---------------------------------------------------------------------------
+// 8. Equipment — the paper doll
+// ---------------------------------------------------------------------------
+
+/**
+ * Seventeen slots. Each slot IS a stat, and the item worn in it is that stat's
+ * quality made into an object you can hover.
+ *
+ * ---------------------------------------------------------------------------
+ * Three decisions, in the order they matter.
+ *
+ * THE SLOT MEANS THE STAT. Main Hand is MRR because your weapon is the number
+ * everything else is judged by; Back is retention because it is what covers
+ * you; Ring 2 is cofounders because a ring is a bond. Not one slot was assigned
+ * to fill a hole in the grid. Anybody proposing a remap should be able to
+ * finish the sentence "this slot is that stat BECAUSE" — if they can't, the
+ * paper doll is just a bingo card.
+ *
+ * THE THRESHOLDS ARE FIXED, NOT PERCENTILES. This was the tempting mistake and
+ * it is the same one section 7 already refuses: a quality indexed on the corpus
+ * means a founder's epic quietly turns rare while they sleep, because somebody
+ * else shipped. Every `min` below is a number, calibrated once against the live
+ * corpus, with the achievement share it was anchored to recorded beside it
+ * where one exists. An item, once worn, is only ever taken off by the stat
+ * itself falling.
+ *
+ * AN EMPTY SLOT IS AN ANSWER. `read` returns null when the corpus never spoke,
+ * and the engine keeps that apart from "reported, but below the first rung" —
+ * see EmptyReason. Two thirds of TrustMRR listings have no marketing channels
+ * and half have no tech stack; dressing those founders in grey commons for
+ * fields they never filled in would be the gear version of the retention
+ * penalty this engine has already thrown out twice.
+ *
+ * ---------------------------------------------------------------------------
+ * THE NAMES. Every item derives from a real Classic one, recorded in `after`.
+ *
+ * The rule that makes a derivation work: keep the cadence and the qualifier,
+ * swap the noun. "Lionheart Helm" → "Linkheart Helm" lands because the shape
+ * survives and one sound moves. "Arcanite Reaper" → "Revenue Axe" does not,
+ * because nothing of the original is left to recognise.
+ *
+ * Two constraints on top, both inherited from the achievements:
+ *
+ *   Never demeaning. A name is a thing somebody screenshots about themselves.
+ *   "Arcanite Refunder" was the first draft of the epic weapon and it is out —
+ *   a refund is a bad day at work, and no founder should find their best month
+ *   labelled with one.
+ *
+ *   Ascending fame. Commons derive from vendor trash nobody will place, and
+ *   only the top two rungs touch items people can name. The joke has to be
+ *   worth the most where it is hardest to earn.
+ */
+
+/**
+ * What each class wears and what it swings.
+ *
+ * Straight off the reference's own armour and weapon rules, because those rules
+ * are the second-most recognised piece of shared vocabulary the genre has after
+ * the quality colours — a player reads "plate" and knows the answer is Warrior
+ * or Paladin before any word arrives.
+ *
+ * Two calls worth defending:
+ *
+ *   Evoker wears mail, which is correct in the reference and also right here:
+ *   it is the class of "earning already, still finding the shape of it", and
+ *   mail is the armour of the classes that are half one thing and half another.
+ *
+ *   Adventurer gets cloth and a plain sword. It is not a class — it is the state
+ *   of having none yet — so it gets the starting kit rather than a specialism,
+ *   which is exactly what it means. Never leather or plate: those are choices,
+ *   and this is the absence of one.
+ */
+export const CLASS_GEAR: Record<CharacterClass, { armor: ArmorType; weapon: WeaponFamily }> = {
+  Warrior: { armor: 'plate', weapon: 'axe' },
+  Paladin: { armor: 'plate', weapon: 'hammer' },
+  Hunter: { armor: 'mail', weapon: 'sword' },
+  Shaman: { armor: 'mail', weapon: 'mace' },
+  Evoker: { armor: 'mail', weapon: 'staff' },
+  Rogue: { armor: 'leather', weapon: 'dagger' },
+  Monk: { armor: 'leather', weapon: 'fist' },
+  Mage: { armor: 'cloth', weapon: 'staff' },
+  Warlock: { armor: 'cloth', weapon: 'dagger' },
+  Priest: { armor: 'cloth', weapon: 'mace' },
+  Adventurer: { armor: 'cloth', weapon: 'sword' },
+}
+
+const usd = (v: number) =>
+  new Intl.NumberFormat('en-US', {
+    style: 'currency',
+    currency: 'USD',
+    notation: v >= 10_000 ? 'compact' : 'standard',
+    maximumFractionDigits: v >= 10_000 ? 1 : 0,
+  }).format(v)
+
+const count = (v: number) =>
+  new Intl.NumberFormat('en-US', {
+    notation: v >= 10_000 ? 'compact' : 'standard',
+    maximumFractionDigits: 1,
+  }).format(v)
+
+const percent = (v: number) => `${Math.round(v)}%`
+
+/** Years since an ISO date, or null when there is no date to count from. */
+const yearsSince = (iso: string | null): number | null =>
+  iso === null ? null : (Date.now() - new Date(iso).getTime()) / YEARS(1)
+
+/** Zero is real on some stats and "never reported" on others. This is the latter. */
+const positive = (v: number): number | null => (v > 0 ? v : null)
+
+/**
+ * What an empty slot shows.
+ *
+ * The reference greys out a silhouette of the piece that belongs there, so an
+ * empty head slot still reads as a head slot. Those are UI textures rather than
+ * item icons and are not on the CDN, so this is the nearest honest equivalent:
+ * the plainest real item of each shape, rendered desaturated and dimmed.
+ *
+ * Keyed on the glyph rather than on the slot, because that is exactly what the
+ * glyph already is — the SHAPE of the thing worn — and both rings want one ring
+ * and both trinkets one talisman, same as the drawings do.
+ *
+ * The point is that a blank slot keeps saying what it is for. A row of
+ * identical question marks would be seventeen ways of saying nothing, and the
+ * drawn glyph alone reads as interface furniture rather than as a gap in a
+ * character.
+ */
+/**
+ * The interface's own pictures, for the places that are not an item, a class,
+ * a faction or a badge.
+ *
+ * Section headings, timeline events, the enchantment line. Every one of these
+ * was a drawn glyph, and each was the last thing on its panel still saying "we
+ * made this ourselves" beside three borrowed ones — which reads as an
+ * unfinished job rather than as a decision.
+ *
+ * Not everything qualifies. `shuffle`, `link` and `download` in the share panel
+ * stay drawn: they are browser actions, the reference has no picture for them,
+ * and reaching for a vaguely-related spell icon would be decoration pretending
+ * to be meaning. Same for the brand mark, which has to be ours by definition.
+ */
+/**
+ * Our drawn stat vocabulary, translated into Blizzard's.
+ *
+ * Keyed on the glyph name rather than on the stat, because the same glyph
+ * already stands for the same idea in three different places — the home page's
+ * figures, the versus rows and the sheet. One table, and every consumer of a
+ * stat glyph gets the borrowed picture without knowing this exists.
+ *
+ * Keys not present here simply keep their drawing, which is the correct
+ * outcome for anything the reference has no word for.
+ */
+export const STAT_ICONS: Record<string, string> = {
+  characters: 'inv_misc_grouplooking',
+  level: 'achievement_level_10',
+  gear: 'inv_misc_bag_10',
+  revenue: 'inv_misc_coin_05',
+  coins: 'inv_misc_coin_17',
+  crowd: 'achievement_guildperk_mrpopularity',
+  beacon: 'spell_holy_searinglight',
+  banner: 'inv_banner_03',
+  stack: 'inv_misc_platnumdisks',
+  achievement: 'achievement_quests_completed_08',
+  rising: 'spell_holy_borrowedtime',
+  shieldPulse: 'ability_warrior_shieldwall',
+  hourglass: 'spell_nature_timestop',
+}
+
+export const UI_ICONS = {
+  /** A career: joined, levelled, earned something. */
+  timelineJoined: 'inv_scroll_11',
+  timelineLevel: 'achievement_level_10',
+  timelineAchievement: 'achievement_quests_completed_08',
+  /** How long we have been watching. */
+  watched: 'spell_nature_timestop',
+  /** The three stat groups. */
+  statRevenue: 'inv_misc_coin_05',
+  statAudience: 'achievement_guildperk_mrpopularity',
+  statTrajectory: 'spell_holy_borrowedtime',
+  /** Standing, and the two founders either side. */
+  rank: 'achievement_arena_2v2_1',
+  rivals: 'achievement_pvp_h_a',
+  /** A product's tech stack, which behaves exactly like an item's enchantments. */
+  enchant: 'trade_engraving',
+
+  /*
+   * The consent actions, which were five copies of the brand crest doing three
+   * different jobs. Claiming a sheet is taking possession of it, so it is a
+   * key; being signed in is an identity; putting a removed sheet back is
+   * literally a resurrection, and the reference has a spell for that.
+   */
+  claim: 'inv_misc_key_03',
+  signedIn: 'achievement_character_human_male',
+  restore: 'spell_holy_resurrection',
+
+  /*
+   * The share panel. These were left drawn on the grounds that a browser
+   * action has no counterpart in the reference, which held for the arrows and
+   * chains a UI kit would use — but not for what these three actually do. A
+   * different draft is a different scroll, a link handed to somebody is a
+   * letter, and taking the picture away is a bag.
+   */
+  reword: 'inv_inscription_scroll',
+  copyLink: 'inv_letter_15',
+  saveCard: 'inv_misc_bag_08',
+} as const
+
+export const EMPTY_SLOT_ICONS: Record<EquipmentGlyph, string> = {
+  helm: 'inv_helmet_08',
+  pendant: 'inv_jewelry_necklace_01',
+  pauldron: 'inv_shoulder_11',
+  cloak: 'inv_misc_cape_01',
+  cuirass: 'inv_chest_cloth_04',
+  bracer: 'inv_bracer_02',
+  gauntlet: 'inv_gauntlets_05',
+  girdle: 'inv_belt_03',
+  legplate: 'inv_pants_02',
+  sabaton: 'inv_boots_01',
+  band: 'inv_jewelry_ring_02',
+  talisman: 'inv_jewelry_talisman_01',
+  blade: 'inv_sword_01',
+  buckler: 'inv_shield_01',
+  longbow: 'inv_weapon_bow_01',
+}
+
+export const SLOTS: readonly SlotDef[] = [
+  // --- Left column ---------------------------------------------------------
+  {
+    key: 'head',
+    label: 'Head',
+    stat: 'Domain rating',
+    glyph: 'helm',
+    read: (i) => i.domainRating,
+    format: (v) => String(Math.round(v)),
+    items: [
+      {
+        rarity: 'common',
+        min: 1,
+        name: 'Worn Meta Coif',
+        icon: 'inv_helmet_14',
+        after: 'Worn Mail Coif',
+      },
+      {
+        rarity: 'uncommon',
+        min: 10,
+        name: 'Backlink Hood',
+        icon: 'inv_helmet_41',
+        after: 'Bloodfang Hood',
+      },
+      {
+        rarity: 'rare',
+        min: 30,
+        name: 'Helm of the Indexed',
+        icon: 'inv_helmet_21',
+        after: 'Helm of the Lifegiver',
+      },
+      // The Authority achievement's threshold, on purpose: 4.3% of the corpus.
+      {
+        rarity: 'epic',
+        min: 50,
+        name: 'Linkheart Helm',
+        icon: 'inv_helmet_25',
+        after: 'Lionheart Helm',
+      },
+      // Renowned's threshold. 1.6%, and years of somebody else's links.
+      {
+        rarity: 'legendary',
+        min: 70,
+        name: 'Crown of Distribution',
+        icon: 'inv_crown_02',
+        after: 'Crown of Destruction',
+      },
+    ],
+  },
+  {
+    key: 'neck',
+    label: 'Neck',
+    stat: 'Followers',
+    glyph: 'pendant',
+    read: (i) => positive(i.followers ?? 0),
+    format: count,
+    items: [
+      {
+        rarity: 'common',
+        min: 1,
+        name: 'Tarnished Reply Chain',
+        icon: 'inv_jewelry_necklace_07',
+        after: 'Tarnished Silver Chain',
+      },
+      {
+        rarity: 'uncommon',
+        min: 1_000,
+        name: 'Pendant of the Timeline',
+        icon: 'inv_jewelry_necklace_13',
+        after: 'Pendant of the Agate Shield',
+      },
+      {
+        rarity: 'rare',
+        min: 10_000,
+        name: 'Choker of the Feed Lord',
+        icon: 'inv_jewelry_necklace_20',
+        after: 'Choker of the Fire Lord',
+      },
+      {
+        rarity: 'epic',
+        min: 50_000,
+        name: "Poster's Talisman of Connectivity",
+        icon: 'inv_jewelry_amulet_03',
+        after: "Prestor's Talisman of Connectivity",
+      },
+      {
+        rarity: 'legendary',
+        min: 250_000,
+        name: 'Talisman of Ephemeral Reach',
+        icon: 'inv_jewelry_necklace_28',
+        after: 'Talisman of Ephemeral Power',
+      },
+    ],
+  },
+  {
+    key: 'shoulders',
+    label: 'Shoulders',
+    stat: 'Products shipped',
+    glyph: 'pauldron',
+    read: (i) => positive(i.nProducts),
+    format: count,
+    items: [
+      {
+        rarity: 'common',
+        min: 1,
+        name: 'Rough Prototype Pads',
+        icon: 'inv_shoulder_09',
+        after: 'Rough Leather Shoulders',
+      },
+      {
+        rarity: 'uncommon',
+        min: 2,
+        name: 'Trueship Shoulders',
+        icon: 'inv_shoulder_02',
+        after: 'Truestrike Shoulders',
+      },
+      // Multiboxer's threshold: 1.2% of the corpus ship three.
+      {
+        rarity: 'rare',
+        min: 3,
+        name: 'Mantle of the Second Domain',
+        icon: 'inv_shoulder_18',
+        after: 'Mantle of Lost Hope',
+      },
+      // Alt King's: 0.3% ship five.
+      {
+        rarity: 'epic',
+        min: 5,
+        name: "Shipmaster's Pauldrons",
+        icon: 'inv_shoulder_24',
+        after: "Dragonstalker's Spaulders",
+      },
+      {
+        rarity: 'legendary',
+        min: 7,
+        name: 'Spaulders of the Endless Backlog',
+        icon: 'inv_shoulder_29',
+        after: 'Spaulders of Valor',
+      },
+    ],
+  },
+  {
+    key: 'back',
+    label: 'Back',
+    stat: 'Retention',
+    glyph: 'cloak',
+    // Guarded exactly like the iLvl penalty: no retention signal is no cloak,
+    // never a grey one. TrustMRR reports customers: 0 on most listings, and a
+    // ratio computed from that is not a low number, it is no number.
+    read: (i) => (i.hasRetentionSignal ? i.retention * 100 : null),
+    format: percent,
+    items: [
+      {
+        rarity: 'common',
+        min: 1,
+        name: 'Tattered Trial Cape',
+        icon: 'inv_misc_cape_02',
+        after: 'Tattered Cloth Cape',
+      },
+      {
+        rarity: 'uncommon',
+        min: 30,
+        name: 'Cloak of Renewals',
+        icon: 'inv_misc_cape_08',
+        after: 'Cloak of Flames',
+      },
+      {
+        rarity: 'rare',
+        min: 50,
+        name: 'Cape of the Recurring Baron',
+        icon: 'inv_misc_cape_16',
+        after: 'Cape of the Black Baron',
+      },
+      {
+        rarity: 'epic',
+        min: 70,
+        name: 'Shroud of Subscription',
+        icon: 'inv_misc_cape_18',
+        after: 'Shroud of Dominion',
+      },
+      /*
+       * Retention is bimodal and the middle bands are nearly empty because of
+       * it: only 5% of the corpus reports a signal at all, and those that do
+       * cluster at ~100% (activeSubscriptions equal to customers, which is
+       * usually the same number twice rather than perfect retention). Epic
+       * lands at 0.1% and legendary at 1.7% as a result. That inversion is a
+       * property of the data, not of these numbers — moving them does not
+       * create founders at 75%.
+       */
+      {
+        rarity: 'legendary',
+        min: 85,
+        name: 'Cloak of the Unchurned',
+        icon: 'inv_misc_cape_20',
+        after: 'Cloak of the Shrouded Mist',
+      },
+    ],
+  },
+  {
+    key: 'chest',
+    varyBy: 'armor',
+    label: 'Chest',
+    stat: 'Customers',
+    glyph: 'cuirass',
+    // effectiveCustomers, not customers: the same fallback the class tree uses,
+    // and the difference between 16% coverage and 78%.
+    read: (i) => positive(i.effectiveCustomers),
+    format: count,
+    items: [
+      {
+        rarity: 'common',
+        min: 1,
+        name: 'Tattered Trial Vest',
+        icon: 'inv_chest_cloth_01',
+        after: 'Tattered Cloth Vest',
+        variants: {
+          cloth: {
+            name: 'Tattered Trial Robe',
+            after: 'Tattered Cloth Vest',
+            icon: 'inv_chest_cloth_01',
+          },
+          leather: {
+            name: 'Tattered Trial Jerkin',
+            after: 'Tattered Leather Vest',
+            icon: 'inv_chest_leather_01',
+          },
+          mail: {
+            name: 'Tattered Trial Hauberk',
+            after: 'Tattered Mail Vest',
+            icon: 'inv_chest_chain_15',
+          },
+          plate: {
+            name: 'Tattered Trial Breastplate',
+            after: 'Tattered Plate Vest',
+            icon: 'inv_chest_plate01',
+          },
+        },
+      },
+      {
+        rarity: 'uncommon',
+        min: 15,
+        name: 'Chestguard of the Early Adopter',
+        icon: 'inv_chest_chain_05',
+        after: 'Chestguard of the Fallen Hero',
+        variants: {
+          cloth: {
+            name: 'Robe of the Early Adopter',
+            after: 'Robe of the Fallen Hero',
+            icon: 'inv_chest_cloth_09',
+          },
+          leather: {
+            name: 'Jerkin of the Early Adopter',
+            after: 'Jerkin of the Fallen Hero',
+            icon: 'inv_chest_leather_05',
+          },
+          mail: {
+            name: 'Hauberk of the Early Adopter',
+            after: 'Chestguard of the Fallen Hero',
+            icon: 'inv_chest_chain_05',
+          },
+          plate: {
+            name: 'Breastplate of the Early Adopter',
+            after: 'Breastplate of the Fallen Hero',
+            icon: 'inv_chest_plate05',
+          },
+        },
+      },
+      {
+        rarity: 'rare',
+        min: 100,
+        name: 'Robe of the Arch-Renewal',
+        icon: 'inv_chest_cloth_18',
+        after: 'Robe of the Archmage',
+        variants: {
+          cloth: {
+            name: 'Robe of the Arch-Renewal',
+            after: 'Robe of the Archmage',
+            icon: 'inv_chest_cloth_18',
+          },
+          leather: {
+            name: 'Tunic of the Arch-Renewal',
+            after: 'Tunic of the Archmage',
+            icon: 'inv_chest_leather_09',
+          },
+          mail: {
+            name: 'Chestguard of the Arch-Renewal',
+            after: 'Chestguard of the Archmage',
+            icon: 'inv_chest_chain_09',
+          },
+          plate: {
+            name: 'Breastplate of the Arch-Renewal',
+            after: 'Breastplate of the Archmage',
+            icon: 'inv_chest_plate08',
+          },
+        },
+      },
+      // Centurion's threshold: 3.2%.
+      {
+        rarity: 'epic',
+        min: 600,
+        name: 'Breastplate of the Paid Tier',
+        icon: 'inv_chest_plate06',
+        after: 'Breastplate of Might',
+        variants: {
+          cloth: {
+            name: 'Robes of the Paid Tier',
+            after: 'Robes of Might',
+            icon: 'inv_chest_cloth_25',
+          },
+          leather: {
+            name: 'Vest of the Paid Tier',
+            after: 'Vest of Might',
+            icon: 'inv_chest_leather_03',
+          },
+          mail: {
+            name: 'Mail of the Paid Tier',
+            after: 'Mail of Might',
+            icon: 'inv_chest_chain_11',
+          },
+          plate: {
+            name: 'Breastplate of the Paid Tier',
+            after: 'Breastplate of Might',
+            icon: 'inv_chest_plate06',
+          },
+        },
+      },
+      // Legion's: 1.6%.
+      {
+        rarity: 'legendary',
+        min: 3_000,
+        name: 'Cuirass of the Thousandfold Base',
+        icon: 'inv_chest_plate16',
+        after: 'Cuirass of the Immortal',
+        variants: {
+          cloth: {
+            name: 'Vestments of the Thousandfold Base',
+            after: 'Vestments of the Immortal',
+            icon: 'inv_chest_cloth_37',
+          },
+          leather: {
+            name: 'Bootstrap Chestpiece',
+            after: 'Bloodfang Chestpiece',
+            icon: 'inv_chest_leather_08',
+          },
+          mail: {
+            name: 'Hauberk of the Thousandfold Base',
+            after: 'Hauberk of the Immortal',
+            icon: 'inv_chest_chain_13',
+          },
+          plate: {
+            name: 'Cuirass of the Thousandfold Base',
+            after: 'Cuirass of the Immortal',
+            icon: 'inv_chest_plate16',
+          },
+        },
+      },
+    ],
+  },
+  {
+    key: 'wrist',
+    label: 'Wrist',
+    stat: 'Per customer',
+    glyph: 'bracer',
+    read: (i) => (i.effectiveCustomers > 0 ? i.mrrUsd / i.effectiveCustomers : null),
+    format: usd,
+    items: [
+      {
+        rarity: 'common',
+        min: 1,
+        name: 'Cuffs of the Free Tier',
+        icon: 'inv_bracer_03',
+        after: "Cuffs of Nature's Fury",
+      },
+      {
+        rarity: 'uncommon',
+        min: 10,
+        name: 'Bracers of Modest Pricing',
+        icon: 'inv_bracer_07',
+        after: 'Bracers of Might',
+      },
+      {
+        rarity: 'rare',
+        min: 50,
+        name: 'Wristguards of Stable Pricing',
+        icon: 'inv_bracer_13',
+        after: 'Wristguards of Stability',
+      },
+      // The Rogue rule's ARPU floor, on purpose: few marks, big scores.
+      {
+        rarity: 'epic',
+        min: 300,
+        name: 'Enterprise Armbraces',
+        icon: 'inv_bracer_17',
+        after: 'Battleborn Armbraces',
+      },
+      {
+        rarity: 'legendary',
+        min: 1_000,
+        name: 'Bracelets of the Annual Contract',
+        icon: 'inv_bracer_19',
+        after: 'Bracelets of Royal Redemption',
+      },
+    ],
+  },
+  // --- Right column --------------------------------------------------------
+  {
+    key: 'hands',
+    label: 'Hands',
+    stat: 'Technologies',
+    glyph: 'gauntlet',
+    read: (i) => positive(i.stack.length),
+    format: count,
+    items: [
+      {
+        rarity: 'common',
+        min: 1,
+        name: 'Handstitched Starter Gloves',
+        icon: 'inv_gauntlets_17',
+        after: 'Handstitched Leather Gloves',
+      },
+      {
+        rarity: 'uncommon',
+        min: 3,
+        name: 'Framework Gauntlets',
+        icon: 'inv_gauntlets_29',
+        after: 'Flameguard Gauntlets',
+      },
+      {
+        rarity: 'rare',
+        min: 6,
+        name: 'DevOps Gauntlets',
+        icon: 'inv_gauntlets_25',
+        after: 'Devilsaur Gauntlets',
+      },
+      // Tinker's threshold: 3.9%. Edgemaster's is the best-known glove in the
+      // game and "edge runtime" is a real thing people deploy to.
+      {
+        rarity: 'epic',
+        min: 10,
+        name: 'Edge Runtime Handguards',
+        icon: 'inv_gauntlets_04',
+        after: "Edgemaster's Handguards",
+      },
+      {
+        rarity: 'legendary',
+        min: 15,
+        name: 'Gauntlets of Infinite Migrations',
+        icon: 'inv_gauntlets_30',
+        after: 'Sacrificial Gauntlets',
+      },
+    ],
+  },
+  {
+    key: 'waist',
+    label: 'Waist',
+    stat: 'Profit margin',
+    glyph: 'girdle',
+    read: (i) => i.profitMargin30d,
+    format: percent,
+    items: [
+      {
+        rarity: 'common',
+        min: 1,
+        name: 'Rugged Runway Belt',
+        icon: 'inv_belt_09',
+        after: 'Rugged Leather Belt',
+      },
+      {
+        rarity: 'uncommon',
+        min: 50,
+        name: 'Girdle of Thin Margins',
+        icon: 'inv_belt_15',
+        after: 'Girdle of Golden Scales',
+      },
+      {
+        rarity: 'rare',
+        min: 80,
+        name: 'Girdle of Operational Fury',
+        icon: 'inv_belt_23',
+        after: 'Girdle of Elemental Fury',
+      },
+      // Alchemist's threshold: 17.1%, which is high for an epic and correct —
+      // software margins are absurd and the corpus says so.
+      {
+        rarity: 'epic',
+        min: 95,
+        name: 'Overhead Girdle',
+        icon: 'inv_belt_27',
+        after: 'Onslaught Girdle',
+      },
+      {
+        rarity: 'legendary',
+        min: 100,
+        name: 'Belt of Never-Ending Runway',
+        icon: 'inv_belt_29',
+        after: 'Belt of Never-Ending Agony',
+      },
+    ],
+  },
+  {
+    key: 'legs',
+    varyBy: 'armor',
+    label: 'Legs',
+    stat: 'Visitors',
+    glyph: 'legplate',
+    read: (i) => positive(i.visitors30d),
+    format: count,
+    items: [
+      {
+        rarity: 'common',
+        min: 1,
+        name: 'Patched Traffic Pants',
+        icon: 'inv_pants_09',
+        after: 'Patched Pants',
+        variants: {
+          cloth: {
+            name: 'Patched Traffic Leggings',
+            after: 'Patched Cloth Pants',
+            icon: 'inv_pants_cloth_01',
+          },
+          leather: {
+            name: 'Patched Traffic Britches',
+            after: 'Patched Pants',
+            icon: 'inv_pants_leather_01',
+          },
+          mail: {
+            name: 'Patched Traffic Legguards',
+            after: 'Patched Mail Pants',
+            icon: 'inv_pants_mail_01',
+          },
+          plate: {
+            name: 'Patched Traffic Legplates',
+            after: 'Patched Plate Pants',
+            icon: 'inv_pants_plate_01',
+          },
+        },
+      },
+      {
+        rarity: 'uncommon',
+        min: 400,
+        name: 'Leggings of the First Thousand',
+        icon: 'inv_pants_11',
+        after: 'Leggings of the Fang',
+        variants: {
+          cloth: {
+            name: 'Leggings of the First Thousand',
+            after: 'Leggings of the Fang',
+            icon: 'inv_pants_cloth_05',
+          },
+          leather: {
+            name: 'Britches of the First Thousand',
+            after: 'Britches of the Fang',
+            icon: 'inv_pants_leather_05',
+          },
+          mail: {
+            name: 'Legguards of the First Thousand',
+            after: 'Legguards of the Fang',
+            icon: 'inv_pants_mail_05',
+          },
+          plate: {
+            name: 'Legplates of the First Thousand',
+            after: 'Legplates of the Fang',
+            icon: 'inv_pants_plate_05',
+          },
+        },
+      },
+      {
+        rarity: 'rare',
+        min: 3_300,
+        name: 'Trafficstalker Legguards',
+        icon: 'inv_pants_03',
+        after: 'Cryptstalker Legguards',
+        variants: {
+          cloth: {
+            name: 'Trafficweave Leggings',
+            after: 'Cryptstalker Leggings',
+            icon: 'inv_pants_cloth_09',
+          },
+          leather: {
+            name: 'Trafficstalker Britches',
+            after: 'Cryptstalker Britches',
+            icon: 'inv_pants_leather_09',
+          },
+          mail: {
+            name: 'Trafficstalker Legguards',
+            after: 'Cryptstalker Legguards',
+            icon: 'inv_pants_mail_09',
+          },
+          plate: {
+            name: 'Trafficstalker Legplates',
+            after: 'Cryptstalker Legplates',
+            icon: 'inv_pants_plate_09',
+          },
+        },
+      },
+      // Server Full's threshold: 2.1%.
+      {
+        rarity: 'epic',
+        min: 22_000,
+        name: 'Legplates of the Front Page',
+        icon: 'inv_pants_04',
+        after: 'Legplates of Might',
+        variants: {
+          cloth: {
+            name: 'Leggings of the Front Page',
+            after: 'Leggings of Might',
+            icon: 'inv_pants_cloth_14',
+          },
+          leather: {
+            name: 'Britches of the Front Page',
+            after: 'Britches of Might',
+            icon: 'inv_pants_leather_11',
+          },
+          mail: {
+            name: 'Legguards of the Front Page',
+            after: 'Legguards of Might',
+            icon: 'inv_pants_mail_11',
+          },
+          plate: {
+            name: 'Legplates of the Front Page',
+            after: 'Legplates of Might',
+            icon: 'inv_pants_plate_11',
+          },
+        },
+      },
+      {
+        rarity: 'legendary',
+        min: 100_000,
+        name: 'Legwraps of the Viral Ascendant',
+        icon: 'inv_pants_08',
+        after: 'Leggings of Transcendence',
+        variants: {
+          cloth: {
+            name: 'Legwraps of the Viral Ascendant',
+            after: 'Leggings of Transcendence',
+            icon: 'inv_pants_cloth_21',
+          },
+          leather: {
+            name: 'Legguards of the Viral Ascendant',
+            after: 'Legguards of Transcendence',
+            icon: 'inv_pants_leather_14',
+          },
+          mail: {
+            name: 'Legstrides of the Viral Ascendant',
+            after: 'Legstrides of Transcendence',
+            icon: 'inv_pants_mail_14',
+          },
+          plate: {
+            name: 'Legplates of the Viral Ascendant',
+            after: 'Legplates of Transcendence',
+            icon: 'inv_pants_plate_14',
+          },
+        },
+      },
+    ],
+  },
+  {
+    key: 'feet',
+    varyBy: 'armor',
+    label: 'Feet',
+    stat: 'Growth 30d',
+    glyph: 'sabaton',
+    // No MRR is no growth rate, rather than 0%: the weighted average of nothing
+    // is not a flat month, it is silence.
+    read: (i) => (i.mrrUsd > 0 ? i.growthMrr30d : null),
+    format: (v) => `${v > 0 ? '+' : ''}${v.toFixed(1)}%`,
+    items: [
+      {
+        rarity: 'common',
+        min: 0,
+        name: 'Worn Bootstraps',
+        icon: 'inv_boots_05',
+        after: 'Worn Leather Boots',
+        variants: {
+          cloth: {
+            name: 'Worn Bootstrap Slippers',
+            after: 'Worn Cloth Slippers',
+            icon: 'inv_boots_cloth_01',
+          },
+          leather: { name: 'Worn Bootstraps', after: 'Worn Leather Boots', icon: 'inv_boots_05' },
+          mail: {
+            name: 'Worn Bootstrap Greaves',
+            after: 'Worn Mail Boots',
+            icon: 'inv_boots_chain_01',
+          },
+          plate: {
+            name: 'Worn Bootstrap Sabatons',
+            after: 'Worn Plate Boots',
+            icon: 'inv_boots_plate_01',
+          },
+        },
+      },
+      {
+        rarity: 'uncommon',
+        min: 5,
+        name: 'Windshear Runners',
+        icon: 'inv_boots_08',
+        after: 'Windshear Boots',
+        variants: {
+          cloth: {
+            name: 'Windshear Slippers',
+            after: 'Windshear Slippers',
+            icon: 'inv_boots_cloth_03',
+          },
+          leather: { name: 'Windshear Runners', after: 'Windshear Boots', icon: 'inv_boots_08' },
+          mail: {
+            name: 'Windshear Striders',
+            after: 'Windshear Striders',
+            icon: 'inv_boots_chain_03',
+          },
+          plate: {
+            name: 'Windshear Warboots',
+            after: 'Windshear Warboots',
+            icon: 'inv_boots_plate_03',
+          },
+        },
+      },
+      // Ascension's threshold: 8.2%.
+      {
+        rarity: 'rare',
+        min: 20,
+        name: 'Boots of Compounding',
+        icon: 'inv_boots_09',
+        after: 'Boots of Avoidance',
+        variants: {
+          cloth: {
+            name: 'Slippers of Compounding',
+            after: 'Slippers of Avoidance',
+            icon: 'inv_boots_cloth_05',
+          },
+          leather: {
+            name: 'Boots of Compounding',
+            after: 'Boots of Avoidance',
+            icon: 'inv_boots_09',
+          },
+          mail: {
+            name: 'Striders of Compounding',
+            after: 'Striders of Avoidance',
+            icon: 'inv_boots_chain_05',
+          },
+          plate: {
+            name: 'Sabatons of Compounding',
+            after: 'Sabatons of Avoidance',
+            icon: 'inv_boots_plate_04',
+          },
+        },
+      },
+      {
+        rarity: 'epic',
+        min: 100,
+        name: 'Boots of the Hockey Stick',
+        icon: 'inv_boots_02',
+        after: 'Boots of the Shadow Flame',
+        variants: {
+          cloth: {
+            name: 'Slippers of the Hockey Stick',
+            after: 'Boots of the Shadow Flame',
+            icon: 'inv_boots_cloth_07',
+          },
+          leather: {
+            name: 'Boots of the Hockey Stick',
+            after: 'Boots of the Shadow Flame',
+            icon: 'inv_boots_02',
+          },
+          mail: {
+            name: 'Striders of the Hockey Stick',
+            after: 'Boots of the Shadow Flame',
+            icon: 'inv_boots_chain_06',
+          },
+          plate: {
+            name: 'Sabatons of the Hockey Stick',
+            after: 'Boots of the Shadow Flame',
+            icon: 'inv_boots_plate_06',
+          },
+        },
+      },
+      // Bloodlust's: 2.9% doubled their MRR in thirty days.
+      {
+        rarity: 'legendary',
+        min: 260,
+        name: 'Sabatons of the Doubling',
+        icon: 'inv_boots_03',
+        after: 'Sabatons of Might',
+        variants: {
+          cloth: {
+            name: 'Footwraps of the Doubling',
+            after: 'Footwraps of Might',
+            icon: 'inv_boots_cloth_09',
+          },
+          leather: {
+            name: 'Treads of the Doubling',
+            after: 'Treads of Might',
+            icon: 'inv_boots_03',
+          },
+          mail: {
+            name: 'Greaves of the Doubling',
+            after: 'Greaves of Might',
+            icon: 'inv_boots_chain_08',
+          },
+          plate: {
+            name: 'Sabatons of the Doubling',
+            after: 'Sabatons of Might',
+            icon: 'inv_boots_03',
+          },
+        },
+      },
+    ],
+  },
+  {
+    key: 'ring1',
+    label: 'Ring 1',
+    stat: 'Shipping for',
+    glyph: 'band',
+    read: (i) => yearsSince(i.foundedFirst),
+    format: (v) => `${v.toFixed(1)}y`,
+    items: [
+      {
+        rarity: 'common',
+        min: 0,
+        name: 'Ring of the First Commit',
+        icon: 'inv_jewelry_ring_03',
+        after: 'Ring of Precision',
+      },
+      {
+        rarity: 'uncommon',
+        min: 1,
+        name: 'Band of the First Year',
+        icon: 'inv_jewelry_ring_15',
+        after: 'Band of the Hierophant',
+      },
+      // Veteran's threshold: 17.5%.
+      {
+        rarity: 'rare',
+        min: 2,
+        name: 'Signet Ring of the Bronze Cohort',
+        icon: 'inv_jewelry_ring_25',
+        after: 'Signet Ring of the Bronze Dragonflight',
+      },
+      // Old Guard's: 5.1%.
+      {
+        rarity: 'epic',
+        min: 5,
+        name: "Master Bootstrapper's Ring",
+        icon: 'inv_jewelry_ring_35',
+        after: "Master Dragonslayer's Ring",
+      },
+      // Classic's: 0.9% have been at it a decade.
+      {
+        rarity: 'legendary',
+        min: 10,
+        name: 'Band of Recurring Eternity',
+        icon: 'inv_jewelry_ring_43',
+        after: 'Band of Accuria',
+      },
+    ],
+  },
+  {
+    key: 'ring2',
+    label: 'Ring 2',
+    stat: 'Cofounders',
+    glyph: 'band',
+    // Zero is a real answer here and gets a real item, not an empty slot: 98.7%
+    // of the corpus builds alone, and an armory that renders the normal case as
+    // a hole would be telling almost everyone they are missing something.
+    read: (i) => i.cofounders.length,
+    format: count,
+    items: [
+      {
+        rarity: 'common',
+        min: 0,
+        name: "Plain Founder's Band",
+        icon: 'inv_jewelry_ring_01',
+        after: 'Plain Iron Band',
+      },
+      // Guilded's threshold: 1.3%. Rare-and-up out of the gate, because having
+      // anyone at all is the rarest fact on this sheet.
+      {
+        rarity: 'uncommon',
+        min: 1,
+        name: 'Ring of Binding Equity',
+        icon: 'inv_jewelry_ring_12',
+        after: 'Ring of Binding',
+      },
+      {
+        rarity: 'rare',
+        min: 2,
+        name: 'Circle of Applied Founders',
+        icon: 'inv_jewelry_ring_21',
+        after: 'Circle of Applied Force',
+      },
+      {
+        rarity: 'epic',
+        min: 3,
+        name: 'Seal of the Cap Table',
+        icon: 'inv_jewelry_ring_30',
+        after: 'Seal of the Dawn',
+      },
+      {
+        rarity: 'legendary',
+        min: 5,
+        name: 'Band of the Founding Council',
+        icon: 'inv_jewelry_ring_40',
+        after: 'Band of Servitude',
+      },
+    ],
+  },
+  {
+    key: 'trinket1',
+    label: 'Trinket 1',
+    stat: 'Categories',
+    glyph: 'talisman',
+    read: (i) => positive(i.categories.length),
+    format: count,
+    items: [
+      {
+        rarity: 'common',
+        min: 1,
+        name: 'Roadmap on a Stick',
+        icon: 'inv_misc_food_54',
+        after: 'Carrot on a Stick',
+      },
+      // Dual Spec's threshold: 3.9% build in two different markets.
+      {
+        rarity: 'uncommon',
+        min: 2,
+        name: 'Hand of Just Ship It',
+        icon: 'inv_misc_bone_10',
+        after: 'Hand of Justice',
+      },
+      {
+        rarity: 'rare',
+        min: 3,
+        name: 'Briarwood Backlog',
+        icon: 'inv_wand_01',
+        after: 'Briarwood Reed',
+      },
+      {
+        rarity: 'epic',
+        min: 4,
+        name: 'Insignia of the Second Market',
+        icon: 'inv_misc_note_01',
+        after: 'Insignia of the Horde',
+      },
+      {
+        rarity: 'legendary',
+        min: 5,
+        name: 'Eye of the Portfolio',
+        icon: 'inv_misc_eye_01',
+        after: 'Eye of the Beast',
+      },
+    ],
+  },
+  {
+    key: 'trinket2',
+    label: 'Trinket 2',
+    stat: 'Channels',
+    glyph: 'talisman',
+    // 22% coverage, the thinnest field on the sheet. Most founders wear nothing
+    // here and that is the honest render, not a bug to paper over.
+    read: (i) => positive(i.channels.length),
+    format: count,
+    items: [
+      {
+        rarity: 'common',
+        min: 1,
+        name: 'Flask of Cold Outreach',
+        icon: 'inv_potion_62',
+        after: 'Flask of the Titans',
+      },
+      {
+        rarity: 'uncommon',
+        min: 2,
+        name: 'Drip Campaign Talisman',
+        icon: 'inv_misc_monsterfang_01',
+        after: 'Drake Fang Talisman',
+      },
+      {
+        rarity: 'rare',
+        min: 4,
+        name: "Growth Loop's Breadth",
+        icon: 'inv_misc_stonetablet_05',
+        after: "Blackhand's Breadth",
+      },
+      {
+        rarity: 'epic',
+        min: 6,
+        name: 'Diamond Distribution Flask',
+        icon: 'inv_potion_27',
+        after: 'Diamond Flask',
+      },
+      {
+        rarity: 'legendary',
+        min: 10,
+        name: 'Talisman of the Omnichannel',
+        icon: 'inv_misc_gem_variety_01',
+        after: 'Talisman of Binding Shard',
+      },
+    ],
+  },
+  // --- Weapons -------------------------------------------------------------
+  {
+    key: 'mainHand',
+    varyBy: 'weapon',
+    label: 'Main Hand',
+    stat: 'Monthly revenue',
+    glyph: 'blade',
+    read: (i) => positive(i.mrrUsd),
+    format: usd,
+    items: [
+      {
+        rarity: 'common',
+        min: 1,
+        name: 'Worn Invoice Blade',
+        icon: 'inv_sword_04',
+        after: 'Worn Shortsword',
+        variants: {
+          sword: { name: 'Worn Invoice Blade', after: 'Worn Shortsword', icon: 'inv_sword_04' },
+          axe: { name: 'Notched Invoice Axe', after: 'Notched Axe', icon: 'inv_axe_02' },
+          hammer: { name: 'Dented Standup Hammer', after: 'Dented Hammer', icon: 'inv_hammer_16' },
+          mace: { name: 'Worn Sprint Mace', after: 'Worn Mace', icon: 'inv_mace_01' },
+          staff: { name: 'Gnarled Bootstrap Staff', after: 'Gnarled Staff', icon: 'inv_staff_08' },
+          dagger: {
+            name: 'Bent Beta Shiv',
+            after: 'Bent Dagger',
+            icon: 'inv_weapon_shortblade_05',
+          },
+          fist: { name: 'Worn Sparring Wraps', after: 'Worn Claw', icon: 'inv_weapon_hand_01' },
+        },
+      },
+      {
+        rarity: 'uncommon',
+        min: 100,
+        name: 'Kroll Blade',
+        icon: 'inv_sword_35',
+        after: 'Krol Blade',
+        variants: {
+          sword: { name: 'Kroll Blade', after: 'Krol Blade', icon: 'inv_sword_35' },
+          axe: { name: 'Deprecated Hatchet', after: 'Deadly Hatchet', icon: 'inv_axe_04' },
+          hammer: { name: 'Vesting Fist', after: "Verigan's Fist", icon: 'inv_hammer_08' },
+          mace: { name: 'Mass of Metrics', after: 'Mass of McGowan', icon: 'inv_mace_08' },
+          staff: { name: 'Staff of Standups', after: 'Staff of Jordan', icon: 'inv_staff_13' },
+          dagger: { name: 'Shadowbank', after: 'Shadowfang', icon: 'inv_weapon_shortblade_11' },
+          fist: {
+            name: 'Cold Outreach Knuckles',
+            after: 'Cold Forged Knuckles',
+            icon: 'inv_weapon_hand_03',
+          },
+        },
+      },
+      // Ramen Profitable's threshold: 16.5%.
+      {
+        rarity: 'rare',
+        min: 1_000,
+        name: "Quel'Server",
+        icon: 'inv_sword_38',
+        after: "Quel'Serrar",
+        variants: {
+          sword: { name: "Quel'Server", after: "Quel'Serrar", icon: 'inv_sword_38' },
+          axe: { name: 'Ravager of Retainers', after: 'Ravager', icon: 'inv_axe_14' },
+          hammer: {
+            name: 'Hammer of the Northern Launch',
+            after: 'Hammer of the Northern Wind',
+            icon: 'inv_hammer_05',
+          },
+          mace: { name: 'Sceptre of Standups', after: 'Sceptre of Smiting', icon: 'inv_mace_10' },
+          staff: {
+            name: 'Serpent Staff of Shipping',
+            after: 'Serpentine Staff',
+            icon: 'inv_staff_20',
+          },
+          dagger: {
+            name: 'Cohort Tooth',
+            after: 'Core Hound Tooth',
+            icon: 'inv_weapon_shortblade_15',
+          },
+          fist: {
+            name: 'Claw of the Cohort',
+            after: 'Claw of the Black Drake',
+            icon: 'inv_weapon_hand_07',
+          },
+        },
+      },
+      /*
+       * Raid Boss Slayer's threshold: 9.3%.
+       *
+       * "Arcanite Refunder" was the first draft and read better as a joke. It is
+       * out under the never-demeaning rule: a refund is a bad day, and this is
+       * the item somebody screenshots on their best month. "Revenuer" keeps the
+       * -er cadence and the two opening syllables, which is all the recognition
+       * the derivation needs.
+       */
+      {
+        rarity: 'epic',
+        min: 10_000,
+        name: 'Arcanite Revenuer',
+        icon: 'inv_axe_09',
+        after: 'Arcanite Reaper',
+        variants: {
+          sword: { name: 'Brutality Backlog', after: 'Brutality Blade', icon: 'inv_sword_43' },
+          axe: { name: 'Arcanite Revenuer', after: 'Arcanite Reaper', icon: 'inv_axe_09' },
+          hammer: {
+            name: 'The Unstoppable Roadmap',
+            after: 'The Unstoppable Force',
+            icon: 'inv_hammer_17',
+          },
+          mace: { name: 'Aurastone Dashboard', after: 'Aurastone Hammer', icon: 'inv_mace_18' },
+          staff: {
+            name: 'Staff of Distribution',
+            after: 'Staff of Dominance',
+            icon: 'inv_staff_30',
+          },
+          dagger: {
+            name: "Alcor's Runrate",
+            after: "Alcor's Sunrazor",
+            icon: 'inv_weapon_shortblade_25',
+          },
+          fist: {
+            name: 'Fists of the Founder',
+            after: 'Fists of the Unrelenting',
+            icon: 'inv_weapon_hand_10',
+          },
+        },
+      },
+      // Mythic's: 1.4%. One sound moves and the whole name lands.
+      {
+        rarity: 'legendary',
+        min: 100_000,
+        name: 'Cashbringer',
+        icon: 'inv_sword_62',
+        after: 'Ashbringer',
+        variants: {
+          sword: { name: 'Cashbringer', after: 'Ashbringer', icon: 'inv_sword_62' },
+          axe: { name: 'Growthhowl', after: 'Gorehowl', icon: 'inv_axe_21' },
+          hammer: {
+            name: 'Sulfuras, Hand of the Roadmap',
+            after: 'Sulfuras, Hand of Ragnaros',
+            icon: 'inv_hammer_20',
+          },
+          mace: {
+            name: 'Hammer of Ten Thousand Tickets',
+            after: 'Hammer of Ten Storms',
+            icon: 'inv_mace_25',
+          },
+          staff: {
+            name: 'Atiesh, Greatstaff of the Guild',
+            after: 'Atiesh, Greatstaff of the Guardian',
+            icon: 'inv_staff_31',
+          },
+          dagger: { name: 'Cashfall', after: 'Kingsfall', icon: 'inv_weapon_shortblade_30' },
+          fist: {
+            name: 'Shipfury, Blessed Fists of the Bootstrapper',
+            after: 'Thunderfury, Blessed Blade of the Windseeker',
+            icon: 'inv_weapon_hand_12',
+          },
+        },
+      },
+    ],
+  },
+  {
+    key: 'offHand',
+    varyBy: 'armor',
+    label: 'Off Hand',
+    stat: 'Lifetime revenue',
+    glyph: 'buckler',
+    read: (i) => positive(i.revenueTotalUsd),
+    format: usd,
+    items: [
+      // First Blood's threshold: 76.1%, the commonest fact in the corpus.
+      {
+        rarity: 'common',
+        min: 1,
+        name: 'Battered Ledger Buckler',
+        icon: 'inv_shield_04',
+        after: 'Battered Buckler',
+        variants: {
+          cloth: { name: 'Battered Ledger', after: 'Battered Tome', icon: 'inv_misc_book_09' },
+          leather: {
+            name: 'Battered Ledger Shiv',
+            after: 'Battered Dagger',
+            icon: 'inv_weapon_shortblade_04',
+          },
+        },
+      },
+      // The Thousand's: 41.3%.
+      {
+        rarity: 'uncommon',
+        min: 1_000,
+        name: 'Drillborer Dashboard',
+        icon: 'inv_shield_09',
+        after: 'Drillborer Disk',
+        variants: {
+          cloth: {
+            name: 'Codex of the Dashboard',
+            after: 'Codex of Wisdom',
+            icon: 'inv_misc_book_07',
+          },
+          leather: {
+            name: 'Drillborer Shiv',
+            after: 'Drillborer Disk',
+            icon: 'inv_weapon_shortblade_08',
+          },
+        },
+      },
+      // Ten Thousand's: 24.3%.
+      {
+        rarity: 'rare',
+        min: 10_000,
+        name: 'Aegis of Runway',
+        icon: 'inv_shield_21',
+        after: 'Aegis of Preservation',
+        variants: {
+          cloth: {
+            name: 'Tome of Runway',
+            after: 'Tome of Preservation',
+            icon: 'inv_misc_book_11',
+          },
+          leather: {
+            name: 'Edge of Runway',
+            after: 'Edge of Preservation',
+            icon: 'inv_weapon_shortblade_12',
+          },
+        },
+      },
+      // Exalted's: 14.1%.
+      {
+        rarity: 'epic',
+        min: 100_000,
+        name: 'Lei of the Lifetime',
+        icon: 'inv_shield_18',
+        after: 'Lei of the Lifegiver',
+        variants: {
+          cloth: {
+            name: 'Grimoire of the Lifetime',
+            after: 'Grimoire of the Lifegiver',
+            icon: 'inv_misc_book_03',
+          },
+          leather: {
+            name: 'Fang of the Lifetime',
+            after: 'Fang of the Lifegiver',
+            icon: 'inv_weapon_shortblade_18',
+          },
+        },
+      },
+      // The Million's: 4.7%.
+      {
+        rarity: 'legendary',
+        min: 1_000_000,
+        name: "Perdition's Ledger",
+        icon: 'inv_shield_30',
+        after: "Perdition's Blade",
+        variants: {
+          cloth: {
+            name: "Perdition's Codex",
+            after: "Perdition's Blade",
+            icon: 'inv_misc_book_05',
+          },
+          leather: {
+            name: "Perdition's Shiv",
+            after: "Perdition's Blade",
+            icon: 'inv_weapon_shortblade_22',
+          },
+        },
+      },
+    ],
+  },
+  {
+    key: 'ranged',
+    label: 'Ranged',
+    stat: 'Impressions',
+    glyph: 'longbow',
+    read: (i) => positive(i.googleImpressions30d),
+    format: count,
+    items: [
+      {
+        rarity: 'common',
+        min: 1,
+        name: 'Crude Sitemap Bow',
+        icon: 'inv_weapon_bow_02',
+        after: 'Crude Bow',
+      },
+      {
+        rarity: 'uncommon',
+        min: 1_200,
+        name: 'Bow of Searing Queries',
+        icon: 'inv_weapon_bow_08',
+        after: 'Bow of Searing Arrows',
+      },
+      {
+        rarity: 'rare',
+        min: 12_000,
+        name: "Seeker's Mark",
+        icon: 'inv_weapon_crossbow_02',
+        after: "Striker's Mark",
+      },
+      // Summoned's threshold: 0.3%, the rarest achievement that is not a title.
+      {
+        rarity: 'epic',
+        min: 40_000,
+        name: "Ashjre'thul, Crossbow of Sitemaps",
+        icon: 'inv_weapon_crossbow_10',
+        after: "Ashjre'thul, Crossbow of Smiting",
+      },
+      {
+        rarity: 'legendary',
+        min: 250_000,
+        name: "Rank'delar, Longbow of the Ancient Crawlers",
+        icon: 'inv_weapon_bow_13',
+        after: "Rhok'delar, Longbow of the Ancient Keepers",
+      },
+    ],
+  },
+]
+
+export const SLOTS_BY_KEY = new Map(SLOTS.map((s) => [s.key, s]))

@@ -1,6 +1,6 @@
 import Link from 'next/link'
-import { Icon } from '@/components/icon'
-import { CLASS_COLORS, FACTIONS_BY_KEY } from '@/engine'
+import { WowIcon } from '@/components/wow-icon'
+import { CLASS_COLORS, CLASS_ICONS, FACTIONS_BY_KEY } from '@/engine'
 import type { LadderRow } from '@/lib/queries'
 import { realmLabel } from '@/lib/realm'
 
@@ -47,7 +47,12 @@ export function LadderTable({ rows }: { rows: LadderRow[] }) {
                 className="ladder-class label"
                 style={{ color: CLASS_COLORS[row.characterClass] }}
               >
-                <Icon name={row.characterClass} size={14} />
+                <WowIcon
+                  slug={CLASS_ICONS[row.characterClass]}
+                  glyph={row.characterClass}
+                  size={18}
+                  bare
+                />
                 {row.characterClass}
               </span>
 
@@ -69,7 +74,7 @@ export function LadderTable({ rows }: { rows: LadderRow[] }) {
                     style={{ color: faction.color }}
                     title={faction.tagline}
                   >
-                    <Icon name={faction.key} size={14} />
+                    <WowIcon slug={faction.icon} glyph={faction.key} size={16} bare />
                   </span>
                 ) : (
                   <span className="ladder-faction ladder-blank" aria-hidden="true" />

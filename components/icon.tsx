@@ -1,4 +1,4 @@
-import type { CharacterClass } from '@/engine/types'
+import type { CharacterClass, EquipmentGlyph } from '@/engine/types'
 
 /**
  * The icon set, drawn here rather than borrowed.
@@ -30,7 +30,15 @@ import type { CharacterClass } from '@/engine/types'
 
 type IconName =
   | CharacterClass
+  // The fifteen equipment shapes. Declared in the engine rather than here, in
+  // the same direction as CharacterClass: tuning.ts names the glyph each slot
+  // wears, and this file is what draws it. Importing IconName the other way
+  // would put a React module inside the pure engine.
+  | EquipmentGlyph
   | 'characters'
+  | 'shuffle'
+  | 'link'
+  | 'download'
   | 'level'
   | 'revenue'
   | 'gear'
@@ -336,6 +344,175 @@ const PATHS: Record<IconName, React.ReactNode> = {
     <g>
       <path d="M12 1.5l9.5 5.5v9L12 21.5 2.5 16V7z" />
       <path d="M12 7l4.5 2.6v4.8L12 17l-4.5-2.6V9.6z" />
+    </g>
+  ),
+
+  // --- Actions -------------------------------------------------------------
+  //
+  // The share block was reaching for whatever already existed: a rising trend
+  // arrow for "different wording" and a cogwheel for "copy link". Both were
+  // wrong in the way that is hardest to notice — recognisable glyphs, used for
+  // something they do not mean, which reads as a page assembled from spare
+  // parts rather than drawn.
+
+  /** Two paths swapping places. Reword. */
+  shuffle: (
+    <g>
+      <path d="M3 7h4l10 10h4" />
+      <path d="M3 17h4l10-10h4" />
+      <path d="M18.5 3.5L21.5 7l-3 3.5" />
+      <path d="M18.5 13.5L21.5 17l-3 3.5" />
+    </g>
+  ),
+  /** Two links of a chain. Copy the address. */
+  link: (
+    <g>
+      <path d="M10 13.5a4 4 0 0 0 5.7.4l3-2.7a4 4 0 0 0-5.4-5.9l-1.7 1.5" />
+      <path d="M14 10.5a4 4 0 0 0-5.7-.4l-3 2.7a4 4 0 0 0 5.4 5.9l1.7-1.5" />
+    </g>
+  ),
+  /** An arrow into a tray. Save the picture. */
+  download: (
+    <g>
+      <path d="M12 3.5v11" />
+      <path d="M8 11l4 4 4-4" />
+      <path d="M4.5 17v2a1.5 1.5 0 0 0 1.5 1.5h12a1.5 1.5 0 0 0 1.5-1.5v-2" />
+    </g>
+  ),
+
+  // --- Equipment slots -----------------------------------------------------
+  //
+  // Fifteen drawings for seventeen slots: both rings share a band and both
+  // trinkets share a talisman, exactly as the reference does. These name the
+  // SHAPE of the thing worn, never the stat behind it — a founder reads the
+  // slot from its silhouette and the stat from the label beside it, which is
+  // how a paper doll has always worked.
+  //
+  // Every one is the garment, not a metaphor for the metric. The Back slot is a
+  // cloak, not a shield, even though it carries retention: the moment a slot
+  // stops looking like what goes there, the grid stops being a character.
+
+  /** Head. A great helm: dome, brow bar, two slits. */
+  helm: (
+    <g>
+      <path d="M5 12.5a7 7 0 0 1 14 0v5a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2z" />
+      <path d="M5 12.5h14" />
+      <path d="M9.2 15.3v2.2M14.8 15.3v2.2" />
+    </g>
+  ),
+  /** Neck. A chain that dips, and the stone hanging off it. */
+  pendant: (
+    <g>
+      <path d="M4.5 4.5a9.5 9.5 0 0 0 15 0" />
+      <path d="M12 12l3 3.6-3 4.4-3-4.4z" />
+    </g>
+  ),
+  /** Shoulders. Three nested lames — the layering is the whole read. */
+  pauldron: (
+    <g>
+      <path d="M4 10.5c1.5-4 4.5-6 8-6s6.5 2 8 6" />
+      <path d="M3.5 14.5c2-3.7 5-5.7 8.5-5.7s6.5 2 8.5 5.7" />
+      <path d="M3 18.5c2.5-3.7 5.5-5.7 9-5.7s6.5 2 9 5.7" />
+    </g>
+  ),
+  /** Back. A collar and a hem, with the fold down the middle. */
+  cloak: (
+    <g>
+      <path d="M8.5 4h7" />
+      <path d="M8.5 4C7 9.5 5.5 14.5 5 19.5c4.5 1.4 9.5 1.4 14 0-.5-5-2-10-3.5-15.5" />
+      <path d="M12 5v15.2" />
+    </g>
+  ),
+  /** Chest. Shoulders, a taper, a centre seam. */
+  cuirass: (
+    <g>
+      <path d="M6.5 5l5.5 2 5.5-2 1.5 4-1 10.5c-4 1.3-8 1.3-12 0L5 9z" />
+      <path d="M12 7v13.2" />
+    </g>
+  ),
+  /** Wrist. A tapered cuff with two straps across it. */
+  bracer: (
+    <g>
+      <path d="M7 5.5c3.3-1 6.7-1 10 0l-1.3 13c-2.4.8-5 .8-7.4 0z" />
+      <path d="M7.3 10c3.1-.8 6.3-.8 9.4 0" />
+      <path d="M7.8 14.5c2.8-.7 5.6-.7 8.4 0" />
+    </g>
+  ),
+  /** Hands. A mitt, a knuckle band, a thumb. */
+  gauntlet: (
+    <g>
+      <path d="M7 20.5V11a5 5 0 0 1 10 0v9.5z" />
+      <path d="M7 14.5h10" />
+      <path d="M17 12.5l2.4-1.9a1.6 1.6 0 0 0-2.1-2.4L15.6 9.7" />
+    </g>
+  ),
+  /** Waist. A band and a buckle, and nothing else is needed. */
+  girdle: (
+    <g>
+      <path d="M2.5 9.5h19v5h-19z" />
+      <path d="M9 8h6v8H9z" />
+      <path d="M12 10.5v3" />
+    </g>
+  ),
+  /** Legs. Plated trousers, split at the knee. */
+  legplate: (
+    <g>
+      <path d="M6 4h12v4l-1.5 12h-3.5l-1-9-1 9H7.5L6 8z" />
+      <path d="M6 8h12" />
+    </g>
+  ),
+  /** Feet. A shaft and a foot: the L is what makes a boot a boot. */
+  sabaton: (
+    <g>
+      <path d="M7.5 3h5v10l5.5 3a2.5 2.5 0 0 1 1.5 2.3V21H7.5z" />
+      <path d="M7.5 17.5h12" />
+    </g>
+  ),
+  /** Both rings. A band, and the stone set into it. */
+  band: (
+    <g>
+      <circle cx="12" cy="14.5" r="6" />
+      <path d="M12 8.5l2.6-3.6H9.4z" />
+    </g>
+  ),
+  /** Both trinkets. A cut stone, which is what a trinket has always been. */
+  talisman: (
+    <g>
+      <path d="M12 2.5l8 4.5v9l-8 4.5-8-4.5v-9z" />
+      <circle cx="12" cy="11.5" r="3" />
+    </g>
+  ),
+  /** Main hand. Blade, guard, grip, pommel. */
+  blade: (
+    <g>
+      <path d="M12 2l2.5 4.5V15h-5V6.5z" />
+      <path d="M6.5 15h11" />
+      <path d="M12 15v4.5" />
+      <circle cx="12" cy="20.8" r="1.2" />
+    </g>
+  ),
+  /** Off hand. A heater shield with a boss — rounder reads as a plate. */
+  buckler: (
+    <g>
+      <path d="M12 2.5l8 3v6c0 5-3.4 8.9-8 10.5-4.6-1.6-8-5.5-8-10.5v-6z" />
+      <circle cx="12" cy="11" r="2.6" />
+    </g>
+  ),
+  /**
+   * Ranged. The same bow the Hunter class wears, drawn.
+   *
+   * The class glyph is an empty bow and this one is nocked, which is the only
+   * separation the two need: a class is a word in one column and a slot is a
+   * square in another, and they are never side by side. Redrawing the bow into
+   * something that was not a bow, purely to avoid the family resemblance, would
+   * have cost the one silhouette everybody already reads.
+   */
+  longbow: (
+    <g>
+      <path d="M17.5 2.5C13 4.5 8 7.5 8 12s5 7.5 9.5 9.5" />
+      <path d="M16 4.5v15" />
+      <path d="M3 12h13.5" />
+      <path d="M13.8 9.3L16.5 12l-2.7 2.7" />
     </g>
   ),
 }

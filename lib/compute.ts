@@ -35,9 +35,21 @@ export interface ComputeReport {
  */
 const PRUNE_MIN_SHARE = 0.5
 
-interface SnapshotRow {
+/**
+ * Exported for lib/queries.ts, which builds the same aggregate for one founder
+ * so the sheet's paper doll is computed from the same numbers the ladder was.
+ * `founder_handle` is only read by the fan-out below and stays optional for
+ * that reason — a caller that already knows whose products these are has no
+ * reason to select it.
+ */
+export interface SnapshotRow {
   startup_slug: string
-  raw: TrustmrrStartup
+  /**
+   * Nullable, which the readers already assumed: `toProduct` falls back to an
+   * empty object and every other access here goes through `?.`. The type said
+   * otherwise and was simply wrong — a snapshot row can predate the payload.
+   */
+  raw: TrustmrrStartup | null
   mrr_cents: string | null
   revenue_total_cents: string | null
   customers: number | null
@@ -47,7 +59,7 @@ interface SnapshotRow {
   visitors_30d: number | null
   funding_status: string | null
   founded_date: string | null
-  founder_handle: string | null
+  founder_handle?: string | null
 }
 
 export async function computeAll(sql: postgres.Sql): Promise<ComputeReport> {
@@ -475,7 +487,16 @@ export async function computeAll(sql: postgres.Sql): Promise<ComputeReport> {
   }
 }
 
-function toProduct(row: SnapshotRow): ProductInput {
+/**
+ * Snapshot row to engine input.
+ *
+ * Exported so the character sheet can reach the same aggregate this file feeds
+ * the ladder. Duplicating the mapping there was the obvious alternative and the
+ * wrong one: the two would drift on the first field anybody added, and the
+ * symptom would be a paper doll quietly disagreeing with the stats panel above
+ * it on the same page.
+ */
+export function toProduct(row: SnapshotRow): ProductInput {
   const raw = row.raw ?? ({} as TrustmrrStartup)
   return {
     slug: row.startup_slug,
@@ -494,6 +515,7 @@ function toProduct(row: SnapshotRow): ProductInput {
     channels: (raw.marketingChannels ?? []).map((c) => c?.slug).filter(isString),
     stack: (raw.techStack ?? []).map((t) => t?.slug).filter(isString),
     cofounders: (raw.cofounders ?? []).map((c) => normalizeHandle(c?.xHandle)).filter(isHandle),
+    followers: numberOrNull(raw.xFollowerCount),
     country: normalizeRealm(raw.country),
     // startupInsights.businessType first, targetAudience as the fallback: they
     // answer the same question with the same three words, and the insight is

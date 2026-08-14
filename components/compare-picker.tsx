@@ -2,8 +2,8 @@
 
 import { useRouter } from 'next/navigation'
 import { useEffect, useMemo, useState } from 'react'
-import { Icon } from '@/components/icon'
-import { CLASS_COLORS } from '@/engine'
+import { WowIcon } from '@/components/wow-icon'
+import { CLASS_COLORS, CLASS_ICONS } from '@/engine'
 import type { PickerFounder } from '@/lib/queries'
 
 /**
@@ -145,7 +145,12 @@ function Slot({
               className="picker-class label"
               style={{ color: CLASS_COLORS[picked.characterClass] }}
             >
-              <Icon name={picked.characterClass} size={12} />
+              <WowIcon
+                slug={CLASS_ICONS[picked.characterClass]}
+                glyph={picked.characterClass}
+                size={16}
+                bare
+              />
               {picked.characterClass}
             </span>
           </span>
@@ -177,6 +182,18 @@ function Slot({
               <span className="qsquare picker-level serif" style={{ color: f.rarity.hex }}>
                 {f.level}
               </span>
+              {/* The class emblem, which the row was missing entirely: a list of
+                  levels and names says nothing about who any of them are, and
+                  the class is the one fact that makes a founder worth comparing
+                  against. */}
+              <WowIcon
+                slug={CLASS_ICONS[f.characterClass]}
+                glyph={f.characterClass}
+                size={18}
+                bare
+                className="picker-class"
+                color={CLASS_COLORS[f.characterClass]}
+              />
               <span className="picker-name">{f.displayName}</span>
               <span className="picker-handle muted">@{f.handle}</span>
             </button>

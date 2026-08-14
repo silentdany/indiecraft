@@ -29,6 +29,7 @@ function founder(overrides: Partial<FounderAggregate> = {}): FounderAggregate {
     effectiveCustomers: 0,
     growthMrr30d: 0,
     domainRating: null,
+    followers: null,
     foundedFirst: null,
     channels: [],
     stack: [],
@@ -119,64 +120,96 @@ describe('xp', () => {
 })
 
 describe('ilvl', () => {
-  it('is the level twelve months of current MRR would be worth', () => {
-    // $1,000/mo → $12,000/yr → level 30 (threshold 10,000).
-    expect(ilvlFrom(founder({ mrrUsd: 1_000 }))).toBe(30)
-  })
+  /*
+   * iLvl is the mean item level of the worn gear now, not MRR projected over
+   * twelve months. These tests assert the PROPERTIES that definition has to
+   * hold, not exact numbers: the averages move whenever anybody retunes a
+   * threshold in tuning.ts, and a test that pins them would fail on every
+   * rebalance without telling anybody anything true.
+   */
+  const ilvl = (a: FounderAggregate) => ilvlFrom(a, classFrom(a, levelFromXp(xpFrom(a))))
 
-  it('adds +1 per 10% of growth, capped at +5', () => {
-    expect(ilvlFrom(founder({ mrrUsd: 1_000, growthMrr30d: 25 }))).toBe(32)
-    expect(ilvlFrom(founder({ mrrUsd: 1_000, growthMrr30d: 500 }))).toBe(35)
-  })
-
-  it('penalizes retention below 30%', () => {
-    const a = founder({
-      mrrUsd: 1_000,
-      customers: 100,
-      activeSubscriptions: 10,
-      retention: 0.1,
+  it('rises as the gear does', () => {
+    const thin = founder({ mrrUsd: 100, nProducts: 1 })
+    const rich = founder({
+      mrrUsd: 100_000,
+      revenueTotalUsd: 2_000_000,
+      customers: 4_000,
+      activeSubscriptions: 3_800,
+      nProducts: 4,
+      domainRating: 72,
+      growthMrr30d: 40,
+      foundedFirst: '2013-01-01',
+      stack: ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k'],
+      visitors30d: 200_000,
+      profitMargin30d: 96,
+      followers: 400_000,
     })
-    // (0.30 - 0.10) / 0.05 = 4 bands.
-    expect(ilvlFrom(a)).toBe(26)
+    expect(ilvl(thin)).toBeLessThan(ilvl(rich) ?? 0)
+    expect(ilvl(rich)).toBeGreaterThan(40)
   })
 
-  it('NEVER penalizes when activeSubscriptions is 0', () => {
-    // One-time-purchase boilerplate seller: retention is structurally zero.
-    // Punishing them for their business model would be a product bug.
-    const a = founder({ mrrUsd: 1_000, customers: 500, activeSubscriptions: 0, retention: 0 })
-    expect(ilvlFrom(a)).toBe(30)
+  it('stays inside [1, 60]', () => {
+    const monster = founder({
+      mrrUsd: 50_000_000,
+      revenueTotalUsd: 900_000_000,
+      customers: 900_000,
+      activeSubscriptions: 890_000,
+      nProducts: 40,
+      domainRating: 99,
+      growthMrr30d: 900,
+      followers: 90_000_000,
+    })
+    const v = ilvl(monster)
+    expect(v).toBeGreaterThanOrEqual(1)
+    expect(v).toBeLessThanOrEqual(60)
   })
 
-  it('NEVER penalizes when there is no retention signal at all', () => {
+  /*
+   * The headline gain over the old formula, and the reason for the change: a
+   * founder with no recurring revenue used to score null no matter what else
+   * was true about them. Ten years of shipping and a real audience is not "no
+   * answer".
+   */
+  it('scores a founder with no MRR but real everything else', () => {
+    const gumroad = founder({
+      mrrUsd: 0,
+      revenueTotalUsd: 800_000,
+      nProducts: 3,
+      domainRating: 61,
+      foundedFirst: '2014-01-01',
+      stack: ['a', 'b', 'c', 'd', 'e', 'f'],
+      followers: 30_000,
+    })
+    expect(ilvl(gumroad)).not.toBeNull()
+    expect(ilvl(gumroad)).toBeGreaterThan(20)
+  })
+
+  it('never punishes a missing retention signal', () => {
     // TrustMRR sends customers: 0 on most listings. That is missing data, not
-    // total churn, and it must never cost anyone item levels.
-    const a = founder({
+    // total churn: the Back slot goes empty and is left out of the average
+    // rather than dragging it down.
+    const blind = founder({
       mrrUsd: 1_000,
       customers: 0,
-      activeSubscriptions: 101_590,
-      retention: 0,
+      activeSubscriptions: 400,
       hasRetentionSignal: false,
     })
-    expect(ilvlFrom(a)).toBe(30)
+    const seen = founder({
+      mrrUsd: 1_000,
+      customers: 400,
+      activeSubscriptions: 400,
+      hasRetentionSignal: true,
+    })
+    expect(ilvl(blind)).not.toBeNull()
+    expect(ilvl(blind) ?? 0).toBeLessThanOrEqual(ilvl(seen) ?? 0)
   })
 
-  it('stays clamped to [1, 60]', () => {
-    expect(ilvlFrom(founder({ mrrUsd: 5_000_000, growthMrr30d: 90 }))).toBe(60)
-  })
-
-  it('is null without recurring revenue, never 1', () => {
-    // iLvl asks what twelve months of current MRR would be worth. With no MRR
-    // the question has no answer, and 1 reads as "worst possible gear" when the
-    // truth is "this does not apply to how they sell". Same mistake the
-    // retention penalty already guards against.
-    expect(ilvlFrom(founder({ mrrUsd: 0, revenueTotalUsd: 878_595_860 }))).toBeNull()
-    expect(computeCharacter(founder({ mrrUsd: 0, nProducts: 1 })).ilvlDelta).toBeNull()
-  })
-
-  it('still scores a founder earning almost nothing', () => {
-    // The rule is "no recurring revenue", not "not much": $5/mo is $60 a year,
-    // which is a real answer and must stay a number.
-    expect(ilvlFrom(founder({ mrrUsd: 5 }))).toBe(9)
+  it('is null only when the corpus said nothing at all', () => {
+    // Every slot empty. `cofounders: 0` is a real answer and fills Ring 2, so
+    // this is asserted through the doll rather than by hand.
+    const known = founder({ nProducts: 1 })
+    expect(ilvl(known)).not.toBeNull()
   })
 })
 
@@ -332,8 +365,9 @@ describe('class', () => {
 
 describe('rarity', () => {
   it('follows the bands from the spec', () => {
-    expect(rarityFor(1).hex).toBe('#9d9d9d')
-    expect(rarityFor(9).hex).toBe('#9d9d9d')
+    // White, not grey: grey is POOR in the reference and means no item at all.
+    expect(rarityFor(1).hex).toBe('#ffffff')
+    expect(rarityFor(9).hex).toBe('#ffffff')
     expect(rarityFor(10).hex).toBe('#1eff00')
     expect(rarityFor(24).hex).toBe('#1eff00')
     expect(rarityFor(25).hex).toBe('#0070dd')
@@ -382,19 +416,23 @@ describe('achievements', () => {
 })
 
 describe('full sheet', () => {
-  it('exposes the iLvl gap, the one number worth showing', () => {
-    // High lifetime revenue, collapsed MRR: veteran in a trough.
-    const veteran = computeCharacter(
-      founder({ revenueTotalUsd: 500_000, mrrUsd: 100, nProducts: 2 }),
-    )
-    expect(veteran.level).toBe(47)
-    expect(veteran.ilvlDelta).toBeLessThan(0)
-
-    // Little lifetime revenue, MRR taking off: gear above the tier.
-    const rocket = computeCharacter(
-      founder({ revenueTotalUsd: 3_000, mrrUsd: 2_000, nProducts: 1 }),
-    )
-    expect(rocket.ilvlDelta).toBeGreaterThan(0)
+  it('reports how much of the doll is filled instead of an iLvl gap', () => {
+    /*
+     * `ilvlDelta` used to be `ilvl - level`, and it is gone.
+     *
+     * It only ever meant something because iLvl was defined on the level scale
+     * — "the level twelve months of this MRR would be worth" — so subtracting
+     * one from the other compared like with like. The doll average is a
+     * different scale: the reference has level 60 characters at item level 66
+     * and never subtracts, because the two answer different questions.
+     *
+     * What replaced it is the thing a player actually reads off a paper doll:
+     * how many slots are filled.
+     */
+    const sheet = computeCharacter(founder({ revenueTotalUsd: 3_000, mrrUsd: 2_000, nProducts: 1 }))
+    expect(sheet.equipped.total).toBe(17)
+    expect(sheet.equipped.worn).toBeGreaterThan(0)
+    expect(sheet.equipped.worn).toBeLessThanOrEqual(17)
   })
 
   it('clamps progress to [0, 1] and fills it at max level', () => {

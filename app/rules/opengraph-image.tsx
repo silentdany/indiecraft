@@ -1,7 +1,7 @@
 import { ImageResponse } from '@vercel/og'
-import { Icon } from '@/components/icon'
-import { OG, OG_SIZE, OgCard } from '@/components/og-card'
-import { CLASS_RULES } from '@/engine/tuning'
+import { OG, OG_SIZE, OgCard, OgIcon } from '@/components/og-card'
+import { CLASS_ICONS, CLASS_RULES } from '@/engine/tuning'
+import { wowIcons } from '@/lib/og-fetch'
 import { ogFonts } from '@/lib/og-fonts'
 
 export const runtime = 'nodejs'
@@ -14,6 +14,8 @@ export const contentType = 'image/png'
  * is a promise and ten glyphs are evidence.
  */
 export default async function Image() {
+  const icons = await wowIcons(CLASS_RULES.map((r) => CLASS_ICONS[r.class]))
+
   return new ImageResponse(
     <OgCard>
       <div style={{ display: 'flex', flexDirection: 'column', flex: 1, justifyContent: 'center' }}>
@@ -42,7 +44,12 @@ export default async function Image() {
                 background: OG.well,
               }}
             >
-              <Icon name={rule.class} size={30} color={OG.gold} />
+              <OgIcon
+                src={icons.get(CLASS_ICONS[rule.class])}
+                glyph={rule.class}
+                size={32}
+                color={OG.gold}
+              />
             </div>
           ))}
         </div>

@@ -13,6 +13,7 @@ function product(overrides: Partial<ProductInput> = {}): ProductInput {
     activeSubscriptions: 0,
     growthMrr30d: null,
     domainRating: null,
+    followers: null,
     visitors30d: null,
     revenuePerVisitor: null,
     foundedDate: null,

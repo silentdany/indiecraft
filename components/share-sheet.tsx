@@ -1,7 +1,8 @@
 'use client'
 
 import { useMemo, useState } from 'react'
-import { Icon } from '@/components/icon'
+import { WowIcon } from '@/components/wow-icon'
+import { UI_ICONS } from '@/engine'
 import { ogImageId, ogImagePath } from '@/lib/og-image'
 import { type ShareFacts, sharePosts } from '@/lib/share-text'
 import { capture } from './posthog-provider'
@@ -71,10 +72,16 @@ export function ShareSheet({
 
   return (
     <section className="share" aria-label="Share this sheet">
-      <header className="share-head">
-        <h2 className="serif">SHARE</h2>
-        <span className="label">This is what gets posted</span>
-      </header>
+      {/*
+        The heading used to read SHARE, under a tab that already reads Share.
+        A panel whose first line repeats the control that opened it is a line
+        spent saying nothing. What a founder actually needs to know here is that
+        the draft below is editable before it goes out — which is the one thing
+        the old caption, "This is what gets posted", got slightly wrong.
+      */}
+      <p className="share-intro">
+        A draft, not a button. Cycle the wording, then post it or take the card.
+      </p>
 
       <div className="share-post">
         <div className="share-author">
@@ -120,7 +127,11 @@ export function ShareSheet({
         </a>
 
         {/* Only when there is somewhere to cycle to: a founder with a single
-            candidate would otherwise get a button that visibly does nothing. */}
+            candidate would otherwise get a button that visibly does nothing.
+
+            The counter is the fix for a button that changed a paragraph you
+            were not looking at: without it, clicking twice on a founder with
+            two angles landed back on the original text and read as broken. */}
         {posts.length > 1 && (
           <button
             type="button"
@@ -130,15 +141,29 @@ export function ShareSheet({
               capture('share_angle_changed', { handle })
             }}
           >
-            <Icon name="rising" size={13} />
-            Different wording
+            <WowIcon slug={UI_ICONS.reword} glyph="shuffle" size={16} bare />
+            Reword
+            <span className="share-count">
+              {(angle % posts.length) + 1}/{posts.length}
+            </span>
           </button>
         )}
 
         <button type="button" className="share-copy label" onClick={copy}>
-          <Icon name="gear" size={13} />
+          <WowIcon slug={UI_ICONS.copyLink} glyph="link" size={16} bare />
           {copied ? 'Copied' : 'Copy link'}
         </button>
+
+        {/*
+          The card is a 1200×630 PNG at a stable URL, and until now the only way
+          to get it was to right-click an <img> — so anybody posting anywhere
+          other than X, or writing their own words, had no route to the picture
+          at all. `download` on a same-origin href is the whole feature.
+        */}
+        <a className="share-copy label" href={card} download={`indiecraft-${handle}.png`}>
+          <WowIcon slug={UI_ICONS.saveCard} glyph="download" size={16} bare />
+          Save card
+        </a>
       </div>
     </section>
   )

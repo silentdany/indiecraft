@@ -1,10 +1,12 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
 import { Frame } from '@/components/frame'
-import { ACHIEVEMENT_ICONS, Icon } from '@/components/icon'
+import { ACHIEVEMENT_ICONS } from '@/components/icon'
+import { WowIcon } from '@/components/wow-icon'
 import {
   ACHIEVEMENTS,
   CLASS_COLORS,
+  CLASS_ICONS,
   FACTIONS,
   LEVEL_THRESHOLDS,
   MAX_LEVEL,
@@ -135,7 +137,7 @@ export default async function Rules() {
                   className="qsquare rules-class-icon"
                   style={{ color: CLASS_COLORS[rule.class] }}
                 >
-                  <Icon name={rule.class} size={19} />
+                  <WowIcon slug={CLASS_ICONS[rule.class]} glyph={rule.class} size={22} bare />
                 </span>
                 <span className="rules-class-body">
                   <span className="rules-class-head">
@@ -178,7 +180,7 @@ export default async function Rules() {
             return (
               <li key={f.key} className="band">
                 <span className="qsquare band-chip" style={{ color: f.color }}>
-                  <Icon name={f.key} size={16} />
+                  <WowIcon slug={f.icon} glyph={f.key} size={20} bare />
                 </span>
                 <span className="band-name" style={{ color: f.color }}>
                   {f.key}
@@ -230,7 +232,11 @@ export default async function Rules() {
           {ACHIEVEMENTS.map((def) => (
             <li key={def.code} className="ach-card">
               <span className="qsquare ach-icon">
-                <Icon name={ACHIEVEMENT_ICONS[def.code] ?? 'achievement'} size={17} />
+                <WowIcon
+                  slug={def.icon}
+                  glyph={ACHIEVEMENT_ICONS[def.code] ?? 'achievement'}
+                  size={30}
+                />
               </span>
               <span className="ach-body">
                 <span className="ach-title serif">{def.label}</span>

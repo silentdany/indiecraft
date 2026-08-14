@@ -1,6 +1,7 @@
 import { ImageResponse } from '@vercel/og'
-import { Icon } from '@/components/icon'
-import { OG, OG_SIZE, OgCard } from '@/components/og-card'
+import { OG, OG_SIZE, OgCard, OgIcon } from '@/components/og-card'
+import { STAT_ICONS } from '@/engine'
+import { wowIcons } from '@/lib/og-fetch'
 import { ogFonts } from '@/lib/og-fonts'
 import { getRealmStats } from '@/lib/queries'
 
@@ -17,6 +18,7 @@ export const contentType = 'image/png'
  */
 export default async function Image() {
   const stats = await getRealmStats().catch(() => null)
+  const icons = await wowIcons(Object.values(STAT_ICONS))
 
   return new ImageResponse(
     // The wordmark is the headline here, so the foot does not repeat it.
@@ -36,11 +38,22 @@ export default async function Image() {
           <div style={{ display: 'flex', marginTop: 34 }}>
             <Stat
               icon="characters"
+              src={icons.get(STAT_ICONS.characters ?? '')}
               value={stats.characters.toLocaleString('en-US')}
               label="CHARACTERS"
             />
-            <Stat icon="level" value={String(stats.maxLevel)} label="HIGHEST LEVEL" />
-            <Stat icon="revenue" value={compactUsd(stats.trackedMrrUsd)} label="TRACKED MRR" />
+            <Stat
+              icon="level"
+              src={icons.get(STAT_ICONS.level ?? '')}
+              value={String(stats.maxLevel)}
+              label="HIGHEST LEVEL"
+            />
+            <Stat
+              icon="revenue"
+              src={icons.get(STAT_ICONS.revenue ?? '')}
+              value={compactUsd(stats.trackedMrrUsd)}
+              label="TRACKED MRR"
+            />
           </div>
         )}
       </div>
@@ -51,16 +64,19 @@ export default async function Image() {
 
 function Stat({
   icon,
+  src,
   value,
   label,
 }: {
   icon: 'characters' | 'level' | 'revenue'
+  /** The borrowed picture, when it arrived. `icon` is the fallback drawing. */
+  src: string | undefined
   value: string
   label: string
 }) {
   return (
     <div style={{ display: 'flex', alignItems: 'center', marginRight: 46 }}>
-      <Icon name={icon} size={30} color={OG.frame} />
+      <OgIcon src={src} glyph={icon} size={32} color={OG.frame} />
       <div style={{ display: 'flex', flexDirection: 'column', marginLeft: 11 }}>
         <div style={{ display: 'flex', fontSize: 34, color: OG.gold, lineHeight: 1.1 }}>
           {value}

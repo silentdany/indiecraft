@@ -1,8 +1,8 @@
+import { equipmentFor, equipmentInput, equipmentScore, ilvlFromDoll } from './equipment'
 import {
   ACHIEVEMENTS,
   CLASS_RULES,
   DEFAULT_CLASS,
-  ILVL,
   LEVEL_THRESHOLDS,
   MAX_LEVEL,
   RARITY_BANDS,
@@ -41,45 +41,37 @@ export function levelBounds(level: number): { current: number; next: number | nu
 }
 
 /**
- * iLvl: the level this founder would hold if they sustained their current MRR
- * for twelve months. One function for both numbers, and the semantics fall out
- * on their own.
+ * iLvl: the mean item level of the gear they are wearing.
  *
- * Returns null when there is no recurring revenue at all, because the question
- * iLvl asks has no answer then. Scoring a one-time-sales business at iLvl 1 is
- * the same mistake as the retention penalty the spec already forbids: it reads
- * as "worst possible gear" when the truth is "this metric does not apply to
- * how they sell". 32 of 141 founders are in that position, and 21 of them sat
- * in the top 100 displaying a flat 1.
- */
-export function ilvlFrom(aggregate: FounderAggregate): number | null {
-  if (aggregate.mrrUsd === 0) return null
-  const base = levelFromXp(aggregate.mrrUsd * 12)
-  return clamp(base + growthBonus(aggregate) - retentionMalus(aggregate), 1, MAX_LEVEL)
-}
-
-function growthBonus(a: FounderAggregate): number {
-  if (a.growthMrr30d <= 0) return 0
-  return Math.min(Math.floor(a.growthMrr30d / ILVL.growthStepPercent), ILVL.growthMaxBonus)
-}
-
-/**
- * This penalty stands in for churn, which the API does not expose.
+ * ---------------------------------------------------------------------------
+ * This used to be "the level this founder would hold if they sustained their
+ * current MRR for twelve months", plus a growth bonus and a retention penalty.
+ * It was the best answer available before the paper doll existed, and it had
+ * one structural flaw no amount of tuning could reach: it asked a single stat
+ * to speak for a whole founder. A ten-year-old business with ten technologies,
+ * a real audience and no subscription revenue scored null; a founder whose only
+ * fact was MRR scored the same as one who also had 4,000 customers, DR 70 and
+ * 90% retention.
  *
- * Two non-negotiable guards, both of the same shape — never punish someone for
- * data we don't have:
- *   - no penalty when activeSubscriptions is 0. For a one-time-purchase
- *     product the ratio is structurally zero, and every boilerplate seller
- *     would be punished for their business model.
- *   - no penalty without a retention signal at all, i.e. when TrustMRR reports
- *     customers: 0, which is most listings.
+ * Seventeen slots is the entire point of having built a doll. Averaging them is
+ * also exactly what the game does, which means the number now means what a
+ * player already expects it to mean.
+ *
+ * The growth bonus and the retention penalty are gone, not moved: both are
+ * slots now — Feet is growth, Back is retention — so applying them again on top
+ * of the average would count them twice. The two helpers that applied them, and
+ * the ILVL constants they read, are deleted rather than left commented out —
+ * the git history is the archive.
+ * ---------------------------------------------------------------------------
+ *
+ * Null when they are wearing nothing at all, which is the same shape of answer
+ * as before and for the same reason: no data is not a bad score.
  */
-function retentionMalus(a: FounderAggregate): number {
-  if (!a.hasRetentionSignal) return 0
-  if (a.activeSubscriptions === 0) return 0
-  if (a.retention >= ILVL.retentionFloor) return 0
-  const steps = Math.ceil((ILVL.retentionFloor - a.retention) / ILVL.retentionStep)
-  return Math.min(steps, ILVL.retentionMaxMalus)
+export function ilvlFrom(
+  aggregate: FounderAggregate,
+  characterClass: CharacterClass,
+): number | null {
+  return ilvlFromDoll(equipmentFor(equipmentInput(aggregate, characterClass)))
 }
 
 /**
@@ -111,7 +103,11 @@ export function achievementsFrom(aggregate: FounderAggregate, level: number): st
 export function computeCharacter(aggregate: FounderAggregate): CharacterSheet {
   const xp = xpFrom(aggregate)
   const level = levelFromXp(xp)
-  const ilvl = ilvlFrom(aggregate)
+  // Class first: it decides which variant of each item is worn, and the doll is
+  // what the item level averages.
+  const characterClass = classFrom(aggregate, level)
+  const doll = equipmentFor(equipmentInput(aggregate, characterClass))
+  const ilvl = ilvlFromDoll(doll)
   const { current, next } = levelBounds(level)
 
   return {
@@ -119,8 +115,8 @@ export function computeCharacter(aggregate: FounderAggregate): CharacterSheet {
     xp,
     level,
     ilvl,
-    ilvlDelta: ilvl === null ? null : ilvl - level,
-    class: classFrom(aggregate, level),
+    equipped: equipmentScore(doll),
+    class: characterClass,
     rarity: rarityFor(level),
     nProducts: aggregate.nProducts,
     realm: aggregate.realm,

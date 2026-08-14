@@ -1,20 +1,25 @@
 import { ImageResponse } from '@vercel/og'
 import { BrandMark } from '@/components/brand-mark'
 import { ACHIEVEMENT_ICONS, Icon, type IconName } from '@/components/icon'
+import { OgIcon } from '@/components/og-card'
 import {
   ACHIEVEMENTS,
   ACHIEVEMENTS_BY_CODE,
   achievementRarityHex,
   CLASS_COLORS,
+  CLASS_ICONS,
   FACTIONS_BY_KEY,
   rarityFor,
+  STAT_ICONS,
+  UI_ICONS,
 } from '@/engine'
-import { remoteImage } from '@/lib/og-fetch'
+import { remoteImage, wowIcons } from '@/lib/og-fetch'
 import { ogFonts } from '@/lib/og-fonts'
 import { ogImageId } from '@/lib/og-image'
 import type { CharacterPage } from '@/lib/queries'
 import { getCharacter } from '@/lib/queries'
 import { realmLabel } from '@/lib/realm'
+import { wowIconUrl } from '@/lib/wow-icon'
 
 /**
  * The OG image — technically the most important part of the product: this is
@@ -99,6 +104,25 @@ const TEXT = '#ede7dc'
 const MUTED = '#9b9187'
 const FRAME = '#6b552a'
 
+/**
+ * A quality colour at partial strength, for the two places the card wants the
+ * hue without the shout. Satori has no `color-mix` and no alpha hex, so the
+ * channels are unpacked by hand.
+ */
+function tint(hex: string, alpha: number): string {
+  const h = hex.replace('#', '')
+  const n = Number.parseInt(
+    h.length === 3
+      ? h
+          .split('')
+          .map((c) => c + c)
+          .join('')
+      : h,
+    16,
+  )
+  return `rgba(${(n >> 16) & 255}, ${(n >> 8) & 255}, ${n & 255}, ${alpha})`
+}
+
 export default async function Image({ params }: { params: Promise<{ handle: string }> }) {
   const { handle } = await params
   const character = await getCharacter(handle)
@@ -112,16 +136,58 @@ export default async function Image({ params }: { params: Promise<{ handle: stri
     ? FACTIONS_BY_KEY.get(character.profile.faction)
     : undefined
 
+  /*
+   * The six best pieces they are wearing, rarest first.
+   *
+   * Sorted by quality rather than shown in slot order, because a card is read
+   * at thumbnail size in a timeline: whatever is legendary has to land in the
+   * first squares or it may as well not be there. Ties keep table order, which
+   * is the reference's own, so the row stays stable between two founders with
+   * the same spread.
+   */
+  const RARITY_RANK = ['common', 'uncommon', 'rare', 'epic', 'legendary']
+  const worn = character.doll
+    .filter((s) => s.item !== null)
+    .sort(
+      (a, b) =>
+        RARITY_RANK.indexOf(b.item?.rarity.name ?? '') -
+        RARITY_RANK.indexOf(a.item?.rarity.name ?? ''),
+    )
+    .slice(0, 6)
+  const best = worn[0]
+
   // One round of fetches for every remote image on the card, in parallel and
   // individually failable. See remoteImage: a dead avatar must degrade to a
   // letter, never to a 500.
-  const gear = character.equipment.slice(0, 4)
-  const [portrait, ...gearIcons] = await Promise.all([
-    remoteImage(character.avatarUrl),
-    ...gear.map((piece) => remoteImage(piece.iconUrl)),
-  ])
-
   const earned = character.achievements.slice(0, 9)
+
+  const [portrait, ...remote] = await Promise.all([
+    remoteImage(character.avatarUrl),
+    ...worn.map((slot) => remoteImage(slot.item ? wowIconUrl(slot.item.icon) : null)),
+    // The badges the founder holds, in the reference's own art. The drawn glyph
+    // stays as the fallback below: nine failed fetches must not blank a row.
+    ...earned.map((a) =>
+      remoteImage(
+        ACHIEVEMENTS_BY_CODE.get(a.code)?.icon
+          ? wowIconUrl(ACHIEVEMENTS_BY_CODE.get(a.code)?.icon ?? '')
+          : null,
+      ),
+    ),
+  ])
+  const wornIcons = remote.slice(0, worn.length)
+  const earnedIcons = remote.slice(worn.length)
+
+  /*
+   * Everything else with a borrowed picture: the kicker's glyph, the faction
+   * banner, and the four stat cells. One batch, deduplicated, and each one
+   * falls back to its drawing — the card must render even if the CDN is down.
+   */
+  const cells = statCells(character)
+  const uiIcons = await wowIcons([
+    variant.slug,
+    faction?.icon,
+    ...cells.map((c) => STAT_ICONS[c.icon]),
+  ])
   const bar = Math.round(character.progress.ratio * 100)
   const ilvlColor = character.ilvl === null ? MUTED : rarityFor(character.ilvl).hex
 
@@ -133,11 +199,42 @@ export default async function Image({ params }: { params: Promise<{ handle: stri
         display: 'flex',
         flexDirection: 'column',
         background: BG,
-        // The quality colour states the hierarchy before a word is read.
-        border: `10px solid ${character.rarity.hex}`,
+        /*
+         * The quality colour used to be a 10px slab around the whole 1200×630.
+         * It was the loudest thing on the card and it was worst exactly where
+         * most people are: common was grey at the time, so three quarters of
+         * the corpus were sharing a picture wrapped in a thick grey band. A frame that
+         * says "unremarkable" in the largest voice on the image is the opposite
+         * of what a share card is for.
+         *
+         * It also said nothing new. The portrait border, the iLvl readout and
+         * every gear name already carry the quality — the slab was the fourth
+         * copy and the only ugly one.
+         *
+         * What is left: a 5px bar along the top edge, and a wash under it that
+         * fades out before the hero band. Enough hue to read the tier at
+         * thumbnail size, quiet enough that grey looks deliberate.
+         */
+        backgroundImage: `linear-gradient(180deg, ${tint(character.rarity.hex, 0.14)} 0px, rgba(0,0,0,0) 260px)`,
         fontFamily: 'Cinzel',
       }}
     >
+      {/*
+        Centre-weighted, not a flat rule.
+
+        A 1200px line of #1eff00 at full strength is the same problem the slab
+        had in miniature — the quality palette is built to be read on 16px item
+        squares, and stretched across a whole edge those hues stop being
+        information and start being glare. Fading both ends keeps the hue where
+        the eye already is and lets it go where it would only shout.
+      */}
+      <div
+        style={{
+          display: 'flex',
+          height: 5,
+          backgroundImage: `linear-gradient(90deg, rgba(0,0,0,0) 0%, ${character.rarity.hex} 28%, ${character.rarity.hex} 72%, rgba(0,0,0,0) 100%)`,
+        }}
+      />
       {/*
         space-between, not a stack with a spacer at the end.
 
@@ -165,7 +262,12 @@ export default async function Image({ params }: { params: Promise<{ handle: stri
           <div style={{ display: 'flex', flexDirection: 'column', marginLeft: 30, flex: 1 }}>
             {/* What changed — the only line that varies over time. */}
             <div style={{ display: 'flex', alignItems: 'center' }}>
-              <Icon name={variant.icon} size={24} color={variant.kickerColor} />
+              <OgIcon
+                src={variant.slug ? uiIcons.get(variant.slug) : undefined}
+                glyph={variant.icon}
+                size={26}
+                color={variant.kickerColor}
+              />
               <div
                 style={{
                   display: 'flex',
@@ -197,13 +299,20 @@ export default async function Image({ params }: { params: Promise<{ handle: stri
               {character.profile.realm && (
                 <Chip
                   icon="realm"
+                  src={undefined}
                   label={realmLabel(character.profile.realm)}
                   color={GOLD}
                   first={false}
                 />
               )}
               {faction && (
-                <Chip icon={faction.key} label={faction.key} color={faction.color} first={false} />
+                <Chip
+                  icon={faction.key}
+                  src={uiIcons.get(faction.icon)}
+                  label={faction.key}
+                  color={faction.color}
+                  first={false}
+                />
               )}
             </div>
           </div>
@@ -253,8 +362,13 @@ export default async function Image({ params }: { params: Promise<{ handle: stri
         {/* ---- Stats. Deliberately the same grammar as the panel on the sheet:
                 a glyph in a square, a value, a name underneath. */}
         <div style={{ display: 'flex' }}>
-          {statCells(character).map((cell, i) => (
-            <StatCell key={cell.label} {...cell} first={i === 0} />
+          {cells.map((cell, i) => (
+            <StatCell
+              key={cell.label}
+              {...cell}
+              src={uiIcons.get(STAT_ICONS[cell.icon] ?? '')}
+              first={i === 0}
+            />
           ))}
         </div>
 
@@ -268,44 +382,75 @@ export default async function Image({ params }: { params: Promise<{ handle: stri
           }}
         >
           <div style={{ display: 'flex', flexDirection: 'column' }}>
-            {gear.length > 0 && (
-              <FootRow label="GEAR">
-                {gear.map((piece, i) => (
-                  <Square
-                    key={piece.slug}
-                    size={46}
-                    color={piece.rarity.hex}
-                    src={gearIcons[i] ?? null}
-                    fallback={(piece.name ?? '?').slice(0, 1).toUpperCase()}
-                    gap={i > 0}
-                  />
-                ))}
-                {/* Most founders here ship one product, which left a row with a
-                    single 46px square and half the card empty beside it. The
-                    name earns that space, and it is the one thing on the card a
-                    reader might actually recognise. Dropped past two, where the
-                    icons alone are the more legible answer. */}
-                {gear.length <= 2 &&
-                  gear.map((piece, i) => (
+            {/*
+              The worn equipment, as pictures.
+
+              This row used to be the founder's PRODUCTS, drawn as squares of
+              their favicon and, below two of them, their names. That was the
+              best available answer before the paper doll existed and the wrong
+              one after it: a share card whose job is to say "this is a
+              character sheet" was spending its most game-shaped row on four
+              website icons, while the actual gear — real item art, real quality
+              colours, the single most recognisable thing the product now owns —
+              appeared nowhere on it.
+
+              Best pieces first, not slot order. A card is read at thumbnail
+              size in a timeline; the legendary has to be in the first two
+              squares or nobody sees it.
+            */}
+            {worn.length > 0 && (
+              <div style={{ display: 'flex', flexDirection: 'column' }}>
+                <FootRow label="GEAR">
+                  {worn.map((slot, i) => (
+                    <Square
+                      key={slot.slot}
+                      size={58}
+                      color={slot.item?.rarity.hex ?? MUTED}
+                      src={wornIcons[i] ?? null}
+                      fallback=""
+                      gap={i > 0}
+                    />
+                  ))}
+                </FootRow>
+
+                {/*
+                  The best piece, captioned under the row rather than beside it.
+
+                  It sat at the end of the squares, which put the name of the
+                  FIRST item — the row is sorted rarest first — immediately to
+                  the right of the last one. Every reader joined the two: the
+                  card looked like it had six slots where the sixth had rendered
+                  as text instead of art. Below the row and indented to the same
+                  edge, it reads as what it is: a caption naming the best of
+                  them, and the line that makes a stranger ask what a
+                  "Cashbringer" is.
+                */}
+                {best?.item && (
+                  <div
+                    style={{
+                      display: 'flex',
+                      alignItems: 'baseline',
+                      marginLeft: 74,
+                      marginTop: 7,
+                    }}
+                  >
+                    <div style={{ display: 'flex', fontSize: 18, color: best.item.rarity.hex }}>
+                      {best.item.name}
+                    </div>
                     <div
-                      key={`${piece.slug}-name`}
                       style={{
                         display: 'flex',
-                        alignItems: 'baseline',
-                        marginLeft: i === 0 ? 14 : 18,
+                        fontSize: 12,
+                        color: MUTED,
+                        marginLeft: 10,
+                        letterSpacing: 2,
                       }}
                     >
-                      <div style={{ display: 'flex', fontSize: 19, color: piece.rarity.hex }}>
-                        {piece.name ?? piece.slug}
-                      </div>
-                      {piece.itemLevel !== null && (
-                        <div style={{ display: 'flex', fontSize: 13, color: MUTED, marginLeft: 9 }}>
-                          {`ILVL ${piece.itemLevel}`}
-                        </div>
-                      )}
+                      {best.stat.toUpperCase()}
                     </div>
-                  ))}
-              </FootRow>
+                  </div>
+                )}
+              </div>
             )}
 
             {earned.length > 0 && (
@@ -324,11 +469,16 @@ export default async function Image({ params }: { params: Promise<{ handle: stri
                       background: WELL,
                     }}
                   >
-                    <Icon
-                      name={ACHIEVEMENT_ICONS[a.code] ?? 'achievement'}
-                      size={20}
-                      color={GOLD}
-                    />
+                    {earnedIcons[i] ? (
+                      // biome-ignore lint/performance/noImgElement: Satori renders raw <img>; next/image has no pipeline here.
+                      <img src={earnedIcons[i] ?? ''} width={34} height={34} alt="" />
+                    ) : (
+                      <Icon
+                        name={ACHIEVEMENT_ICONS[a.code] ?? 'achievement'}
+                        size={20}
+                        color={GOLD}
+                      />
+                    )}
                   </div>
                 ))}
                 <div style={{ display: 'flex', fontSize: 15, color: MUTED, marginLeft: 14 }}>
@@ -374,13 +524,13 @@ function Portrait({ character, src }: { character: CharacterPage; src: string | 
         width: 214,
         height: 214,
         flexShrink: 0,
-        border: `4px solid ${character.rarity.hex}`,
+        border: `3px solid ${character.rarity.hex}`,
         background: WELL,
       }}
     >
       {src ? (
         // biome-ignore lint/performance/noImgElement: Satori renders raw <img>; next/image has no pipeline here.
-        <img src={src} width={206} height={206} style={{ objectFit: 'cover' }} alt="" />
+        <img src={src} width={208} height={208} style={{ objectFit: 'cover' }} alt="" />
       ) : (
         <div style={{ display: 'flex', fontSize: 94, color: character.rarity.hex }}>
           {character.handle.slice(0, 1).toUpperCase()}
@@ -463,18 +613,21 @@ function FootRow({
 /** Realm and faction, riding the handle line as two small marks. */
 function Chip({
   icon,
+  src,
   label,
   color,
   first,
 }: {
   icon: IconName
+  /** The borrowed picture, when there is one. A country has none. */
+  src: string | undefined
   label: string
   color: string
   first: boolean
 }) {
   return (
     <div style={{ display: 'flex', alignItems: 'center', marginLeft: first ? 0 : 18 }}>
-      <Icon name={icon} size={17} color={color} />
+      <OgIcon src={src} glyph={icon} size={19} color={color} />
       <div style={{ display: 'flex', fontSize: 17, color, marginLeft: 7 }}>{label}</div>
     </div>
   )
@@ -482,11 +635,14 @@ function Chip({
 
 function StatCell({
   icon,
+  src,
   value,
   label,
   first,
 }: {
   icon: IconName
+  /** The borrowed picture; `icon` is the drawing behind it. */
+  src: string | undefined
   value: string
   label: string
   first: boolean
@@ -503,7 +659,7 @@ function StatCell({
         background: WELL,
       }}
     >
-      <Icon name={icon} size={22} color={GOLD} />
+      <OgIcon src={src} glyph={icon} size={24} color={GOLD} />
       <div style={{ display: 'flex', flexDirection: 'column', marginLeft: 11 }}>
         <div style={{ display: 'flex', fontSize: 27, color: GOLD, lineHeight: 1.1 }}>{value}</div>
         <div
@@ -611,6 +767,7 @@ function pickVariant(character: CharacterPage) {
   if (character.recentLevelUp) {
     return {
       icon: 'level' as const,
+      slug: UI_ICONS.timelineLevel as string | undefined,
       kicker: 'DING!',
       kickerColor: GOLD,
       headline: name,
@@ -621,6 +778,7 @@ function pickVariant(character: CharacterPage) {
     const def = ACHIEVEMENTS_BY_CODE.get(character.recentAchievement.code)
     return {
       icon: ACHIEVEMENT_ICONS[character.recentAchievement.code] ?? ('achievement' as const),
+      slug: ACHIEVEMENTS_BY_CODE.get(character.recentAchievement.code)?.icon,
       kicker: (def?.label ?? character.recentAchievement.code).toUpperCase(),
       // Its quality colour, for the same reason the class kicker wears the
       // class colour: the card and the page have to agree, or the colour
@@ -632,6 +790,7 @@ function pickVariant(character: CharacterPage) {
   }
   return {
     icon: character.characterClass,
+    slug: CLASS_ICONS[character.characterClass] as string | undefined,
     kicker: `${character.characterClass.toUpperCase()} · RANK #${character.rank}`,
     // The class kicker wears the class colour: the shared image and the page
     // have to agree, or the colour system stops meaning anything the moment it

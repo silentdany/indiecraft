@@ -1,4 +1,5 @@
 import { BrandMark } from '@/components/brand-mark'
+import { Icon, type IconName } from '@/components/icon'
 
 /**
  * The shared skeleton behind every OG image on the site.
@@ -93,5 +94,32 @@ export function OgSignature() {
         </div>
       </div>
     </div>
+  )
+}
+
+/**
+ * One icon on a card: the Blizzard picture when it arrived, the drawn glyph
+ * when it did not.
+ *
+ * The same bargain the whole site makes, restated for Satori — which cannot do
+ * the CSS layering `WowIcon` uses in the browser, so the choice happens here
+ * instead. `color` only reaches the fallback; a JPEG has its own colours.
+ */
+export function OgIcon({
+  src,
+  glyph,
+  size,
+  color,
+}: {
+  src: string | undefined
+  glyph: IconName
+  size: number
+  color: string
+}) {
+  return src ? (
+    // biome-ignore lint/performance/noImgElement: Satori renders raw <img>; next/image has no pipeline here.
+    <img src={src} width={size} height={size} alt="" />
+  ) : (
+    <Icon name={glyph} size={size} color={color} />
   )
 }

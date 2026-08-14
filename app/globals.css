@@ -348,6 +348,24 @@ a:hover {
   overflow: hidden;
 }
 
+/* The drawn glyph and the Blizzard JPEG occupy one cell, the image on top. When
+   the hotlink fails the image collapses and the glyph is already in place — see
+   components/wow-icon.tsx. Shared by items, achievements, classes and factions,
+   which is why it is no longer scoped to the doll. */
+.wowicon {
+  display: grid;
+  grid-template-areas: "stack";
+  place-items: center;
+}
+.wowicon > * {
+  grid-area: stack;
+}
+.wowicon img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
 /* --- The tab strip --------------------------------------------------------
    Straight from the reference: uppercase, bold, no border, amber on nothing.
    The selected tab inverts into a solid amber block with dark text — the only
@@ -399,10 +417,125 @@ a:hover {
 
 /* Three stacked filter rows need their axis named, or the second and third read
    as a continuation of the first. */
+/* --- Ladder facets --------------------------------------------------------
+   Four short tab strips and, below them, the badge grid. The badges used to be
+   a fifth strip of thirty-five bare names with a nested disclosure inside it,
+   which is what turned this block into a wall. */
+
 .facets {
   display: grid;
   gap: 2px;
   margin-bottom: 14px;
+}
+
+/* The active-filter line. Its own rule underneath so it reads as the state of
+   the page rather than as another thing to pick from. */
+.facets-active {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  padding-bottom: 6px;
+  margin-bottom: 4px;
+  border-bottom: 1px solid var(--ic-line);
+}
+.activechip {
+  gap: 8px;
+  color: #211510;
+  background: var(--ic-gold);
+}
+.activechip:hover {
+  background: var(--ic-gold-bright);
+}
+.activeclear {
+  color: var(--ic-text-muted);
+}
+.activeclear:hover {
+  color: var(--ic-gold);
+}
+
+/* --- The badge picker ------------------------------------------------------
+   A grid of cards rather than a strip of chips: a badge name on its own tells
+   you nothing, and "who has Summoned" is unanswerable until you know Summoned
+   is 100,000 Google impressions. Icon, name, sentence, count — the same four
+   things the sheet already shows for the same badge. */
+
+.badgepicker {
+  margin-top: 6px;
+  border-top: 1px solid var(--ic-line);
+  padding-top: 8px;
+}
+.badgepicker > summary {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  cursor: pointer;
+  list-style: none;
+  padding: 4px 0;
+}
+.badgepicker > summary::-webkit-details-marker {
+  display: none;
+}
+/* A caret drawn from the same parts as everything else here: no marker, so the
+   disclosure needs to say it is one. */
+.badgepicker > summary::after {
+  content: "▸";
+  color: var(--ic-frame);
+}
+.badgepicker[open] > summary::after {
+  content: "▾";
+}
+.badgepicker > summary:hover {
+  color: var(--ic-gold);
+}
+
+.badgegrid {
+  list-style: none;
+  margin: 8px 0 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(290px, 1fr));
+  gap: 2px;
+}
+.badgecard > a {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  padding: 8px 10px;
+  background: var(--ic-surface);
+  border: 1px solid transparent;
+  color: var(--ic-text);
+}
+.badgecard > a:hover {
+  border-color: var(--ach-color);
+}
+.badgecard.is-on > a {
+  border-color: var(--ach-color);
+  background: color-mix(in srgb, var(--ach-color) 12%, var(--ic-surface));
+}
+.badgecard .wowicon {
+  color: var(--ach-color);
+  border-color: color-mix(in srgb, var(--ach-color) 45%, transparent);
+  flex-shrink: 0;
+}
+.badgecard-body {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+}
+.badgecard-name {
+  font-size: 13px;
+  color: var(--ach-color);
+}
+.badgecard-desc {
+  font-size: 11.5px;
+  line-height: 1.35;
+  color: var(--ic-text-muted);
+}
+.badgecard-count {
+  margin-left: auto;
+  flex-shrink: 0;
+  font-variant-numeric: tabular-nums;
 }
 .facet {
   display: flex;
@@ -791,9 +924,9 @@ a:hover {
   border-color: var(--faction-color);
   color: var(--ic-text);
 }
+/* Sized by the component now, so the rule only carries the colour the fallback
+   glyph needs. */
 .faction-icon {
-  width: 36px;
-  height: 36px;
   color: var(--faction-color);
 }
 .faction-body {
@@ -849,9 +982,12 @@ a:hover {
 /* Classes reuse the realm row wholesale, because they are the same object: a
    mark, a name, a count, and a link to that slice of the ladder. Only the
    colour differs — a realm code is always gold, a class is always its own. */
+/* No border: the class emblem is a sigil, not a piece of gear, and the square
+   is what this interface uses to mean gear. The colour stays, because the
+   drawn glyph underneath still inherits it when the CDN does not answer. */
 .class-mark {
   color: var(--row-color, var(--ic-gold));
-  border-color: color-mix(in srgb, var(--row-color, var(--ic-gold)) 45%, transparent);
+  flex-shrink: 0;
 }
 .class-name {
   color: var(--row-color, var(--ic-text));
@@ -1223,30 +1359,6 @@ a.pager-num:hover {
   background: var(--ic-gold);
 }
 
-/* --- The character sheet ---------------------------------------------------
-   The reference's header grammar, in order: portrait, then a small title
-   riding above a large name, then a vertical hairline, then the two numbers
-   that define the character, then one thin line of metadata underneath. */
-
-.sheet-head {
-  display: flex;
-  gap: 20px;
-  align-items: flex-start;
-  flex-wrap: wrap;
-}
-.sheet-portrait {
-  width: 96px;
-  height: 96px;
-}
-.sheet-portrait img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-.sheet-identity {
-  flex: 1 1 320px;
-  min-width: 260px;
-}
 .sheet-eyebrow {
   display: flex;
   align-items: center;
@@ -1264,20 +1376,6 @@ a.pager-num:hover {
      items by quality and the person by being the person. Rarity already reads
      from the portrait border a few pixels away. */
   color: var(--ic-butter);
-}
-/* Name and headline numbers sit on one row, split by a vertical hairline. */
-/* The readouts sit on the name, not on the middle of the block. Centering was
-   fine while the left column was two lines; adding the class reason made a
-   third, and the numbers drifted up off the name they belong to. */
-.sheet-topline {
-  display: flex;
-  align-items: flex-end;
-  gap: 22px;
-  flex-wrap: wrap;
-}
-.sheet-readouts {
-  display: flex;
-  align-items: baseline;
 }
 .sheet-readout {
   display: flex;
@@ -1389,6 +1487,483 @@ a.pager-num:hover {
   font-size: 10px;
   letter-spacing: 0.1em;
   color: var(--ic-text-muted);
+}
+
+/* --- The paper doll -------------------------------------------------------
+   Seventeen slots, one per stat. Two flanking columns of armour with the
+   weapons on a rail underneath — the reference's own arrangement, and the
+   reason it is a grid rather than the flat auto-fill the gear list uses: the
+   left column has to stay the left column at every width above the breakpoint,
+   or it stops being a body and becomes a list again.
+
+   The quality colour arrives as inline `color` from the component and is the
+   only colour in the block. Everything else is the page's own furniture, which
+   is what keeps seventeen coloured names from turning into confetti. */
+
+.doll {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+/* Dressed: the character stands between the columns, which is the whole shape
+   of the thing. The centre is fixed-ish so the two gear columns stay equal —
+   an armory whose left side is wider than its right is not an armory. */
+.doll-dressed {
+  grid-template-columns: 1fr minmax(210px, 268px) 1fr;
+  gap: 14px;
+  align-items: start;
+}
+.doll-col {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+.doll-rail {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 2px;
+  padding-top: 12px;
+  border-top: 1px solid var(--ic-line);
+}
+
+.sheet-section {
+  margin-top: 30px;
+}
+.sheet-section > h2 {
+  font-size: 16px;
+  letter-spacing: 0.14em;
+  margin: 0 0 12px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--ic-line-2);
+}
+
+/* The frame holds the whole armory now, so it stops being a card wrapped round
+   a header and becomes the border of the page's actual subject. */
+.armory {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.armory-bar {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 16px 24px;
+  flex-wrap: wrap;
+  padding-bottom: 14px;
+  border-bottom: 1px solid var(--ic-line-2);
+}
+.armory-who {
+  min-width: 0;
+}
+/* `<3>` after the name, where the reference prints the guild. Parchment, not
+   gold: it is a fact about the character, not a figure. */
+.armory-guild {
+  margin-left: 10px;
+  font-size: 0.5em;
+  letter-spacing: 0.04em;
+  color: var(--ic-text-muted);
+  vertical-align: middle;
+}
+.armory-line {
+  margin: 4px 0 0;
+  font-size: 13px;
+  color: var(--ic-text-muted);
+}
+.armory-line b {
+  color: var(--ic-text);
+  font-weight: 600;
+}
+.armory-line a {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  vertical-align: baseline;
+}
+
+/* The headline strip. The reference stands its figures in a row with the label
+   under the number, and that shape is most of why it reads as a game readout
+   rather than as a byline. */
+.armory-figures {
+  display: flex;
+  align-items: flex-end;
+  gap: 0;
+  flex-wrap: wrap;
+}
+.armory-fig {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 0 16px;
+  white-space: nowrap;
+}
+.armory-fig + .armory-fig {
+  border-left: 1px solid var(--ic-line-2);
+}
+.armory-fig:last-child {
+  padding-right: 0;
+}
+.armory-fig > .serif {
+  font-size: 21px;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+.armory-handle {
+  margin: 0;
+}
+.armory-handle:hover {
+  color: var(--ic-gold);
+}
+
+/* --- Works: the products, inside the frame --------------------------------
+   The third register of the same object. The armour is what the numbers say
+   about a founder, the weapons are the same thing again, and these are the
+   actual businesses — the only part of the page a visitor can go and use, so
+   the one place they must never be is behind a tab.
+
+   Same rule the weapon rail uses, for the same reason: it separates registers
+   without starting a new card. */
+
+.armory-works {
+  padding-top: 16px;
+  border-top: 1px solid var(--ic-line-2);
+}
+.armory-works > h2 {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  margin: 0 0 12px;
+  font-size: 13px;
+  letter-spacing: 0.14em;
+  color: var(--ic-gold);
+}
+/* The count sits in the heading rather than in a corner: at one product it is
+   noise, and the heading already says "PRODUCT" singular in that case. */
+.armory-works-count {
+  padding: 1px 7px;
+  border: 1px solid var(--ic-line-2);
+  font-family: var(--ic-sans);
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  color: var(--ic-text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+/* --- Sheet tabs -----------------------------------------------------------
+   The reference runs Character / Talents / Raid Progression / Achievements /
+   PvP / Statistics / History across the top of the sheet. Ours are the three we
+   have content for.
+
+   Radio inputs and :checked, no JavaScript — same commitment as the item
+   tooltips, and it keeps every panel in the HTML for crawlers and for find-in-
+   page. The inputs are visually hidden but never `display: none`, which would
+   take them out of the tab order and strand a keyboard on the tab strip. */
+
+.sheettabs {
+  margin-top: 30px;
+}
+.sheettabs > input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  pointer-events: none;
+}
+.sheettabs > .tabs .tab {
+  cursor: pointer;
+  user-select: none;
+}
+/* The focus ring has to land on the label, since that is what a user sees.
+   `:has()` rather than an adjacent-sibling chain: with five inputs that chain
+   needed a different number of `+ input` steps per tab, and adding a sixth
+   would have silently broken the two either side of it. */
+.sheettabs:has(#tab-character:focus-visible) .tab[for="tab-character"],
+.sheettabs:has(#tab-ach:focus-visible) .tab[for="tab-ach"],
+.sheettabs:has(#tab-history:focus-visible) .tab[for="tab-history"],
+.sheettabs:has(#tab-share:focus-visible) .tab[for="tab-share"] {
+  outline: 2px solid var(--ic-gold-bright);
+  outline-offset: -2px;
+}
+#tab-character:checked ~ .tabs .tab[for="tab-character"],
+#tab-ach:checked ~ .tabs .tab[for="tab-ach"],
+#tab-history:checked ~ .tabs .tab[for="tab-history"],
+#tab-share:checked ~ .tabs .tab[for="tab-share"] {
+  color: #211510;
+  background: var(--ic-gold);
+}
+.tabpanel {
+  display: none;
+}
+#tab-character:checked ~ .tabpanels > [data-tab="character"],
+#tab-ach:checked ~ .tabpanels > [data-tab="ach"],
+#tab-history:checked ~ .tabpanels > [data-tab="history"],
+#tab-share:checked ~ .tabpanels > [data-tab="share"] {
+  display: block;
+}
+/* The first section inside a panel sits right under the tab strip, so it does
+   not get the 30px the stacked sections give each other. */
+.tabpanel > .sheet-section:first-child,
+.tabpanel > .summary:first-child {
+  margin-top: 18px;
+}
+
+/* --- Summary: standing beside statistics ----------------------------------
+   Two number panels that used to be stacked, which made them read as one panel
+   printed twice. Side by side the difference is structural: where this founder
+   stands against everybody else on the left, what they actually measure on the
+   right. */
+
+.summary {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 2px;
+  background: var(--ic-line);
+  border: 1px solid var(--ic-line);
+  margin-top: 30px;
+}
+.summary-panel {
+  background: var(--ic-surface);
+  padding: 14px 16px 16px;
+  min-width: 0;
+}
+.summary-panel > h2 {
+  font-size: 13px;
+  letter-spacing: 0.14em;
+  margin: 0 0 12px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--ic-line);
+  color: var(--ic-gold);
+}
+
+@media (max-width: 720px) {
+  .summary {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* --- Statistics, grouped ---------------------------------------------------
+   `{{ category }}` then a run of `{{ stat }}: {{ value }}`, which is the shape
+   the reference uses and the shape the old glyph-tile grid only resembled from
+   a distance. The glyph moved to the group heading: one picture per question
+   asked, rather than one per number. */
+
+.statgroups {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.statgroup-head {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  margin: 0 0 5px;
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--ic-text-muted);
+}
+.statlist {
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+.statrow {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 3px 0;
+}
+/* The dotted leader is what turns two columns of text into a readable table
+   without drawing one, and it is exactly what the reference does. */
+.statrow::after {
+  content: "";
+  order: 1;
+  flex: 1 1 auto;
+  height: 0;
+  margin: 0 2px;
+  border-bottom: 1px dotted var(--ic-line-2);
+}
+.statrow > dt {
+  order: 0;
+  flex: 0 0 auto;
+  font-size: 12.5px;
+  color: var(--ic-text-muted);
+}
+.statrow > dd {
+  order: 2;
+  flex: 0 0 auto;
+  margin: 0;
+  font-size: 14px;
+  color: var(--ic-text);
+  font-variant-numeric: tabular-nums;
+}
+/* A stat with a footnote gets a cursor that says so — the note itself is the
+   title attribute, which is the only tooltip that survives with no JavaScript
+   and no hover at all. */
+.statrow[title] > dt {
+  cursor: help;
+}
+
+/* --- The character, in the middle of their own gear ----------------------- */
+
+.doll-center {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  padding: 4px 6px 0;
+  text-align: center;
+  min-width: 0;
+}
+.doll-portrait {
+  width: 128px;
+  height: 128px;
+  font-size: 44px;
+}
+.doll-portrait img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+/* The two numbers the sheet exists to state, directly under the portrait where
+   the reference puts level and item level. */
+.doll-readouts {
+  display: flex;
+  align-items: baseline;
+  justify-content: center;
+}
+.doll-filled {
+  margin: -4px 0 0;
+  font-variant-numeric: tabular-nums;
+}
+.doll-center .sheet-progress {
+  margin-top: 0;
+  width: 100%;
+  flex-direction: column;
+  gap: 6px;
+  align-items: stretch;
+}
+
+.doll-slot {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 8px;
+  background: var(--ic-surface);
+  border: 1px solid transparent;
+  min-width: 0;
+}
+.doll-slot:hover {
+  border-color: var(--ic-line-2);
+}
+
+.doll-body {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+}
+.doll-name {
+  font-size: 12.5px;
+  line-height: 1.3;
+  color: currentColor;
+  overflow-wrap: anywhere;
+}
+.doll-meta {
+  font-size: 10px;
+  font-variant-numeric: tabular-nums;
+}
+.doll-meta b {
+  color: var(--ic-text);
+  font-weight: 600;
+}
+/* The piece's item level.
+   
+   It was boxed, and at 10px with a 1px border and 4px of padding inside a
+   column of seventeen rows the box was doing more damage than the number was
+   worth — a grid of tiny outlines reads as noise before it reads as data. A
+   middle dot separates the two numbers just as well, and it is the separator
+   the rest of this stylesheet already uses. The dot itself lives in the markup,
+   not in a `::before` — see the component. */
+.doll-ilvl {
+  color: var(--ic-text-muted);
+}
+
+/* Two kinds of empty, and they must not read as one. Never told: a dashed
+   square, because the frame is there and nothing filled it. Not yet: a solid
+   grey one, which is what an item of no quality actually looks like.
+
+   Both wear the silhouette of the piece that belongs in the slot, drained of
+   colour and pushed back — the reference's own answer, and the reason a blank
+   slot still reads as a head or a weapon rather than as a hole.
+
+   It stays grey on hover. An earlier version brought some colour back, which
+   read as the slot lighting up: hovering an empty square would promise
+   something is there. Nothing is. The row border already answers the hover. */
+.doll-empty {
+  color: #4a423b;
+}
+.doll-empty .doll-icon img {
+  filter: grayscale(1) brightness(0.45) contrast(0.9);
+}
+.doll-unreported .doll-icon {
+  border-style: dashed;
+}
+/* The reference's POOR grey, which is now the only thing it means: no item.
+   Common moved to white, so these two no longer collide. */
+.doll-unearned .doll-icon {
+  color: #6f675f;
+}
+.doll-nothing {
+  font-size: 12px;
+  color: var(--ic-text-muted);
+}
+
+/* Tabard and shirt: no quality colour, because neither has a quality. Parchment
+   keeps them clearly outside the five-colour language rather than pretending to
+   the bottom rung of it. */
+.doll-cosmetic {
+  color: var(--ic-text-muted);
+}
+.doll-cosmetic .doll-name {
+  color: var(--ic-text);
+}
+.doll-cosmetic:hover .doll-name {
+  color: var(--ic-gold);
+}
+
+/* Below this the three columns stop being a body and start being a queue. The
+   character goes first — it is the subject of the page — then the gear in one
+   run, mirroring switched off so everything reads from the same edge. */
+@media (max-width: 860px) {
+  .doll-dressed {
+    grid-template-columns: 1fr 1fr;
+  }
+  .doll-center {
+    grid-column: 1 / -1;
+    grid-row: 1;
+    padding-bottom: 12px;
+    border-bottom: 1px solid var(--ic-line);
+  }
+}
+@media (max-width: 620px) {
+  .doll,
+  .doll-dressed,
+  .doll-rail {
+    grid-template-columns: 1fr;
+  }
+  .doll-col-right .doll-slot {
+    flex-direction: row;
+    text-align: left;
+  }
+  .doll-col-right .doll-body {
+    align-items: flex-start;
+  }
 }
 
 /* --- Achievements ---------------------------------------------------------
@@ -1956,7 +2531,8 @@ a.pager-num:hover {
    for a mouse, :focus-within for a keyboard or a tap, which is why the row
    wraps a real link. */
 
-.gear-row {
+.gear-row,
+.doll-slot {
   position: relative;
 }
 
@@ -1977,9 +2553,31 @@ a.pager-num:hover {
   pointer-events: none;
 }
 .gear-row:hover .tooltip,
-.gear-row:focus-within .tooltip {
+.gear-row:focus-within .tooltip,
+.doll-slot:hover .tooltip,
+.doll-slot:focus-within .tooltip {
   opacity: 1;
   visibility: visible;
+}
+
+/* A doll slot is 38px of icon, not 56, so its tooltip starts further left. */
+.doll-slot .tooltip {
+  left: 44px;
+}
+
+/* Mirrored, exactly as the reference does it: the icons face the character on
+   both sides, so the eye reads outward from the portrait rather than left to
+   right across a table. */
+.doll-col-right .doll-slot {
+  flex-direction: row-reverse;
+  text-align: right;
+}
+.doll-col-right .doll-body {
+  align-items: flex-end;
+}
+.doll-col-right .tooltip {
+  left: auto;
+  right: 44px;
 }
 
 .tooltip-name {
@@ -2043,89 +2641,82 @@ a.pager-num:hover {
   color: var(--ic-frame);
 }
 
+/* The narrow-screen tooltip rules live here, after every selector they
+   override, rather than up with the doll where they were first written. Biome's
+   noDescendingSpecificity was right to complain: a reset that precedes the rule
+   it resets works only by accident of source order. */
+@media (max-width: 620px) {
+  .doll-col-right .tooltip {
+    left: 44px;
+    right: auto;
+  }
+}
 @media (max-width: 560px) {
-  .tooltip {
+  .tooltip,
+  .doll-col-right .tooltip {
     left: 0;
+    right: auto;
   }
 }
 
 /* --- What the rank means -------------------------------------------------- */
 
-.rankpanel {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: space-between;
-  align-items: center;
-  gap: 18px;
-  margin-top: 18px;
-  padding: 14px 18px;
-  border: 1px solid var(--ic-line);
-  background: var(--ic-surface);
-}
+/* --- Standing --------------------------------------------------------------
+   Shares StatsPanel's groups, leaders and tabular figures — the two sit in one
+   row and used to be built out of different parts. Only the rivals need
+   anything of their own.
 
-.rankpanel-figures {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 14px 30px;
-}
-.rankfig {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
-/* Two of the four figures name a ladder you can go and read. Underlining them
-   would put three underlines in a row of numbers; the hover state is enough,
-   and the cursor already says it. */
-.rankfig-link {
-  color: var(--ic-text);
-}
-.rankfig-link:hover {
-  color: var(--ic-text);
-}
-.rankfig-link:hover > .label {
-  color: var(--ic-gold);
-}
-.rankfig > .serif {
-  font-size: 22px;
-  color: var(--ic-gold);
-  line-height: 1.1;
+   The old `.rankpanel` card, its `.rankpanel-figures` row and `.rankfig` gold
+   numerals are gone: a bordered surface inside a bordered surface, and a
+   headline rank printed large a second time under one already in the identity
+   strip. */
+
+/* The denominator, and any date beside it. Muted and smaller so "#3" stays the
+   thing being read and "of 104" stays the thing giving it meaning. */
+.statrow-of {
+  font-family: var(--ic-sans);
+  font-size: 11.5px;
+  font-weight: 400;
+  color: var(--ic-text-muted);
 }
 
 .rivals {
-  display: flex;
-  gap: 10px;
-}
-.rival {
+  list-style: none;
+  margin: 0;
+  padding: 0;
   display: flex;
   flex-direction: column;
-  gap: 2px;
-  padding: 7px 12px;
-  border: 1px solid var(--ic-line-2);
-  color: var(--ic-text);
+  gap: 1px;
 }
-.rival:hover {
-  border-color: var(--ic-gold);
+/* A row, not a boxed card: two cards side by side had nowhere to go at half
+   width, and the row already reads left to right — who, how far, what to do. */
+.rival {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  padding: 4px 0;
+}
+.rival-side {
+  flex: 0 0 46px;
 }
 .rival-name {
   font-size: 13px;
   color: var(--ic-gold);
+  overflow-wrap: anywhere;
+}
+.rival-name:hover {
+  color: var(--ic-gold-bright);
 }
 .rival-gap {
-  font-size: 11px;
+  font-size: 11.5px;
   color: var(--ic-text-muted);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
 }
-.rival {
-  align-items: flex-start;
-}
-.rival-name {
-  color: var(--ic-gold);
-}
+/* Pushed to the end of the row, which is where an action belongs. */
 .rival-vs {
-  margin-top: 4px;
-  color: var(--ic-text-muted);
-  text-decoration: underline;
-  text-underline-offset: 3px;
-  text-decoration-color: var(--ic-line-2);
+  margin-left: auto;
+  white-space: nowrap;
 }
 .rival-vs:hover {
   color: var(--ic-gold);
@@ -2206,6 +2797,10 @@ a.pager-num:hover {
   width: 30px;
   height: 26px;
   font-size: 12px;
+}
+/* No border: a class emblem is a sigil, not gear. Sized by the component. */
+.picker-class {
+  flex-shrink: 0;
 }
 .picker-name {
   overflow: hidden;
@@ -2416,41 +3011,6 @@ a.pager-num:hover {
   }
 }
 
-/* --- The stat grid -------------------------------------------------------- */
-
-/* The gaps sit on the page colour, not on a lighter separator colour: the last
-   row is rarely full, and a lighter grid background showed the empty slots as holes. */
-.statgrid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(168px, 1fr));
-  gap: 1px;
-  background: var(--ic-bg);
-}
-.statcell {
-  display: flex;
-  align-items: center;
-  gap: 11px;
-  padding: 11px 13px;
-  background: var(--ic-surface);
-  border: 1px solid var(--ic-line);
-}
-.statcell-icon {
-  width: 32px;
-  height: 32px;
-  color: var(--ic-gold);
-}
-.statcell-body {
-  display: flex;
-  flex-direction: column;
-  gap: 1px;
-  min-width: 0;
-}
-.statcell-body > .serif {
-  font-size: 19px;
-  color: var(--ic-gold);
-  line-height: 1.1;
-}
-
 /* --- Achievement progress ------------------------------------------------- */
 
 .ach-progress {
@@ -2529,19 +3089,14 @@ a.pager-num:hover {
   margin-top: 26px;
 }
 
-.share-head {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: 16px;
-  margin-bottom: 12px;
-  padding-bottom: 8px;
-  border-bottom: 1px solid var(--ic-line-2);
-}
-.share-head h2 {
-  margin: 0;
-  font-size: 16px;
-  letter-spacing: 0.14em;
+/* Replaces the old `.share-head`, which carried an <h2>SHARE</h2> under a tab
+   already labelled Share. One line of instruction, no rule: the panel is short
+   enough that a divider would be dividing it from nothing. */
+.share-intro {
+  margin: 0 0 14px;
+  max-width: 520px;
+  font-size: 13px;
+  color: var(--ic-text-muted);
 }
 
 /* Narrower than the page: a post is a column, and stretching it to full width
@@ -2694,73 +3249,19 @@ a.pager-num:hover {
 .share-copy:hover {
   color: var(--ic-gold);
 }
-
-/* --- Standing: realm and faction -------------------------------------------
-   These were two grey chips buried in the metadata line, which is where facts
-   go to be ignored. They are now the only bordered block inside the header
-   frame, because they are the two things on the sheet that place a founder
-   among other founders rather than on a number line — and both are doors. */
-
-.standing {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  margin-top: 14px;
-}
-.standing-cell {
-  --standing-color: var(--ic-gold);
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 7px 12px 7px 8px;
+/* Which of the drafts is on screen. Boxed rather than bare so it reads as a
+   position in a set and not as part of the word before it. */
+.share-count {
+  padding: 0 5px;
   border: 1px solid var(--ic-line-2);
-  background: var(--ic-well);
-  color: var(--ic-text);
+  font-size: 10px;
+  letter-spacing: 0.04em;
+  font-variant-numeric: tabular-nums;
 }
-.standing-cell:hover {
-  border-color: var(--standing-color);
-  color: var(--ic-text);
-}
-.standing-icon {
-  width: 28px;
-  height: 28px;
-  color: var(--ic-gold);
-}
-.standing-icon-faction {
-  color: var(--standing-color);
-}
-.standing-body {
-  display: flex;
-  flex-direction: column;
-  gap: 1px;
-  min-width: 0;
-}
-.standing-value {
-  font-size: 14px;
-  line-height: 1.2;
-  color: var(--standing-color);
-}
-/* The realm code repeats the square-in-a-border idiom the level and the gear
-   icons already use, at the smallest size it still reads. */
-.standing-code {
-  padding: 2px 6px;
-  border: 1px solid var(--ic-frame);
-  font-size: 11px;
-  letter-spacing: 0.08em;
-  color: var(--ic-text-muted);
-}
-.standing-tagline {
-  white-space: nowrap;
-}
-@media (max-width: 480px) {
-  /* The tagline is the first thing to go: the faction name and its colour
-     already carry the whole meaning at this width. */
-  .standing-tagline {
-    display: none;
-  }
-  .standing-cell {
-    flex: 1;
-  }
+/* `Save card` is an <a download>, the other two are <button>. They are the same
+   control to a reader and must not be told apart by their default styling. */
+a.share-copy {
+  text-decoration: none;
 }
 
 /* --- Timeline -------------------------------------------------------------- */

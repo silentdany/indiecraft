@@ -1,9 +1,10 @@
 import Link from 'next/link'
 import type { CSSProperties } from 'react'
-import { ACHIEVEMENT_ICONS, Icon, type IconName } from '@/components/icon'
-import { ACHIEVEMENTS, achievementRarityHex, CLASS_COLORS, FACTIONS_BY_KEY } from '@/engine'
+import { ACHIEVEMENT_ICONS, type IconName } from '@/components/icon'
+import { WowIcon } from '@/components/wow-icon'
+import { ACHIEVEMENTS, achievementRarityHex, CLASS_COLORS, UI_ICONS } from '@/engine'
 import type { AchievementProgressInput, CharacterClass } from '@/engine/types'
-import type { HistoryPoint, RankContext, SheetProfile, SheetStats } from '@/lib/queries'
+import type { HistoryPoint, RankContext, SheetStats } from '@/lib/queries'
 import { realmLabel } from '@/lib/realm'
 
 /**
@@ -15,6 +16,22 @@ import { realmLabel } from '@/lib/realm'
  * A bare "#14" is inert. A position inside a class is something a person can
  * hold and defend, and the founder immediately above is a target rather than a
  * statistic — which is also why both neighbours are links.
+ *
+ * ---------------------------------------------------------------------------
+ * Rebuilt on the same vocabulary as StatsPanel, because it now sits beside it.
+ *
+ * This was a full-width card: its own border, its own surface, its own padding,
+ * a row of 22px gold numerals and two boxed rivals pushed apart by
+ * `justify-content: space-between`. All of that was right when it was the only
+ * thing in its section. Dropped into a half-width panel it became a card inside
+ * a card — a second border six pixels from the first, dead margin under the
+ * heading, and five figures wrapping into a ragged block next to a neighbour
+ * made of tidy dotted rows.
+ *
+ * Same groups, same leaders, same tabular figures as the panel it shares a row
+ * with. The headline rank has not been demoted by losing its 22px: it is in the
+ * identity strip at the top of the page, and printing it large twice was the
+ * actual redundancy.
  */
 export function RankPanel({
   context,
@@ -31,147 +48,233 @@ export function RankPanel({
   const realm = context.realmRank
 
   return (
-    <div className="rankpanel">
-      <div className="rankpanel-figures">
-        <Figure value={`#${context.rank}`} label={`of ${context.total}`} />
-        <Figure
-          value={`#${context.classRank}`}
-          label={`of ${context.classTotal} ${characterClass}`}
-          href={`/ladder?class=${characterClass}`}
-          color={CLASS_COLORS[characterClass]}
-        />
-        {/* The one figure most founders can actually move. A French founder is
-            #97 globally forever and 2nd of 14 at home. */}
-        {realm && (
-          <Figure
-            value={`#${realm.rank}`}
-            // A middle dot rather than a preposition: "on France" reads and "on
-            // United States" does not, and the label has no room to say "on the
-            // United States realm".
-            label={`of ${realm.total} · ${realmLabel(realm.realm)}`}
-            href={`/ladder?realm=${realm.realm}`}
+    <div className="statgroups">
+      <div className="statgroup">
+        <h3 className="statgroup-head">
+          <WowIcon slug={UI_ICONS.rank} glyph="crown" size={18} bare />
+          Rank
+        </h3>
+        <dl className="statlist">
+          <RankRow label="Overall" value={`#${context.rank}`} of={context.total} />
+          <RankRow
+            label={characterClass}
+            value={`#${context.classRank}`}
+            of={context.classTotal}
+            href={`/ladder?class=${characterClass}`}
+            color={CLASS_COLORS[characterClass]}
           />
-        )}
-        <Figure value={`top ${context.percentile}%`} label="overall" />
-        {/* The one figure that can only go up. Rank falls when somebody else
-            ships; a peak is never taken away. */}
-        {context.best && context.best.rank < context.rank && (
-          <Figure value={`#${context.best.rank}`} label={`best · ${shortDay(context.best.day)}`} />
-        )}
+          {/* The one figure most founders can actually move. A French founder
+              is #97 globally forever and 2nd of 14 at home. */}
+          {realm && (
+            <RankRow
+              label={realmLabel(realm.realm)}
+              value={`#${realm.rank}`}
+              of={realm.total}
+              href={`/ladder?realm=${realm.realm}`}
+            />
+          )}
+          <RankRow label="Percentile" value={`top ${context.percentile}%`} />
+          {/* The one figure that can only go up. Rank falls when somebody else
+              ships; a peak is never taken away. */}
+          {context.best && context.best.rank < context.rank && (
+            <RankRow
+              label="Best ever"
+              value={`#${context.best.rank}`}
+              note={shortDay(context.best.day)}
+            />
+          )}
+        </dl>
       </div>
 
       {/* The rivals were a dead end: two names, and nothing to do about either.
-          Each now carries the comparison as a second link, which is the thing
+          Each carries the comparison as a second link, which is the thing
           somebody looking at "the founder immediately above me" actually
           wants. */}
       {(context.above || context.below) && (
-        <div className="rivals">
-          {context.above && (
-            <div className="rival">
-              <span className="label">Above</span>
-              <Link href={`/c/${context.above.handle}`} className="rival-name">
-                @{context.above.handle}
-              </Link>
-              {gap > 0 && <span className="rival-gap">{usdCompact(gap)} MRR ahead</span>}
-              <Link href={`/c/${handle}/vs/${context.above.handle}`} className="rival-vs label">
-                Compare
-              </Link>
-            </div>
-          )}
-          {context.below && (
-            <div className="rival">
-              <span className="label">Below</span>
-              <Link href={`/c/${context.below.handle}`} className="rival-name">
-                @{context.below.handle}
-              </Link>
-              <Link href={`/c/${handle}/vs/${context.below.handle}`} className="rival-vs label">
-                Compare
-              </Link>
-            </div>
-          )}
+        <div className="statgroup">
+          <h3 className="statgroup-head">
+            <WowIcon slug={UI_ICONS.rivals} glyph="characters" size={18} bare />
+            Rivals
+          </h3>
+          <ul className="rivals">
+            {context.above && (
+              <Rival
+                side="Above"
+                handle={handle}
+                other={context.above.handle}
+                note={gap > 0 ? `${usdCompact(gap)} ahead` : null}
+              />
+            )}
+            {context.below && (
+              <Rival side="Below" handle={handle} other={context.below.handle} note={null} />
+            )}
+          </ul>
         </div>
       )}
     </div>
   )
 }
 
-/** A link when the figure names a ladder you can go and read, a div otherwise. */
-function Figure({
-  value,
+/**
+ * One row of the rank list. `of` renders as a muted denominator beside the
+ * ordinal — "#3 of 104" — because a position without its field size is a number
+ * pretending to be a rank.
+ */
+function RankRow({
   label,
+  value,
+  of,
+  note,
   href,
   color,
 }: {
-  value: string
   label: string
+  value: string
+  of?: number
+  note?: string
   href?: string
   color?: string
 }) {
-  const body = (
-    <>
-      <span className="serif" style={color ? { color } : undefined}>
+  return (
+    <div className="statrow">
+      <dt>
+        {href ? (
+          <Link href={href} style={color ? { color } : undefined}>
+            {label}
+          </Link>
+        ) : (
+          label
+        )}
+      </dt>
+      <dd className="serif">
         {value}
-      </span>
-      <span className="label">{label}</span>
-    </>
+        {of !== undefined && <span className="statrow-of"> of {num(of)}</span>}
+        {note && <span className="statrow-of"> · {note}</span>}
+      </dd>
+    </div>
   )
-  return href ? (
-    <Link href={href} className="rankfig rankfig-link">
-      {body}
-    </Link>
-  ) : (
-    <div className="rankfig">{body}</div>
+}
+
+function Rival({
+  side,
+  handle,
+  other,
+  note,
+}: {
+  side: string
+  handle: string
+  other: string
+  note: string | null
+}) {
+  return (
+    <li className="rival">
+      <span className="rival-side label">{side}</span>
+      <Link href={`/c/${other}`} className="rival-name">
+        @{other}
+      </Link>
+      {note && <span className="rival-gap">{note}</span>}
+      <Link href={`/c/${handle}/vs/${other}`} className="rival-vs label">
+        Compare
+      </Link>
+    </li>
   )
 }
 
 /**
- * The stat panel the reference armory reads as: a glyph, a value in the stat's
- * colour, a name underneath. Only the stats we actually have — a panel padded
- * with dashes says less than a shorter one.
+ * The stat panel, in the shape the reference actually uses.
+ *
+ * classic-armory renders `{{ category }}` then a run of `{{ stat }}: {{ value }}`
+ * rows — Base Stats, Melee, Defense, and so on. This was a grid of glyph tiles
+ * instead, which looked like an armory panel from a distance and behaved like
+ * one of those stat-card rows every SaaS landing page has: eight equal boxes,
+ * no grouping, nothing telling you which number to read against which.
+ *
+ * Grouped, the same eleven numbers answer three separate questions — what comes
+ * in, who it comes from, and where it is going — and each group is short enough
+ * to read as a unit. The glyph survives on the category, not on every cell,
+ * which is also what the reference does.
+ *
+ * Only the stats we actually have. A panel padded with dashes says less than a
+ * short one, and a whole group with nothing in it does not render at all.
  */
-type StatCell = { icon: IconName; v: string; l: string }
+type StatRow = { l: string; v: string; hint?: string }
+type StatGroup = { icon: IconName; slug: string; title: string; rows: StatRow[] }
 
-export function StatsPanel({ stats }: { stats: SheetStats }) {
-  // Built by pushing rather than by filtering a list of `false`s: the union of
-  // literal types a conditional array produces is not worth the type predicate
-  // needed to narrow it back.
-  const cells: StatCell[] = []
-  const add = (icon: IconName, v: string | null, l: string) => {
-    if (v !== null) cells.push({ icon, v, l })
+export function StatsPanel({
+  stats,
+  mrrUsd,
+  revenueTotalUsd,
+  nProducts,
+}: {
+  stats: SheetStats
+  mrrUsd: number
+  revenueTotalUsd: number
+  nProducts: number
+}) {
+  const group = (
+    icon: IconName,
+    slug: string,
+    title: string,
+    rows: (StatRow | null)[],
+  ): StatGroup | null => {
+    const kept = rows.filter((r): r is StatRow => r !== null)
+    return kept.length === 0 ? null : { icon, slug, title, rows: kept }
   }
+  const row = (l: string, v: string | null, hint?: string): StatRow | null =>
+    v === null ? null : { l, v, hint }
 
-  add('revenue', stats.last30dUsd > 0 ? usdCompact(stats.last30dUsd) : null, 'Last 30 days')
-  add('coins', stats.arpu === null ? null : usd(stats.arpu), 'Per customer')
-  add('crowd', stats.customers === null ? null : num(stats.customers), 'Customers')
-  add(
-    'shieldPulse',
-    stats.retention === null ? null : `${Math.round(stats.retention * 100)}%`,
-    'Retention',
-  )
-  add(
-    'rising',
-    stats.growthMrr30d === null
-      ? null
-      : `${stats.growthMrr30d > 0 ? '+' : ''}${stats.growthMrr30d.toFixed(1)}%`,
-    'Growth 30d',
-  )
-  add('beacon', stats.domainRating === null ? null : String(stats.domainRating), 'Domain rating')
-  add('banner', stats.followers === null ? null : num(stats.followers), 'Followers')
-  add('hourglass', stats.age === null ? null : `${stats.age.toFixed(1)}y`, 'Shipping for')
+  const groups = [
+    group('revenue', UI_ICONS.statRevenue, 'Revenue', [
+      row('Monthly', mrrUsd > 0 ? usdCompact(mrrUsd) : null),
+      row('Last 30 days', stats.last30dUsd > 0 ? usdCompact(stats.last30dUsd) : null),
+      row('Lifetime', revenueTotalUsd > 0 ? usdCompact(revenueTotalUsd) : null),
+      row('Per customer', stats.arpu === null ? null : usd(stats.arpu)),
+    ]),
+    group('crowd', UI_ICONS.statAudience, 'Audience', [
+      row('Customers', stats.customers === null ? null : num(stats.customers)),
+      row(
+        'Retention',
+        stats.retention === null ? null : `${Math.round(stats.retention * 100)}%`,
+        // The one number on this panel that is a proxy rather than a
+        // measurement, and it says so where somebody can see it.
+        'Active subscriptions over customers. TrustMRR reports no churn figure.',
+      ),
+      row('Followers', stats.followers === null ? null : num(stats.followers)),
+      row('Domain rating', stats.domainRating === null ? null : String(stats.domainRating)),
+    ]),
+    group('rising', UI_ICONS.statTrajectory, 'Trajectory', [
+      row(
+        'Growth 30d',
+        stats.growthMrr30d === null
+          ? null
+          : `${stats.growthMrr30d > 0 ? '+' : ''}${stats.growthMrr30d.toFixed(1)}%`,
+      ),
+      row('Shipping for', stats.age === null ? null : `${stats.age.toFixed(1)}y`),
+      row('Products', nProducts > 0 ? num(nProducts) : null),
+    ]),
+  ].filter((g): g is StatGroup => g !== null)
 
-  if (cells.length === 0) return null
+  if (groups.length === 0) return null
 
   return (
-    <div className="statgrid">
-      {cells.map((c) => (
-        <div key={c.l} className="statcell">
-          <span className="qsquare statcell-icon">
-            <Icon name={c.icon} size={17} />
-          </span>
-          <span className="statcell-body">
-            <span className="serif">{c.v}</span>
-            <span className="stat-name">{c.l}</span>
-          </span>
+    <div className="statgroups">
+      {groups.map((g) => (
+        <div key={g.title} className="statgroup">
+          <h3 className="statgroup-head">
+            <WowIcon slug={g.slug} glyph={g.icon} size={18} bare />
+            {g.title}
+          </h3>
+          <dl className="statlist">
+            {g.rows.map((r) => (
+              <div key={r.l} className="statrow" title={r.hint}>
+                <dt>
+                  {r.l}
+                  {r.hint && <span aria-hidden="true"> *</span>}
+                </dt>
+                <dd className="serif">{r.v}</dd>
+              </div>
+            ))}
+          </dl>
         </div>
       ))}
     </div>
@@ -249,9 +352,12 @@ function LockedList({ items }: { items: LockedItem[] }) {
           className="ach-card"
           style={{ '--ach-color': achievementRarityHex(def.rarity) } as CSSProperties}
         >
-          <span className="qsquare ach-icon">
-            <Icon name={ACHIEVEMENT_ICONS[def.code] ?? 'achievement'} size={17} />
-          </span>
+          <WowIcon
+            slug={def.icon}
+            glyph={ACHIEVEMENT_ICONS[def.code] ?? 'achievement'}
+            size={32}
+            className="ach-icon"
+          />
           <span className="ach-body">
             <span className="ach-title serif">{def.label}</span>
             <span className="ach-desc">{def.description}</span>
@@ -291,7 +397,7 @@ export function HistoryPanel({ history }: { history: HistoryPoint[] }) {
   return (
     <div className="history">
       <div className="history-line">
-        <Icon name="hourglass" size={15} />
+        <WowIcon slug={UI_ICONS.watched} glyph="hourglass" size={20} bare />
         <span>
           Watched since <strong>{formatDay(first.day)}</strong>
           {days > 1 ? ` · ${days} daily snapshots` : ' · first snapshot'}
@@ -376,57 +482,6 @@ const formatDay = (day: string) =>
     timeZone: 'UTC',
   })
 
-/**
- * Realm and faction: where they build, and who they sell to.
- *
- * These were two grey chips in a metadata line, which is where facts go to be
- * ignored. They are the two things on the sheet that place a founder among
- * other founders rather than on a number line — and both are links, because a
- * fact you can walk into is worth more than a fact you can read.
- *
- * Absent rather than "Unknown": a third of the corpus has no country and a
- * third no business type, and a row of grey question marks would make the sheet
- * look broken on a third of its pages for no information gained.
- */
-export function Standing({ profile }: { profile: SheetProfile }) {
-  const faction = profile.faction ? FACTIONS_BY_KEY.get(profile.faction) : undefined
-  if (!profile.realm && !faction) return null
-
-  return (
-    <div className="standing">
-      {profile.realm && (
-        <Link href={`/ladder?realm=${profile.realm}`} className="standing-cell">
-          <span className="qsquare standing-icon">
-            <Icon name="realm" size={16} />
-          </span>
-          <span className="standing-body">
-            <span className="label">Realm</span>
-            <span className="standing-value serif">{realmLabel(profile.realm)}</span>
-          </span>
-          <span className="standing-code serif">{profile.realm}</span>
-        </Link>
-      )}
-
-      {faction && (
-        <Link
-          href={`/ladder?faction=${faction.key}`}
-          className="standing-cell"
-          style={{ '--standing-color': faction.color } as React.CSSProperties}
-        >
-          <span className="qsquare standing-icon standing-icon-faction">
-            <Icon name={faction.key} size={16} />
-          </span>
-          <span className="standing-body">
-            <span className="label">Faction</span>
-            <span className="standing-value serif">{faction.key}</span>
-          </span>
-          <span className="standing-tagline label">{faction.tagline}</span>
-        </Link>
-      )}
-    </div>
-  )
-}
-
 export interface TimelineEvent {
   at: string
   kind: 'joined' | 'level' | 'achievement'
@@ -449,12 +504,18 @@ export function Timeline({ events, backfilled }: { events: TimelineEvent[]; back
     <ol className="timeline">
       {events.map((e) => (
         <li key={`${e.kind}-${e.at}-${e.label}`} className="timeline-row">
-          <span className="qsquare timeline-dot">
-            <Icon
-              name={e.kind === 'level' ? 'level' : e.kind === 'joined' ? 'crest' : 'achievement'}
-              size={13}
-            />
-          </span>
+          <WowIcon
+            slug={
+              e.kind === 'level'
+                ? UI_ICONS.timelineLevel
+                : e.kind === 'joined'
+                  ? UI_ICONS.timelineJoined
+                  : UI_ICONS.timelineAchievement
+            }
+            glyph={e.kind === 'level' ? 'level' : e.kind === 'joined' ? 'crest' : 'achievement'}
+            size={24}
+            className="timeline-dot"
+          />
           <span className="timeline-label">
             {e.label}
             {e.kind === 'joined' && backfilled > 0 && (

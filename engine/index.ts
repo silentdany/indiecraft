@@ -10,13 +10,16 @@ export {
   rarityFor,
   xpFrom,
 } from './character'
+export { equipmentFor, equipmentInput, equipmentScore } from './equipment'
 export type { FactionDef } from './tuning'
 export {
   ACHIEVEMENTS,
   ACHIEVEMENTS_BY_CODE,
   achievementRarityHex,
   CLASS_COLORS,
+  CLASS_ICONS,
   CLASS_REASONS,
+  EMPTY_SLOT_ICONS,
   FACTIONS,
   FACTIONS_BY_KEY,
   FUNDING_POLICY,
@@ -24,14 +27,26 @@ export {
   MAX_LEVEL,
   RARITY_BANDS,
   RARITY_BY_NAME,
+  SLOTS,
+  SLOTS_BY_KEY,
+  STAT_ICONS,
+  UI_ICONS,
 } from './tuning'
 export type {
   AchievementDef,
   CharacterClass,
   CharacterSheet,
+  EmptyReason,
+  EquipmentGlyph,
+  EquipmentInput,
+  EquippedItem,
+  EquippedSlot,
   Faction,
   FounderAggregate,
+  ItemDef,
   ProductInput,
   Rarity,
   RarityName,
+  SlotDef,
+  SlotKey,
 } from './types'
