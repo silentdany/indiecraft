@@ -186,7 +186,12 @@ finish() {
 
 TOTAL_STAGES=6
 
-SITE_URL="${SITE_URL:-https://indiecraft-ten.vercel.app}"
+# The production origin, and the one string this whole flow turns on: X compares
+# the redirect_uri against the registered callback character for character, so a
+# stale default here sends somebody through the portal wizard registering a URL
+# the app will never send. It was the generated .vercel.app hostname until the
+# domain landed.
+SITE_URL="${SITE_URL:-https://indiecraft.quest}"
 PROD_CALLBACK="$SITE_URL/api/auth/x/callback"
 LOCAL_CALLBACK="http://localhost:3000/api/auth/x/callback"
 
