@@ -45,7 +45,7 @@ export const metadata: Metadata = {
     template: '%s — World of Indiecraft',
   },
   description:
-    'Lifetime revenue is XP, MRR is item level, products are gear. A public armory for indie founders, built on TrustMRR data.',
+    'Lifetime revenue is XP, every stat is an equipment slot, and item level is the average of your gear. A public armory for indie founders, built on TrustMRR data.',
   applicationName: 'World of Indiecraft',
   // Defaults every page inherits; each one overrides the title and description
   // and lets its own opengraph-image.tsx supply the picture.

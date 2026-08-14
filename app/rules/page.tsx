@@ -61,13 +61,14 @@ export default async function Rules() {
           <br />
           level = the last tier reached in the table below
           <br />
-          iLvl = the level you would hold on twelve months of your current MRR
+          iLvl = the average item level of the gear you are wearing
         </code>
         <p className="muted">
-          The gap between the two is the only genuinely interesting number. Above your level, your
-          gear outruns your tier. Below it, you are a veteran in a trough. With no recurring revenue
-          there is no iLvl at all — the question has no answer, so the sheet says so rather than
-          printing a 1.
+          Level is what you have banked and cannot lose. Item level is what you are carrying right
+          now: every stat on your sheet is an equipment slot, each piece scores from where that stat
+          sits on its own ladder, and your iLvl is their mean — which is exactly how the game
+          computes it. A slot TrustMRR never filled is left out of the average rather than counted
+          as a zero, because no data is not a bad score.
         </p>
       </Frame>
 

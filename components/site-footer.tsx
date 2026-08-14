@@ -31,8 +31,8 @@ export async function SiteFooter() {
             </span>
           </Link>
           <p className="muted">
-            A public armory for indie founders. Lifetime revenue is XP, MRR is item level, products
-            are gear.
+            A public armory for indie founders. Lifetime revenue is XP, every stat is an equipment
+            slot, and item level is the average of your gear.
           </p>
         </div>
 

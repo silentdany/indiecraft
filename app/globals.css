@@ -691,47 +691,135 @@ a:hover {
   padding: 34px 20px 26px;
 }
 
-/* The wordmark apes the shape of the WoW logo — a small "World of" riding
-   above a much larger title — without borrowing a single pixel of it. */
-/* The mark carries the butter yellow the wordmark uses, so the two read as one
-   lockup rather than a badge sitting above a title. */
+/* --- The wordmark ---------------------------------------------------------
+   The lockup takes its SHAPE and its FINISH from the reference — a small
+   wide-tracked "World of" riding a much larger title, cast in gold with a dark
+   edge and a highlight across the upper third — and none of its artwork. The
+   letterforms are Cinzel, a Trajan-derived roman we already load, which is the
+   same family the reference's own type lives in. That is the whole trick: the
+   recognition comes from the treatment, not from the mark.
+
+   Everything below is CSS on live text. No image, so it stays sharp at any
+   size, it is selectable, and a screen reader still reads "INDIECRAFT". */
+
 .wordmark-crest {
   display: block;
-  margin: 0 auto 10px;
-  color: var(--ic-butter);
+  margin: 0 auto 6px;
+  color: var(--ic-gold-bright);
+  /* The mark sits in the same light as the letters below it. */
+  filter: drop-shadow(0 1px 0 rgba(0, 0, 0, 0.6));
 }
 
 .wordmark-over {
   margin: 0;
-  font-size: 12px;
-  letter-spacing: 0.42em;
-  text-indent: 0.42em; /* letter-spacing pads the right; put it back on the left */
-  color: var(--ic-frame);
+  font-size: clamp(11px, 2.1vw, 14px);
+  font-weight: 600;
+  letter-spacing: 0.52em;
+  text-indent: 0.52em; /* letter-spacing pads the right; put it back on the left */
+  color: var(--ic-gold);
+  text-shadow: 0 1px 0 rgba(0, 0, 0, 0.7);
 }
+
+/* The stack is three layers of the same word:
+     ::before  the dark cast edge, drawn thicker and sitting behind
+     the fill  a vertical gold gradient clipped to the glyphs
+     the shadow underneath, for the weight
+   `data-text` carries the word to the pseudo-element; the <h1> keeps the real
+   text so nothing about the document changes. */
 .wordmark {
-  margin: 2px 0 0;
-  font-size: clamp(34px, 9vw, 62px);
+  position: relative;
+  display: inline-block;
+  margin: 1px 0 0;
+  font-size: clamp(38px, 11vw, 88px);
+  font-weight: 500;
   line-height: 1;
-  letter-spacing: 0.1em;
-  text-indent: 0.1em;
+  letter-spacing: 0.08em;
+  text-indent: 0.08em;
   color: var(--ic-gold-bright);
 }
-/* Thin rules flanking the subtitle, the logo's horizontal bars, flattened. */
+
+.wordmark::before {
+  content: attr(data-text);
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  letter-spacing: inherit;
+  text-indent: inherit;
+  color: transparent;
+  -webkit-text-stroke: 0.055em #3a2a10;
+  /* Two soft shadows rather than one hard one: a cast letter has a contact
+     edge and a body, and a single offset reads as a sticker. */
+  text-shadow:
+    0 2px 1px rgba(0, 0, 0, 0.55),
+    0 6px 14px rgba(0, 0, 0, 0.55);
+}
+
+/*
+ * The metal itself. Guarded, because a clipped gradient that does not paint
+ * leaves transparent text on a dark page — the wordmark would simply vanish.
+ * The plain `color` above stays as the answer for anything that cannot do this.
+ */
+@supports (-webkit-background-clip: text) or (background-clip: text) {
+  .wordmark {
+    background-image: linear-gradient(
+      180deg,
+      #fff6d2 0%,
+      #ffd451 30%,
+      #f8b700 52%,
+      #b8791a 78%,
+      #8a5a17 100%
+    );
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+}
+
+/* The highlight band, which is what actually makes it read as polished metal
+   rather than as a gradient. A second clipped layer over the top third only. */
+.wordmark::after {
+  content: attr(data-text);
+  position: absolute;
+  inset: 0;
+  letter-spacing: inherit;
+  text-indent: inherit;
+  background-image: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.85) 0%,
+    rgba(255, 255, 255, 0.25) 26%,
+    rgba(255, 255, 255, 0) 42%
+  );
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  pointer-events: none;
+}
+
+/* Thin rules flanking the subtitle: the logo's horizontal bars, flattened. */
 .wordmark-under {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 12px;
-  margin: 10px 0 22px;
+  gap: 14px;
+  margin: 12px 0 22px;
+  letter-spacing: 0.28em;
+  text-indent: 0.28em;
   color: var(--ic-text-muted);
 }
 .wordmark-under::before,
 .wordmark-under::after {
   content: "";
   height: 1px;
-  width: clamp(24px, 12vw, 90px);
-  background: var(--ic-frame);
+  width: clamp(24px, 12vw, 110px);
+  background: linear-gradient(90deg, transparent, var(--ic-frame));
 }
+.wordmark-under::after {
+  background: linear-gradient(90deg, var(--ic-frame), transparent);
+}
+
+/* Nothing here animates, deliberately: the reference's own mark does not
+   shimmer, and a moving logo would be the one part of this page that looks
+   like a template. */
 
 .inspect {
   display: flex;
@@ -995,9 +1083,11 @@ a:hover {
 
 /* Every realm, on /rules, where the long tail of ones and twos is the point
    rather than clutter. */
+/* No top margin of its own — the note above it already carries the gap, and
+   the two were stacking into an inconsistent 26. */
 .realm-grid {
   list-style: none;
-  margin: 10px 0 0;
+  margin: 0;
   padding: 0;
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(178px, 1fr));
@@ -2312,17 +2402,38 @@ a.pager-num:hover {
 .rules-section {
   margin-top: 38px;
 }
+/* 16, not 10: the rule under a heading is a lid, and the first line of prose
+   was sitting on it. */
 .rules-section > h2 {
-  margin: 0 0 10px;
+  margin: 0 0 16px;
   font-size: 15px;
   letter-spacing: 0.16em;
   padding-bottom: 8px;
   border-bottom: 1px solid var(--ic-line-2);
 }
 
+/*
+ * A note leads a section, and it also follows the lists inside one.
+ *
+ * `margin: 0 0 16px` was written for the first case, where a top margin under
+ * the heading rule would be wrong — and it left every note that comes AFTER a
+ * table glued to it at zero pixels. Half the notes on this page are in the
+ * second position, which is what made the whole thing read as text stuck to
+ * furniture.
+ *
+ * Stated by what precedes it rather than with :first-child, because a note can
+ * follow another note (the realms block does), and those two want the ordinary
+ * paragraph gap, not the gap that separates prose from a table.
+ */
 .rules-note {
   max-width: 68ch;
-  margin: 0 0 16px;
+  margin: 0 0 18px;
+}
+ul + .rules-note,
+ol + .rules-note,
+.levels + .rules-note,
+.realm-grid + .rules-note {
+  margin-top: 26px;
 }
 
 .rules-formula code {

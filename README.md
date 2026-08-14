@@ -1,6 +1,6 @@
 # Indiecraft
 
-**A public armory for indie founders.** Your lifetime revenue is your XP, your MRR is your item level, your products are your gear. No account, nothing to install, one URL: `indiecraft.dev/c/yourhandle`.
+**A public armory for indie founders.** Your lifetime revenue is your XP, every stat you have is an equipment slot, and your item level is the average of what you are wearing. No account, nothing to install, one URL: `indiecraft.dev/c/yourhandle`.
 
 The numbers come from [TrustMRR](https://trustmrr.com). The formula is entirely in this repo — you don't have to take our word for it, you can read it.
 

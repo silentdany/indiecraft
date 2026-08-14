@@ -31,7 +31,7 @@ export default async function Image() {
           INDIECRAFT
         </div>
         <div style={{ display: 'flex', fontSize: 27, color: OG.text, marginTop: 14 }}>
-          Lifetime revenue is XP. MRR is item level. Your products are your gear.
+          Lifetime revenue is XP. Your MRR is a weapon. Item level is what you wear.
         </div>
 
         {stats && stats.characters > 0 && (

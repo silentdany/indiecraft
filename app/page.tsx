@@ -78,7 +78,7 @@ export default async function Home() {
           name: 'World of Indiecraft',
           url: site,
           description:
-            'A public armory for indie founders. Lifetime revenue is XP, MRR is item level, products are gear.',
+            'A public armory for indie founders. Lifetime revenue is XP, every stat is an equipment slot, and item level is the average of your gear.',
           potentialAction: {
             '@type': 'SearchAction',
             target: { '@type': 'EntryPoint', urlTemplate: `${site}/c/{handle}` },
@@ -90,13 +90,17 @@ export default async function Home() {
       <Frame className="hero">
         <BrandMark size={64} className="wordmark-crest" />
         <p className="wordmark-over label">World of</p>
-        <h1 className="wordmark serif">INDIECRAFT</h1>
+        {/* `data-text` feeds the two clipped layers in globals.css that make
+            the letters read as cast metal. The real text stays here. */}
+        <h1 className="wordmark serif" data-text="INDIECRAFT">
+          INDIECRAFT
+        </h1>
         <p className="wordmark-under label">The founders&rsquo; armory</p>
 
         <InspectSearch />
 
         <p className="hero-note muted">
-          Lifetime revenue is XP. MRR is item level. Your products are your gear.
+          Lifetime revenue is XP. Your MRR is a weapon. Item level is what you wear.
         </p>
       </Frame>
 

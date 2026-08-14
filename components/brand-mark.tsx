@@ -20,6 +20,20 @@
  * fill, no bevel, no metal — which is the house rule anyway, and what will let
  * this render inside the OG image where Satori supports nothing richer.
  */
+/**
+ * The field inside the ring.
+ *
+ * Part of the mark rather than whatever page it lands on: the reference's own
+ * mark carries its ground with it, and a ring that shows through to the surface
+ * behind it is a monogram, not a badge. It also means the mark stops depending
+ * on where it sits — the same object in the top bar, on the OG cards and in the
+ * favicon, where the route paints the same value edge to edge.
+ *
+ * Not `currentColor`: this one is fixed by definition. Callers recolour the
+ * metal, never the field.
+ */
+export const MARK_GROUND = '#1c2033'
+
 export function BrandMark({
   size = 40,
   className,
@@ -44,6 +58,11 @@ export function BrandMark({
       focusable="false"
       fill={color ?? 'currentColor'}
     >
+      {/* The field, first so everything else sits on it. Radius matches the
+          ring's centre line, so the stroke covers the disc's edge and there is
+          no seam at any size. */}
+      <circle cx="32" cy="32" r="19" fill={MARK_GROUND} />
+
       {/* The ring. */}
       <circle
         cx="32"
