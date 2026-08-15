@@ -3,7 +3,7 @@
  *
  *   pnpm verify-icons
  *
- * The table holds eighty-five hand-written slugs. A wrong one does not throw,
+ * The census holds 283 hand-written slugs. A wrong one does not throw,
  * does not fail a type-check and does not fail a test — it renders as a hole in
  * somebody's paper doll, on production, silently. This script is the only thing
  * standing between "I am fairly sure Lionheart Helm is inv_helmet_25" and that
@@ -12,31 +12,21 @@
  * Networked on purpose, and therefore NOT a vitest file: the suite has to run
  * offline and in CI without depending on Blizzard's CDN being up. Broken slugs
  * are a content error caught before commit, not a red build.
+ *
+ * This answers half the question. A slug that resolves is not a slug that is
+ * RIGHT — `inv_helmet_25` returns bytes whether or not it is the helm the name
+ * promises — and no script can tell the difference. `/icons` is the other half:
+ * the same census as pictures, laid out to be looked at. Run this, then look at
+ * that.
  */
 
-import {
-  ACHIEVEMENTS,
-  CLASS_ICONS,
-  EMPTY_SLOT_ICONS,
-  FACTIONS,
-  SLOTS,
-  STAT_ICONS,
-  UI_ICONS,
-} from '../engine/tuning'
+import { type IconEntry, iconCensusFlat } from '../lib/icon-census'
 import { ICON_OK_STATUS, wowIconUrl } from '../lib/wow-icon'
 
-/** Polite: the CDN owes us nothing, and eighty-five requests can wait. */
+/** Polite: the CDN owes us nothing, and 283 requests can wait. */
 const CONCURRENCY = 6
 
-interface Row {
-  slot: string
-  /** `${slotKey}:${rarity}` — the rung, shared by an item and all its variants. */
-  tier: string
-  name: string
-  after: string
-  icon: string
-  status: number | string
-}
+type Row = IconEntry & { status: number | string }
 
 async function head(url: string): Promise<number | string> {
   try {
@@ -51,79 +41,12 @@ async function head(url: string): Promise<number | string> {
 
 async function main() {
   /*
-   * Base entries and every class variant. The variants are the larger half now
-   * and the easier half to get wrong — nobody looks at a Monk's fist weapon
-   * unless they are a Monk, so a broken slug there could sit in production for
-   * months without a single report.
+   * The census is shared with `/icons`, which shows the same list as pictures.
+   * Two questions, one enumeration: this script asks whether a slug RESOLVES,
+   * the page asks whether it is the RIGHT picture. Keeping the list in one
+   * place is what stops a slug from falling between them.
    */
-  const items: Omit<Row, 'status'>[] = SLOTS.flatMap((slot) =>
-    slot.items.flatMap((item) => [
-      {
-        slot: slot.key,
-        tier: `${slot.key}:${item.rarity}`,
-        name: item.name,
-        after: item.after,
-        icon: item.icon,
-      },
-      ...Object.entries(item.variants ?? {}).map(([key, v]) => ({
-        slot: `${slot.key}/${key}`,
-        tier: `${slot.key}:${item.rarity}`,
-        name: v.name,
-        after: v.after,
-        icon: v.icon,
-      })),
-    ]),
-  )
-
-  /*
-   * Everything else the site borrows a picture for. Same reason as the items:
-   * these are hand-written slugs, and a wrong one is a hole in a grid that no
-   * type-check, test or build will ever complain about.
-   */
-  items.push(
-    ...ACHIEVEMENTS.map((a) => ({
-      slot: 'achievement',
-      tier: `achievement:${a.code}`,
-      name: a.label,
-      after: a.code,
-      icon: a.icon,
-    })),
-    ...Object.entries(CLASS_ICONS).map(([cls, icon]) => ({
-      slot: 'class',
-      tier: `class:${cls}`,
-      name: cls,
-      after: cls,
-      icon,
-    })),
-    ...Object.entries(EMPTY_SLOT_ICONS).map(([glyph, icon]) => ({
-      slot: 'empty',
-      tier: `empty:${glyph}`,
-      name: `empty ${glyph}`,
-      after: glyph,
-      icon,
-    })),
-    ...Object.entries(STAT_ICONS).map(([key, icon]) => ({
-      slot: 'stat',
-      tier: `stat:${key}`,
-      name: key,
-      after: key,
-      icon,
-    })),
-    ...Object.entries(UI_ICONS).map(([key, icon]) => ({
-      slot: 'ui',
-      tier: `ui:${key}`,
-      name: key,
-      after: key,
-      icon,
-    })),
-    ...FACTIONS.map((f) => ({
-      slot: 'faction',
-      tier: `faction:${f.key}`,
-      name: f.key,
-      after: f.key,
-      icon: f.icon,
-    })),
-  )
+  const items = iconCensusFlat()
 
   const results: Row[] = []
   let cursor = 0

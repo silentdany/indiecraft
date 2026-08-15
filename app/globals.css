@@ -3436,3 +3436,87 @@ a.share-copy {
 .timeline-when {
   white-space: nowrap;
 }
+
+/* ---------------------------------------------------------------------------
+ * Icon census — /icons, dev only.
+ *
+ * A review instrument, so it is denser than anything else on the site: the job
+ * is to hold one ladder in view at once and let a wrong picture break the
+ * pattern. Rungs are the rows, so reading down a section is reading a founder's
+ * progression, and a legendary that looks poorer than its rare shows up as a
+ * kink rather than as something you have to remember three scrolls later.
+ * ------------------------------------------------------------------------- */
+.census-count {
+  color: var(--ic-text-muted);
+  font-family: var(--ic-sans);
+  font-size: 12px;
+  letter-spacing: 0.06em;
+}
+.census-rungs {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.census-rung {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 8px;
+  background: var(--ic-well);
+  border: 1px solid var(--ic-line);
+}
+.census-cell {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  /* Wide enough for the longest item name on two lines, narrow enough that a
+     five-rung ladder still fits a laptop without horizontal scrolling. */
+  flex: 1 1 260px;
+  min-width: 0;
+  margin: 0;
+  padding: 6px 8px;
+  background: var(--ic-surface);
+  border: 1px solid var(--ic-line);
+}
+.census-cell figcaption {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+}
+.census-name {
+  font-size: 13px;
+  line-height: 1.25;
+}
+.census-variant {
+  margin-left: 6px;
+  padding: 0 4px;
+  color: var(--ic-text-muted);
+  font-family: var(--ic-sans);
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  border: 1px solid var(--ic-line-2);
+}
+.census-after,
+.census-slug {
+  overflow: hidden;
+  color: var(--ic-text-muted);
+  font-size: 11px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.census-after::before {
+  content: "← ";
+}
+.census-slug {
+  font-family: ui-monospace, monospace;
+  font-size: 10px;
+  /* Dimmer than the source item: you read the slug only once you have already
+     decided the picture is wrong, and it should not compete before then. */
+  opacity: 0.6;
+}
+.census-after:hover,
+.census-slug:hover {
+  color: var(--ic-gold);
+}
