@@ -17,6 +17,7 @@ function input(overrides: Partial<EquipmentInput> = {}): EquipmentInput {
     handle: 'test',
     revenueTotalUsd: 0,
     mrrUsd: 0,
+    last30dUsd: 0,
     customers: 0,
     activeSubscriptions: 0,
     nProducts: 0,
@@ -184,16 +185,34 @@ describe('empty slots', () => {
     }
   })
 
-  it('never penalises a missing retention signal', () => {
+  it('dresses the back slot off subscriptions alone', () => {
     // activeSubscriptions without customers is the commonest shape in the
-    // corpus, and it must not read as a founder whose customers all left.
+    // corpus. The cloak used to read retention — a ratio needing both numbers —
+    // which left 95.6% of characters bare here for want of a denominator.
+    // Reading the subscription count on its own is what makes this founder
+    // dressed rather than penalised for what TrustMRR never filled in.
     const thin = equipmentFor(input({ activeSubscriptions: 40, mrrUsd: 900 }))
-    expect(at(thin, 'back')).toMatchObject({ item: null, empty: 'unreported' })
-    // The same founder is still dressed everywhere the data does exist, and
-    // dressed off activeSubscriptions rather than off the customers TrustMRR
-    // never filled in.
+    expect(at(thin, 'back').item?.name).toBe('Cloak of Renewals')
     expect(at(thin, 'chest').item?.name).toBe('Robe of the Early Adopter')
     expect(at(thin, 'mainHand').item).not.toBeNull()
+  })
+
+  /*
+   * Three slots were retargeted because their stat was one almost nobody
+   * reports: a slot you can fill by working is an objective, a slot nobody can
+   * fill because TrustMRR has no field for it is scenery. Retention (4% of the
+   * corpus), Google impressions (5%) and visitors-on-Legs (18%) became
+   * subscriptions (45%), visitors (18%) and last-30-days revenue (52%).
+   */
+  it('reads the retargeted slots off their new stats', () => {
+    const slots = equipmentFor(
+      input({ activeSubscriptions: 120, visitors30d: 4_000, last30dUsd: 30_000 }),
+    )
+    expect(at(slots, 'back').item?.name).toBe('Cape of the Recurring Baron')
+    expect(at(slots, 'ranged').item?.name).toBe("Ashjre'thul, Crossbow of Inbound")
+    // Cloth, because the default fixture is an Adventurer: the variant axis
+    // still applies to a slot that changed what it measures.
+    expect(at(slots, 'legs').item?.name).toBe('Leggings of the Banner Month')
   })
 
   it('separates "not yet" from "never told"', () => {
@@ -437,6 +456,7 @@ describe('equipmentScore', () => {
       input({
         revenueTotalUsd: 500_000,
         mrrUsd: 30_000,
+        last30dUsd: 34_000,
         customers: 400,
         activeSubscriptions: 380,
         nProducts: 3,

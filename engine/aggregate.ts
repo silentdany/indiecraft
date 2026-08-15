@@ -13,6 +13,7 @@ const FACTIONS: readonly Faction[] = ['B2B', 'B2C', 'Both']
 export function aggregateFounder(handle: string, products: ProductInput[]): FounderAggregate {
   const revenueTotalUsd = sum(products, (p) => p.revenueTotalUsd)
   const mrrUsd = sum(products, (p) => p.mrrUsd)
+  const last30dUsd = sum(products, (p) => p.last30dUsd)
   const customers = sum(products, (p) => p.customers)
   const activeSubscriptions = sum(products, (p) => p.activeSubscriptions)
 
@@ -24,6 +25,7 @@ export function aggregateFounder(handle: string, products: ProductInput[]): Foun
     handle,
     revenueTotalUsd,
     mrrUsd,
+    last30dUsd,
     customers,
     activeSubscriptions,
     nProducts: products.length,

@@ -9,6 +9,7 @@ function product(overrides: Partial<ProductInput> = {}): ProductInput {
     iconUrl: null,
     revenueTotalUsd: 0,
     mrrUsd: 0,
+    last30dUsd: 0,
     customers: 0,
     activeSubscriptions: 0,
     growthMrr30d: null,

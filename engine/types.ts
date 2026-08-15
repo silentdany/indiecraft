@@ -7,6 +7,8 @@ export interface ProductInput {
   revenueTotalUsd: number
   /** revenue.mrr, in dollars. */
   mrrUsd: number
+  /** revenue.last30Days, in dollars. What actually came in this month. */
+  last30dUsd: number
   customers: number
   activeSubscriptions: number
   /** growthMRR30d: 8.5 means +8.5%. */
@@ -59,6 +61,13 @@ export interface FounderAggregate {
   handle: string
   revenueTotalUsd: number
   mrrUsd: number
+  /**
+   * Revenue over the last thirty days, summed across the products.
+   *
+   * Reported on 52% of founders — better coverage than anything else that was
+   * not already a slot, which is why it became one.
+   */
+  last30dUsd: number
   customers: number
   activeSubscriptions: number
   nProducts: number

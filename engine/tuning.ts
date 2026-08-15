@@ -1358,13 +1358,20 @@ export const SLOTS: readonly SlotDef[] = [
   {
     key: 'back',
     label: 'Back',
-    stat: 'Retention',
+    stat: 'Subscribers',
     glyph: 'cloak',
-    // Guarded exactly like the iLvl penalty: no retention signal is no cloak,
-    // never a grey one. TrustMRR reports customers: 0 on most listings, and a
-    // ratio computed from that is not a low number, it is no number.
-    read: (i) => (i.hasRetentionSignal ? i.retention * 100 : null),
-    format: percent,
+    /*
+     * This slot used to read retention, and it was the emptiest on the sheet:
+     * 95.6% of characters wore nothing here, because retention needs both
+     * customers and activeSubscriptions and TrustMRR reports the pair on 4% of
+     * listings. A slot nobody can fill is not an objective, it is decoration.
+     *
+     * activeSubscriptions on its own is reported on 45%, and it is the number
+     * the ratio was reaching for anyway — every cloak below was already named
+     * for renewals rather than for a percentage. The stat moved to meet them.
+     */
+    read: (i) => positive(i.activeSubscriptions),
+    format: count,
     items: [
       {
         rarity: 'common',
@@ -1375,37 +1382,28 @@ export const SLOTS: readonly SlotDef[] = [
       },
       {
         rarity: 'uncommon',
-        min: 30,
+        min: 15,
         name: 'Cloak of Renewals',
         icon: 'inv_misc_cape_08',
         after: 'Cloak of Flames',
       },
       {
         rarity: 'rare',
-        min: 50,
+        min: 100,
         name: 'Cape of the Recurring Baron',
         icon: 'inv_misc_cape_16',
         after: 'Cape of the Black Baron',
       },
       {
         rarity: 'epic',
-        min: 70,
+        min: 500,
         name: 'Shroud of Subscription',
         icon: 'inv_misc_cape_18',
         after: 'Shroud of Dominion',
       },
-      /*
-       * Retention is bimodal and the middle bands are nearly empty because of
-       * it: only 5% of the corpus reports a signal at all, and those that do
-       * cluster at ~100% (activeSubscriptions equal to customers, which is
-       * usually the same number twice rather than perfect retention). Epic
-       * lands at 0.1% and legendary at 1.7% as a result. That inversion is a
-       * property of the data, not of these numbers — moving them does not
-       * create founders at 75%.
-       */
       {
         rarity: 'legendary',
-        min: 85,
+        min: 2_000,
         name: 'Cloak of the Unchurned',
         icon: 'inv_misc_cape_20',
         after: 'Cloak of the Shrouded Mist',
@@ -1717,35 +1715,42 @@ export const SLOTS: readonly SlotDef[] = [
     key: 'legs',
     varyBy: 'armor',
     label: 'Legs',
-    stat: 'Visitors',
+    stat: 'Last 30 days',
     glyph: 'legplate',
-    read: (i) => positive(i.visitors30d),
-    format: count,
+    /*
+     * Visitors moved to the Ranged slot and the revenue of the last thirty days
+     * took its place, which is the trade this slot was always worth making:
+     * 17.9% of the corpus reports traffic, 52.0% reports what it earned last
+     * month. Every name below changed with it — these were traffic legs, and
+     * the traffic vocabulary went to the bow.
+     */
+    read: (i) => positive(i.last30dUsd),
+    format: usd,
     items: [
       {
         rarity: 'common',
         min: 1,
-        name: 'Patched Traffic Pants',
+        name: 'Patched Payout Pants',
         icon: 'inv_pants_09',
         after: 'Patched Pants',
         variants: {
           cloth: {
-            name: 'Patched Traffic Leggings',
+            name: 'Patched Payout Leggings',
             after: 'Patched Cloth Pants',
             icon: 'inv_pants_cloth_01',
           },
           leather: {
-            name: 'Patched Traffic Britches',
+            name: 'Patched Payout Britches',
             after: 'Patched Pants',
             icon: 'inv_pants_leather_01',
           },
           mail: {
-            name: 'Patched Traffic Legguards',
+            name: 'Patched Payout Legguards',
             after: 'Patched Mail Pants',
             icon: 'inv_pants_mail_01',
           },
           plate: {
-            name: 'Patched Traffic Legplates',
+            name: 'Patched Payout Legplates',
             after: 'Patched Plate Pants',
             icon: 'inv_pants_plate_01',
           },
@@ -1753,7 +1758,7 @@ export const SLOTS: readonly SlotDef[] = [
       },
       {
         rarity: 'uncommon',
-        min: 400,
+        min: 700,
         name: 'Leggings of the First Thousand',
         icon: 'inv_pants_11',
         after: 'Leggings of the Fang',
@@ -1782,58 +1787,57 @@ export const SLOTS: readonly SlotDef[] = [
       },
       {
         rarity: 'rare',
-        min: 3_300,
-        name: 'Trafficstalker Legguards',
+        min: 5_000,
+        name: 'Legguards of Steady Takings',
         icon: 'inv_pants_03',
         after: 'Cryptstalker Legguards',
         variants: {
           cloth: {
-            name: 'Trafficweave Leggings',
+            name: 'Leggings of Steady Takings',
             after: 'Cryptstalker Leggings',
             icon: 'inv_pants_cloth_09',
           },
           leather: {
-            name: 'Trafficstalker Britches',
+            name: 'Britches of Steady Takings',
             after: 'Cryptstalker Britches',
             icon: 'inv_pants_leather_09',
           },
           mail: {
-            name: 'Trafficstalker Legguards',
+            name: 'Legguards of Steady Takings',
             after: 'Cryptstalker Legguards',
             icon: 'inv_pants_mail_09',
           },
           plate: {
-            name: 'Trafficstalker Legplates',
+            name: 'Legplates of Steady Takings',
             after: 'Cryptstalker Legplates',
             icon: 'inv_pants_plate_09',
           },
         },
       },
-      // Server Full's threshold: 2.1%.
       {
         rarity: 'epic',
-        min: 22_000,
-        name: 'Legplates of the Front Page',
+        min: 30_000,
+        name: 'Legplates of the Banner Month',
         icon: 'inv_pants_04',
         after: 'Legplates of Might',
         variants: {
           cloth: {
-            name: 'Leggings of the Front Page',
+            name: 'Leggings of the Banner Month',
             after: 'Leggings of Might',
             icon: 'inv_pants_cloth_14',
           },
           leather: {
-            name: 'Britches of the Front Page',
+            name: 'Britches of the Banner Month',
             after: 'Britches of Might',
             icon: 'inv_pants_leather_11',
           },
           mail: {
-            name: 'Legguards of the Front Page',
+            name: 'Legguards of the Banner Month',
             after: 'Legguards of Might',
             icon: 'inv_pants_mail_11',
           },
           plate: {
-            name: 'Legplates of the Front Page',
+            name: 'Legplates of the Banner Month',
             after: 'Legplates of Might',
             icon: 'inv_pants_plate_11',
           },
@@ -1842,27 +1846,27 @@ export const SLOTS: readonly SlotDef[] = [
       {
         rarity: 'legendary',
         min: 100_000,
-        name: 'Legwraps of the Viral Ascendant',
+        name: 'Legwraps of the Six-Figure Month',
         icon: 'inv_pants_08',
         after: 'Leggings of Transcendence',
         variants: {
           cloth: {
-            name: 'Legwraps of the Viral Ascendant',
+            name: 'Legwraps of the Six-Figure Month',
             after: 'Leggings of Transcendence',
             icon: 'inv_pants_cloth_21',
           },
           leather: {
-            name: 'Legguards of the Viral Ascendant',
+            name: 'Legguards of the Six-Figure Month',
             after: 'Legguards of Transcendence',
             icon: 'inv_pants_leather_14',
           },
           mail: {
-            name: 'Legstrides of the Viral Ascendant',
+            name: 'Legstrides of the Six-Figure Month',
             after: 'Legstrides of Transcendence',
             icon: 'inv_pants_mail_14',
           },
           plate: {
-            name: 'Legplates of the Viral Ascendant',
+            name: 'Legplates of the Six-Figure Month',
             after: 'Legplates of Transcendence',
             icon: 'inv_pants_plate_14',
           },
@@ -2482,44 +2486,55 @@ export const SLOTS: readonly SlotDef[] = [
   {
     key: 'ranged',
     label: 'Ranged',
-    stat: 'Impressions',
+    stat: 'Visitors',
     glyph: 'longbow',
-    read: (i) => positive(i.googleImpressions30d),
+    /*
+     * Google impressions before this, on 5% of the corpus — the second-emptiest
+     * slot after the cloak. Visitors is the same idea one step closer to the
+     * founder (reach that actually arrived) and is reported three times as
+     * often, so the bow is now drawable by anybody who measures their traffic.
+     */
+    read: (i) => positive(i.visitors30d),
     format: count,
     items: [
       {
         rarity: 'common',
         min: 1,
-        name: 'Crude Sitemap Bow',
+        name: 'Crude Traffic Bow',
         icon: 'inv_weapon_bow_02',
         after: 'Crude Bow',
       },
       {
         rarity: 'uncommon',
-        min: 1_200,
-        name: 'Bow of Searing Queries',
+        min: 60,
+        name: 'Bow of Searing Sessions',
         icon: 'inv_weapon_bow_08',
         after: 'Bow of Searing Arrows',
       },
       {
         rarity: 'rare',
-        min: 12_000,
+        min: 500,
         name: "Seeker's Mark",
         icon: 'inv_weapon_crossbow_02',
         after: "Striker's Mark",
       },
-      // Summoned's threshold: 0.3%, the rarest achievement that is not a title.
       {
         rarity: 'epic',
-        min: 40_000,
-        name: "Ashjre'thul, Crossbow of Sitemaps",
+        min: 4_000,
+        name: "Ashjre'thul, Crossbow of Inbound",
         icon: 'inv_weapon_crossbow_10',
         after: "Ashjre'thul, Crossbow of Smiting",
       },
+      /*
+       * Common is thinner than uncommon here (4.6% against 5.4%) and that is
+       * the data rather than the rungs: a founder who measures their traffic at
+       * all rarely measures under sixty visitors a month. Every band above is
+       * strictly ordered, which is where the ordering has to hold.
+       */
       {
         rarity: 'legendary',
-        min: 250_000,
-        name: "Rank'delar, Longbow of the Ancient Crawlers",
+        min: 20_000,
+        name: "Rank'delar, Longbow of the Ancient Referrers",
         icon: 'inv_weapon_bow_13',
         after: "Rhok'delar, Longbow of the Ancient Keepers",
       },

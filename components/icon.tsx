@@ -389,7 +389,7 @@ const PATHS: Record<IconName, React.ReactNode> = {
   // how a paper doll has always worked.
   //
   // Every one is the garment, not a metaphor for the metric. The Back slot is a
-  // cloak, not a shield, even though it carries retention: the moment a slot
+  // cloak, not a shield, even though it carries subscribers: the moment a slot
   // stops looking like what goes there, the grid stops being a character.
 
   /** Head. A great helm: dome, brow bar, two slits. */

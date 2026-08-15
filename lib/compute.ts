@@ -51,6 +51,7 @@ export interface SnapshotRow {
    */
   raw: TrustmrrStartup | null
   mrr_cents: string | null
+  last30d_cents: string | null
   revenue_total_cents: string | null
   customers: number | null
   active_subscriptions: number | null
@@ -80,7 +81,7 @@ export async function computeAll(sql: postgres.Sql): Promise<ComputeReport> {
    */
   const rows = await sql<SnapshotRow[]>`
     select distinct on (s.source, s.startup_slug)
-      s.startup_slug, s.raw, s.mrr_cents, s.revenue_total_cents, s.customers,
+      s.startup_slug, s.raw, s.mrr_cents, s.last30d_cents, s.revenue_total_cents, s.customers,
       s.active_subscriptions, s.growth_mrr_30d, s.domain_rating, s.visitors_30d,
       s.funding_status, s.founded_date, s.founder_handle
     from snapshots s
@@ -504,6 +505,7 @@ export function toProduct(row: SnapshotRow): ProductInput {
     iconUrl: raw.icon ?? null,
     revenueTotalUsd: centsToUsd(Number(row.revenue_total_cents ?? 0)),
     mrrUsd: centsToUsd(Number(row.mrr_cents ?? 0)),
+    last30dUsd: centsToUsd(Number(row.last30d_cents ?? 0)),
     customers: row.customers ?? 0,
     activeSubscriptions: row.active_subscriptions ?? 0,
     growthMrr30d: row.growth_mrr_30d === null ? null : Number(row.growth_mrr_30d),
