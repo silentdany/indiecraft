@@ -130,18 +130,6 @@ export function computeCharacter(aggregate: FounderAggregate): CharacterSheet {
   }
 }
 
-/**
- * A product is a piece of gear: its item level is the level it would be worth
- * on its own, over twelve months of its MRR.
- *
- * Null for the same reason as iLvl: a product that does not bill monthly has
- * no monthly score, and printing "item level 1" beside it says the opposite.
- */
-export function itemLevelFor(productMrrUsd: number): number | null {
-  if (productMrrUsd === 0) return null
-  return levelFromXp(productMrrUsd * 12)
-}
-
 function clamp(value: number, min: number, max: number): number {
   return Math.min(Math.max(value, min), max)
 }

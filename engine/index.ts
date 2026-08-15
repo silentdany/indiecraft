@@ -4,13 +4,12 @@ export {
   classFrom,
   computeCharacter,
   ilvlFrom,
-  itemLevelFor,
   levelBounds,
   levelFromXp,
   rarityFor,
   xpFrom,
 } from './character'
-export { equipmentFor, equipmentInput, equipmentScore } from './equipment'
+export { equipmentFor, equipmentInput, equipmentScore, scoreOnSlot } from './equipment'
 export type { FactionDef } from './tuning'
 export {
   ACHIEVEMENTS,

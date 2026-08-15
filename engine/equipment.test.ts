@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { equipmentFor, equipmentInput, equipmentScore } from './equipment'
+import { equipmentFor, equipmentInput, equipmentScore, scoreOnSlot } from './equipment'
 import { CLASS_GEAR, RARITY_BY_NAME, SLOTS, SLOTS_BY_KEY } from './tuning'
 import type {
   CharacterClass,
@@ -388,6 +388,40 @@ describe('class variants', () => {
         expect(item.variants, `${slot.key} / ${item.name}`).toBeUndefined()
       }
     }
+  })
+})
+
+/**
+ * Products are gear in the older sense — they never enter the doll, but the
+ * sheet still gives them an item level, on the same page as the character's.
+ * Two numbers with one name have to come from one place.
+ */
+describe('scoreOnSlot', () => {
+  it('puts a product on the same scale as the gear beside it', () => {
+    // $30K of product MRR and $30K of founder MRR are the same fact, so they
+    // must score identically. They did not: the product used the pre-doll
+    // formula and the level bands, the weapon used the ladder.
+    const asProduct = scoreOnSlot('mainHand', 30_000)
+    const asWeapon = at(equipmentFor(input({ mrrUsd: 30_000 })), 'mainHand').item
+    expect(asProduct?.itemLevel).toBe(asWeapon?.itemLevel)
+    expect(asProduct?.rarity.name).toBe(asWeapon?.rarity.name)
+  })
+
+  it('rises with the number and stays inside the scale', () => {
+    const small = scoreOnSlot('mainHand', 200)
+    const large = scoreOnSlot('mainHand', 200_000)
+    expect(small?.itemLevel).toBeLessThan(large?.itemLevel ?? 0)
+    expect(large?.itemLevel).toBeLessThanOrEqual(60)
+  })
+
+  it('scores nothing below the first rung', () => {
+    // A product that does not bill monthly has no monthly score, which is the
+    // same answer the doll gives an unearned slot.
+    expect(scoreOnSlot('mainHand', 0)).toBeNull()
+  })
+
+  it('is null for a slot that does not exist', () => {
+    expect(scoreOnSlot('nope' as SlotKey, 100)).toBeNull()
   })
 })
 

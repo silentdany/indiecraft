@@ -4,7 +4,6 @@ import {
   classFrom,
   computeCharacter,
   ilvlFrom,
-  itemLevelFor,
   levelFromXp,
   rarityFor,
   xpFrom,
@@ -446,17 +445,6 @@ describe('full sheet', () => {
     expect(capped.level).toBe(60)
     expect(capped.progress.next).toBeNull()
     expect(capped.progress.ratio).toBe(1)
-  })
-})
-
-describe('gear', () => {
-  it('gives each product its own item level', () => {
-    expect(itemLevelFor(1_000)).toBe(30)
-    expect(itemLevelFor(10_000)).toBe(40)
-  })
-
-  it('gives no item level to a product that does not bill monthly', () => {
-    expect(itemLevelFor(0)).toBeNull()
   })
 })
 

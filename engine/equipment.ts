@@ -1,4 +1,11 @@
-import { CLASS_GEAR, ITEM_LEVEL_BANDS, ITEM_LEVEL_TOP_SPAN, RARITY_BY_NAME, SLOTS } from './tuning'
+import {
+  CLASS_GEAR,
+  ITEM_LEVEL_BANDS,
+  ITEM_LEVEL_TOP_SPAN,
+  RARITY_BY_NAME,
+  SLOTS,
+  SLOTS_BY_KEY,
+} from './tuning'
 import type {
   CharacterClass,
   EmptyReason,
@@ -10,6 +17,7 @@ import type {
   ItemVariant,
   Rarity,
   SlotDef,
+  SlotKey,
 } from './types'
 
 /**
@@ -146,6 +154,39 @@ function itemLevelOf(slot: SlotDef, worn: ItemDef, value: number): number {
   const t = hi <= lo ? 1 : clamp((Math.log1p(Math.max(value, 0)) - lo) / (hi - lo), 0, 1)
 
   return Math.round(band.from + t * (band.to - band.from))
+}
+
+/**
+ * Score a bare number against one slot's ladder.
+ *
+ * For the things that are gear in the older sense and never enter the doll:
+ * a founder's products, which the sheet still shows as items with an item
+ * level of their own.
+ *
+ * They used to be scored by `itemLevelFor` — the pre-doll formula, MRR
+ * projected over twelve months — and coloured by RARITY_BANDS, which index on
+ * a character's LEVEL. So a product card printed "item level 40" beside a
+ * character's iLvl of 37, two numbers with the same name and the same units on
+ * one page, derived from unrelated arithmetic. Nobody would have caught that
+ * from reading either side alone.
+ *
+ * Routing through a real slot is what makes them the same kind of number: a
+ * product is MRR, MRR is the Main Hand, and both now come out of the same five
+ * thresholds and the same quality bands.
+ *
+ * Null when the value is below the ladder's first rung, which for MRR means a
+ * product that does not bill monthly — the same answer the doll gives, and for
+ * the same reason.
+ */
+export function scoreOnSlot(
+  key: SlotKey,
+  value: number,
+): { itemLevel: number; rarity: Rarity } | null {
+  const slot = SLOTS_BY_KEY.get(key)
+  if (!slot) return null
+  const worn = highestWearable(slot.items, value)
+  if (worn === null) return null
+  return { itemLevel: itemLevelOf(slot, worn, value), rarity: rarityOf(worn) }
 }
 
 /**

@@ -6,9 +6,10 @@ import {
   equipmentFor,
   equipmentInput,
   equipmentScore,
-  itemLevelFor,
   levelBounds,
+  RARITY_BY_NAME,
   rarityFor,
+  scoreOnSlot,
 } from '@/engine'
 import type {
   AchievementProgressInput,
@@ -576,7 +577,16 @@ const getCharacterUncached = async (rawHandle: string): Promise<CharacterPage | 
     doll,
     equipment: products.map((p) => {
       const productMrr = Number(p.mrr_cents ?? 0) / 100
-      const itemLevel = itemLevelFor(productMrr)
+      /*
+       * The Main Hand ladder, which is where MRR already lives.
+       *
+       * A product's score and the character's iLvl are the same kind of number
+       * on the same page, so they have to come out of the same thresholds. They
+       * did not: this was `itemLevelFor` (MRR over twelve months, the formula
+       * the doll replaced) coloured by RARITY_BANDS, which index on a
+       * character's LEVEL rather than on an item's quality.
+       */
+      const score = scoreOnSlot('mainHand', productMrr)
       const raw = (p.raw ?? {}) as Record<string, unknown>
       const insights = (raw.startupInsights ?? {}) as Record<string, unknown>
       return {
@@ -585,8 +595,8 @@ const getCharacterUncached = async (rawHandle: string): Promise<CharacterPage | 
         website: p.website,
         iconUrl: p.icon_url,
         mrrUsd: productMrr,
-        itemLevel,
-        rarity: rarityFor(itemLevel ?? 1),
+        itemLevel: score?.itemLevel ?? null,
+        rarity: score?.rarity ?? RARITY_BY_NAME.get('common') ?? { name: 'common', hex: '#ffffff' },
         vcFunded: p.funding_status === 'vc-funded',
         description: asText(raw.description),
         category: asText(raw.category),
