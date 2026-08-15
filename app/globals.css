@@ -3291,6 +3291,37 @@ ol + .rules-note,
   margin-top: 14px;
 }
 
+/* --- The 404's two routes forward ---------------------------------------
+   Side by side rather than stacked: they are alternatives, not steps, and the
+   visitor knows within a word which column is theirs. */
+
+.missing-routes {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 2px;
+  background: var(--ic-line);
+  border: 1px solid var(--ic-line);
+}
+.missing-route {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 16px 18px 18px;
+  background: var(--ic-surface);
+}
+.missing-route > p {
+  margin: 0;
+  max-width: 46ch;
+  font-size: 13.5px;
+  line-height: 1.55;
+}
+/* Pushes the action to the bottom edge so the two columns line up even when
+   their paragraphs run to different lengths. */
+.missing-route > :last-child {
+  margin-top: auto;
+}
+
 /* --- The badge block ------------------------------------------------------
    The rendered badge and two buttons. The Markdown snippet is deliberately not
    shown: a one-line string in a horizontally scrolling code box is an ugly
