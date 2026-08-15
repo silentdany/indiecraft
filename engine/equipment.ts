@@ -74,7 +74,8 @@ function wearAs(slot: SlotDef, item: ItemDef, characterClass: CharacterClass): I
   if (!slot.varyBy || !item.variants) return base
 
   const gear = CLASS_GEAR[characterClass]
-  const key = slot.varyBy === 'armor' ? gear.armor : gear.weapon
+  const key =
+    slot.varyBy === 'armor' ? gear.armor : slot.varyBy === 'weapon' ? gear.weapon : gear.offHand
   return item.variants[key] ?? base
 }
 

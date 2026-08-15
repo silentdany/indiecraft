@@ -1,7 +1,14 @@
 import { describe, expect, it } from 'vitest'
 import { equipmentFor, equipmentInput, equipmentScore } from './equipment'
 import { CLASS_GEAR, RARITY_BY_NAME, SLOTS, SLOTS_BY_KEY } from './tuning'
-import type { CharacterClass, EquipmentInput, EquippedSlot, RarityName, SlotKey } from './types'
+import type {
+  CharacterClass,
+  EquipmentInput,
+  EquippedSlot,
+  RarityName,
+  SlotKey,
+  WeaponFamily,
+} from './types'
 
 const RARITY_ORDER: readonly RarityName[] = ['common', 'uncommon', 'rare', 'epic', 'legendary']
 
@@ -290,6 +297,73 @@ describe('class variants', () => {
       (c) => at(equipmentFor(input({ characterClass: c })), 'ring2').item?.name,
     )
     expect(new Set(rings)).toEqual(new Set(["Plain Founder's Band"]))
+  })
+
+  /**
+   * The proficiency table, as the game states it, asserted against what the
+   * doll actually hands out.
+   *
+   * This exists because the off hand was keyed on armour type — heavy armour
+   * means a shield, which sounds right and is false. Hunters wear mail and
+   * cannot equip a shield in any version of the game; neither can Evokers, who
+   * also wear mail. Shield proficiency does not follow armour class in either
+   * direction: Shamans wear mail and can, Rogues wear leather and cannot,
+   * Priests wear cloth and can.
+   *
+   * Written as data rather than as prose in a comment so the next person to add
+   * a class or move a slot to a new axis gets a failing test instead of a
+   * character holding something they could never pick up.
+   */
+  const CAN_SHIELD: Record<CharacterClass, boolean> = {
+    Warrior: true,
+    Paladin: true,
+    Shaman: true,
+    // Mail, and still no shield — the case that made this test necessary.
+    Hunter: false,
+    Evoker: false,
+    Rogue: false,
+    Monk: false,
+    Mage: false,
+    Warlock: false,
+    // True in the reference, but a caster's off hand is a tome here.
+    Priest: true,
+    // Not a class. The starting kit, which is a sword and a buckler.
+    Adventurer: true,
+  }
+
+  /** Every weapon family each class may actually wield. */
+  const CAN_WIELD: Record<CharacterClass, WeaponFamily[]> = {
+    Warrior: ['sword', 'axe', 'hammer', 'mace', 'dagger', 'staff', 'fist'],
+    Paladin: ['sword', 'axe', 'hammer', 'mace'],
+    Hunter: ['sword', 'axe', 'mace', 'hammer', 'dagger', 'staff', 'fist'],
+    Shaman: ['mace', 'hammer', 'axe', 'dagger', 'staff', 'fist'],
+    Evoker: ['dagger', 'staff', 'sword', 'axe', 'mace', 'hammer', 'fist'],
+    Rogue: ['dagger', 'sword', 'mace', 'hammer', 'axe', 'fist'],
+    Monk: ['fist', 'sword', 'axe', 'mace', 'hammer', 'staff', 'dagger'],
+    Mage: ['dagger', 'staff', 'sword'],
+    Warlock: ['dagger', 'staff', 'sword'],
+    Priest: ['mace', 'hammer', 'dagger', 'staff'],
+    Adventurer: ['sword', 'dagger', 'staff', 'mace', 'hammer', 'axe', 'fist'],
+  }
+
+  it('never arms a class with a weapon it cannot wield', () => {
+    for (const [cls, gear] of Object.entries(CLASS_GEAR) as [
+      CharacterClass,
+      (typeof CLASS_GEAR)[CharacterClass],
+    ][]) {
+      expect(CAN_WIELD[cls], `${cls} wielding a ${gear.weapon}`).toContain(gear.weapon)
+    }
+  })
+
+  it('never hands a shield to a class that cannot hold one', () => {
+    for (const [cls, gear] of Object.entries(CLASS_GEAR) as [
+      CharacterClass,
+      (typeof CLASS_GEAR)[CharacterClass],
+    ][]) {
+      if (gear.offHand === 'shield') {
+        expect(CAN_SHIELD[cls], `${cls} holding a shield`).toBe(true)
+      }
+    }
   })
 
   it('gives every variant a slug and a real derivation', () => {

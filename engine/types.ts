@@ -298,8 +298,23 @@ export type EquipmentGlyph =
  */
 export type ArmorType = 'cloth' | 'leather' | 'mail' | 'plate'
 
-/** The main hand only. Off hands key off ArmorType, which is how the game does it. */
 export type WeaponFamily = 'sword' | 'axe' | 'hammer' | 'dagger' | 'staff' | 'mace' | 'fist'
+
+/**
+ * What a class holds in its off hand — its own axis, not armour's.
+ *
+ * The off hand used to key off ArmorType on the reasoning that heavy armour
+ * means a shield. It does not, and the counterexample is the loudest one
+ * available: Hunters wear mail and CANNOT equip a shield in any version of the
+ * game. Nor can Evokers, who also wear mail. Shield proficiency simply does not
+ * follow armour class — Shamans wear mail and can, Rogues wear leather and
+ * cannot, Priests wear cloth and can.
+ *
+ *   shield — Warrior, Paladin, Shaman
+ *   blade  — the dual-wielders: Rogue, Monk, Hunter
+ *   focus  — a tome or orb, for the casters who hold neither
+ */
+export type OffHandKind = 'shield' | 'blade' | 'focus'
 
 /** A per-class swap of the three things that carry the joke. */
 export interface ItemVariant {
@@ -344,7 +359,7 @@ export interface ItemDef {
    * Warrior on the same MRR hold the same rung of the same ladder; what differs
    * is that one of them is holding a staff.
    */
-  variants?: Partial<Record<ArmorType | WeaponFamily, ItemVariant>>
+  variants?: Partial<Record<ArmorType | WeaponFamily | OffHandKind, ItemVariant>>
 }
 
 /**
@@ -360,11 +375,11 @@ export interface SlotDef {
    * Which axis this slot's `variants` are keyed on, if any.
    *
    * Stated per slot rather than inferred from the key so that adding a slot
-   * cannot silently get the wrong axis: an armour slot reads the class's
-   * ArmorType, the main hand reads its WeaponFamily, and a slot with no axis
-   * never looks at either.
+   * cannot silently get the wrong axis. There are three, and the third exists
+   * because the off hand was briefly keyed on armour and handed every Hunter a
+   * shield they cannot equip.
    */
-  varyBy?: 'armor' | 'weapon'
+  varyBy?: 'armor' | 'weapon' | 'offhand'
   /** 'Main Hand'. */
   label: string
   /** The stat this slot IS, in the words the sheet uses: 'Monthly revenue'. */

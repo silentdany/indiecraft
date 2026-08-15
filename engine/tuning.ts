@@ -21,6 +21,7 @@ import type {
   EquipmentGlyph,
   Faction,
   FounderAggregate,
+  OffHandKind,
   Rarity,
   RarityName,
   SlotDef,
@@ -1058,18 +1059,21 @@ export const ACHIEVEMENTS_BY_CODE = new Map(ACHIEVEMENTS.map((a) => [a.code, a])
  *   which is exactly what it means. Never leather or plate: those are choices,
  *   and this is the absence of one.
  */
-export const CLASS_GEAR: Record<CharacterClass, { armor: ArmorType; weapon: WeaponFamily }> = {
-  Warrior: { armor: 'plate', weapon: 'axe' },
-  Paladin: { armor: 'plate', weapon: 'hammer' },
-  Hunter: { armor: 'mail', weapon: 'sword' },
-  Shaman: { armor: 'mail', weapon: 'mace' },
-  Evoker: { armor: 'mail', weapon: 'staff' },
-  Rogue: { armor: 'leather', weapon: 'dagger' },
-  Monk: { armor: 'leather', weapon: 'fist' },
-  Mage: { armor: 'cloth', weapon: 'staff' },
-  Warlock: { armor: 'cloth', weapon: 'dagger' },
-  Priest: { armor: 'cloth', weapon: 'mace' },
-  Adventurer: { armor: 'cloth', weapon: 'sword' },
+export const CLASS_GEAR: Record<
+  CharacterClass,
+  { armor: ArmorType; weapon: WeaponFamily; offHand: OffHandKind }
+> = {
+  Warrior: { armor: 'plate', weapon: 'axe', offHand: 'shield' },
+  Paladin: { armor: 'plate', weapon: 'hammer', offHand: 'shield' },
+  Hunter: { armor: 'mail', weapon: 'sword', offHand: 'blade' },
+  Shaman: { armor: 'mail', weapon: 'mace', offHand: 'shield' },
+  Evoker: { armor: 'mail', weapon: 'staff', offHand: 'focus' },
+  Rogue: { armor: 'leather', weapon: 'dagger', offHand: 'blade' },
+  Monk: { armor: 'leather', weapon: 'fist', offHand: 'blade' },
+  Mage: { armor: 'cloth', weapon: 'staff', offHand: 'focus' },
+  Warlock: { armor: 'cloth', weapon: 'dagger', offHand: 'focus' },
+  Priest: { armor: 'cloth', weapon: 'mace', offHand: 'focus' },
+  Adventurer: { armor: 'cloth', weapon: 'sword', offHand: 'shield' },
 }
 
 const usd = (v: number) =>
@@ -2370,7 +2374,7 @@ export const SLOTS: readonly SlotDef[] = [
   },
   {
     key: 'offHand',
-    varyBy: 'armor',
+    varyBy: 'offhand',
     label: 'Off Hand',
     stat: 'Lifetime revenue',
     glyph: 'buckler',
@@ -2385,8 +2389,8 @@ export const SLOTS: readonly SlotDef[] = [
         icon: 'inv_shield_04',
         after: 'Battered Buckler',
         variants: {
-          cloth: { name: 'Battered Ledger', after: 'Battered Tome', icon: 'inv_misc_book_09' },
-          leather: {
+          focus: { name: 'Battered Ledger', after: 'Battered Tome', icon: 'inv_misc_book_09' },
+          blade: {
             name: 'Battered Ledger Shiv',
             after: 'Battered Dagger',
             icon: 'inv_weapon_shortblade_04',
@@ -2401,12 +2405,12 @@ export const SLOTS: readonly SlotDef[] = [
         icon: 'inv_shield_09',
         after: 'Drillborer Disk',
         variants: {
-          cloth: {
+          focus: {
             name: 'Codex of the Dashboard',
             after: 'Codex of Wisdom',
             icon: 'inv_misc_book_07',
           },
-          leather: {
+          blade: {
             name: 'Drillborer Shiv',
             after: 'Drillborer Disk',
             icon: 'inv_weapon_shortblade_08',
@@ -2421,12 +2425,12 @@ export const SLOTS: readonly SlotDef[] = [
         icon: 'inv_shield_21',
         after: 'Aegis of Preservation',
         variants: {
-          cloth: {
+          focus: {
             name: 'Tome of Runway',
             after: 'Tome of Preservation',
             icon: 'inv_misc_book_11',
           },
-          leather: {
+          blade: {
             name: 'Edge of Runway',
             after: 'Edge of Preservation',
             icon: 'inv_weapon_shortblade_12',
@@ -2441,12 +2445,12 @@ export const SLOTS: readonly SlotDef[] = [
         icon: 'inv_shield_18',
         after: 'Lei of the Lifegiver',
         variants: {
-          cloth: {
+          focus: {
             name: 'Grimoire of the Lifetime',
             after: 'Grimoire of the Lifegiver',
             icon: 'inv_misc_book_03',
           },
-          leather: {
+          blade: {
             name: 'Fang of the Lifetime',
             after: 'Fang of the Lifegiver',
             icon: 'inv_weapon_shortblade_18',
@@ -2461,12 +2465,12 @@ export const SLOTS: readonly SlotDef[] = [
         icon: 'inv_shield_30',
         after: "Perdition's Blade",
         variants: {
-          cloth: {
+          focus: {
             name: "Perdition's Codex",
             after: "Perdition's Blade",
             icon: 'inv_misc_book_05',
           },
-          leather: {
+          blade: {
             name: "Perdition's Shiv",
             after: "Perdition's Blade",
             icon: 'inv_weapon_shortblade_22',
