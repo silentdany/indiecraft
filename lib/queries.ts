@@ -1,3 +1,4 @@
+import { unstable_cache } from 'next/cache'
 import { cache } from 'react'
 import {
   ACHIEVEMENTS_BY_CODE,
@@ -27,6 +28,37 @@ import type { TrustmrrStartup } from '@/lib/trustmrr'
  * The guarantee is not "RLS refuses" but "no client ever touches the database".
  * Nothing in this file may become a client module.
  */
+
+/**
+ * The tag every cached read here carries, and the one /api/cron/compute
+ * invalidates the moment new data lands.
+ *
+ * One tag, not one per query: `characters` is rewritten wholesale by a single
+ * nightly job, so there is no such thing as the ladder being fresh while the
+ * class counts are stale. A finer set of tags would only be more ways to
+ * forget one.
+ */
+export const CORPUS_TAG = 'corpus'
+
+/**
+ * Cache a read of the corpus.
+ *
+ * /ladder and /compare take searchParams, which makes Next render them
+ * dynamically — their `revalidate` never applied and every visit re-ran every
+ * query. The ISR pages are covered by their own segment cache; these two are
+ * not, and they were the routes in the EMAXCONN report.
+ *
+ * `unstable_cache` and not `use cache`: the latter replaces it in Next 16 but
+ * requires the `cacheComponents` flag, which changes rendering across the whole
+ * app. That is the right migration and the wrong thing to do to a live site in
+ * the same change as an outage fix.
+ */
+function cachedCorpusRead<A extends unknown[], R>(
+  key: string,
+  read: (...args: A) => Promise<R>,
+): (...args: A) => Promise<R> {
+  return unstable_cache(read, [key], { tags: [CORPUS_TAG], revalidate: 86400 })
+}
 
 export interface EquipmentPiece {
   slug: string
@@ -197,7 +229,7 @@ interface CharacterRow {
  * page body of the same route concurrently, and both need the sheet. Without
  * it every character page reads the database twice for one visitor.
  */
-export const getCharacter = cache(async (rawHandle: string): Promise<CharacterPage | null> => {
+const getCharacterUncached = async (rawHandle: string): Promise<CharacterPage | null> => {
   const sql = db()
   const handle = rawHandle.replace(/^@/, '').toLowerCase()
 
@@ -573,7 +605,26 @@ export const getCharacter = cache(async (rawHandle: string): Promise<CharacterPa
     recentLevelUp: leveledRecently ? { level, at: leveledAt } : null,
     recentAchievement: freshAchievement ?? null,
   }
-})
+}
+
+/**
+ * The character sheet: six queries, and the single most requested route here.
+ *
+ * Two layers, and they do different jobs. `unstable_cache` is the one that
+ * matters — measured at 7.2 database transactions per request without it and
+ * effectively none with it, on a page whose data changes once a night. Next
+ * does not give this route segment ISR: it is a dynamic segment with no
+ * generateStaticParams, so every visit re-rendered and re-queried, which is why
+ * /c/[handle] was in the EMAXCONN report alongside /ladder.
+ *
+ * React `cache` stays wrapped around it because it solves a different problem:
+ * Next renders `generateMetadata` and the page body concurrently and both read
+ * the sheet, and per-request dedupe is what keeps that one call rather than
+ * two. Dropping it would double the miss cost of every cold render — and the
+ * item-level average depends on it, since that is what makes the doll agree
+ * with the class printed above it.
+ */
+export const getCharacter = cache(cachedCorpusRead('character', getCharacterUncached))
 
 export interface LadderRow {
   rank: number
@@ -667,7 +718,7 @@ export const LADDER_PAGE_SIZE = 100
  * from the row's position in the result. Those agree only on page one, and only
  * without a search: `index + 1` would tell the 400th founder they are 1st.
  */
-export async function getLadder(query: LadderQuery = {}): Promise<LadderPage> {
+async function getLadderUncached(query: LadderQuery = {}): Promise<LadderPage> {
   const sql = db()
   const realm = normalizeRealm(query.realm)
   const faction = asFaction(query.faction ?? null)
@@ -817,7 +868,7 @@ const PICKER_LIMIT = 8
  * Matching is server-side and prefix-weighted: somebody typing "zach" wants
  * @zachly before @seanzachary, and ranking by level alone would bury them.
  */
-export async function getComparableFounders(query?: string): Promise<PickerFounder[]> {
+async function getComparableFoundersUncached(query?: string): Promise<PickerFounder[]> {
   const sql = db()
   const q = query?.trim().replace(/^@/, '').toLowerCase() ?? ''
 
@@ -876,7 +927,7 @@ async function getComparableFoundersByHandles(handles: string[]): Promise<Picker
  * US and the tail is a dozen realms of one. Callers cap it; the query does not,
  * because a realm of one is still a page that founder will visit.
  */
-export async function getRealmCounts(): Promise<FacetCount[]> {
+async function getRealmCountsUncached(): Promise<FacetCount[]> {
   const sql = db()
   const rows = await sql<{ realm: string; n: number }[]>`
     select c.realm, count(*)::int as n
@@ -892,7 +943,7 @@ export async function getRealmCounts(): Promise<FacetCount[]> {
   })
 }
 
-export async function getFactionCounts(): Promise<FacetCount<Faction>[]> {
+async function getFactionCountsUncached(): Promise<FacetCount<Faction>[]> {
   const sql = db()
   const rows = await sql<{ faction: string; n: number }[]>`
     select c.faction, count(*)::int as n
@@ -1004,7 +1055,7 @@ export async function getRealmStats(): Promise<RealmStats> {
 }
 
 /** Class names, each with how many characters carry it. */
-export async function getClassCounts(): Promise<{ name: string; count: number }[]> {
+async function getClassCountsUncached(): Promise<{ name: string; count: number }[]> {
   const sql = db()
   const rows = await sql<{ class: string; n: number }[]>`
     select c.class, count(*)::int as n
@@ -1025,7 +1076,7 @@ export async function getClassCounts(): Promise<{ name: string; count: number }[
  * did the hard thing", and burying `legendary` under `lone_wolf` because 1,142
  * people have no cofounder would put the interesting filters last.
  */
-export async function getAchievementCounts(): Promise<FacetCount[]> {
+async function getAchievementCountsUncached(): Promise<FacetCount[]> {
   const sql = db()
   const rows = await sql<{ code: string; n: number }[]>`
     select a.code, count(*)::int as n
@@ -1120,3 +1171,23 @@ const realmRankOf = (row: {
   if (!realm || total < 2) return null
   return { realm, rank: Number(row.realm_rank ?? 0), total }
 }
+
+/*
+ * The corpus reads that /ladder and /compare make on every request.
+ *
+ * Six queries a visit between them, all against a table that changes once a
+ * night. Wrapped rather than inlined so the query bodies above stay readable as
+ * queries — and so the tag is applied in one place instead of six.
+ *
+ * getLadder keys on its arguments, which is what makes a filtered ladder and
+ * the bare one separate entries rather than one of them evicting the other.
+ */
+export const getLadder = cachedCorpusRead('ladder', getLadderUncached)
+export const getComparableFounders = cachedCorpusRead('picker', getComparableFoundersUncached)
+export const getRealmCounts = cachedCorpusRead('realm-counts', getRealmCountsUncached)
+export const getFactionCounts = cachedCorpusRead('faction-counts', getFactionCountsUncached)
+export const getClassCounts = cachedCorpusRead('class-counts', getClassCountsUncached)
+export const getAchievementCounts = cachedCorpusRead(
+  'achievement-counts',
+  getAchievementCountsUncached,
+)

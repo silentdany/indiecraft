@@ -1,5 +1,7 @@
+import { revalidatePath, revalidateTag } from 'next/cache'
 import { computeAll } from '@/lib/compute'
 import { directDb } from '@/lib/db'
+import { CORPUS_TAG } from '@/lib/queries'
 
 /**
  * Vercel Cron only keeps the compute step: it's fast, and everything is already
@@ -39,6 +41,31 @@ async function handle(request: Request) {
   const sql = directDb()
   try {
     const report = await computeAll(sql)
+
+    /*
+     * New numbers exist; nothing is showing them yet.
+     *
+     * Every page holds its render for a day now, because the data only changes
+     * here. That window is only tolerable if this call closes it — without it a
+     * founder who levelled up overnight would keep seeing yesterday's sheet
+     * until the ISR clock happened to expire.
+     *
+     * From a Route Handler both of these only MARK the entries; the work
+     * happens on the next visit to each path. That is the property that makes
+     * it safe to invalidate 2,600 character pages in one line — there is no
+     * stampede, just a cache miss for whoever arrives first.
+     *
+     * The dynamic-segment forms need their `type`, and passing the literal
+     * path instead silently revalidates nothing.
+     */
+    revalidateTag(CORPUS_TAG, 'max')
+    revalidatePath('/')
+    revalidatePath('/rules')
+    revalidatePath('/ladder')
+    revalidatePath('/compare')
+    revalidatePath('/c/[handle]', 'page')
+    revalidatePath('/c/[handle]/vs/[other]', 'page')
+
     return Response.json({ ok: true, ...report })
   } catch (error) {
     console.error('compute', error)

@@ -4,7 +4,7 @@ import { notFound } from 'next/navigation'
 import { Versus } from '@/components/versus'
 import { getCharacter } from '@/lib/queries'
 
-export const revalidate = 300
+export const revalidate = 86400
 
 type Props = { params: Promise<{ handle: string; other: string }> }
 

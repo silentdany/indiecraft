@@ -2,7 +2,14 @@ import type { Metadata } from 'next'
 import { ComparePicker } from '@/components/compare-picker'
 import { getComparableFounders, getPickerFounder } from '@/lib/queries'
 
-export const revalidate = 300
+/*
+ * This page reads searchParams, so Next renders it dynamically and this number
+ * has never done anything — it was quietly decorative while the route ran its
+ * queries on every single request. Kept at a real value for the day the page
+ * stops being dynamic; the caching that actually applies here is on the
+ * queries themselves, in lib/queries.ts.
+ */
+export const revalidate = 86400
 
 /**
  * `noindex`, on the same grounds as the comparison pages it leads to: this is a

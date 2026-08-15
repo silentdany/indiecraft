@@ -1,7 +1,8 @@
-import { revalidatePath } from 'next/cache'
+import { revalidatePath, revalidateTag } from 'next/cache'
 import { authMode, sessionHandle } from '@/lib/auth'
 import { clientIp, hashIp, OPT_OUT_MAX_PER_HOUR } from '@/lib/consent'
 import { db } from '@/lib/db'
+import { CORPUS_TAG } from '@/lib/queries'
 
 /**
  * Claim, unclaim, and remove — all three on the handle X said you are.
@@ -98,6 +99,21 @@ export async function POST(request: Request) {
     changed = result.count
   }
 
+  /*
+   * `expire: 0`, not the 'max' the compute route uses, and the difference is
+   * the whole point.
+   *
+   * 'max' marks a tag stale and serves the stale copy while fresh data loads —
+   * exactly right for a nightly recompute, where nobody is harmed by seeing
+   * yesterday's rank for one more request. It is exactly wrong here: the stale
+   * copy of somebody who just opted out is their sheet, still public, and
+   * "one more request" is the request that matters.
+   *
+   * Expiring the tag rather than only the paths because the reads behind those
+   * paths are cached too now. revalidatePath alone would re-render the page and
+   * the cached query would hand it the same removed founder.
+   */
+  revalidateTag(CORPUS_TAG, { expire: 0 })
   revalidatePath(`/c/${handle}`)
   revalidatePath('/ladder')
   revalidatePath('/sitemap.xml')

@@ -18,7 +18,21 @@ import {
 } from '@/lib/queries'
 import { realmLabel } from '@/lib/realm'
 
-export const revalidate = 300
+/*
+ * A day, not five minutes.
+ *
+ * Every number on this page comes from `characters`, and that table is written
+ * once a night by the compute step and never between. Re-rendering every five
+ * minutes re-ran the same queries against the same rows 288 times a day to
+ * produce the same bytes — and each render of a sheet is six queries, which is
+ * how a handful of visitors exhausted the pooler's client budget and took
+ * production down.
+ *
+ * The window is a backstop, not the freshness mechanism: /api/cron/compute
+ * revalidates these paths the moment new data lands, so the day only matters if
+ * that call never arrives.
+ */
+export const revalidate = 86400
 
 /**
  * The armory front.

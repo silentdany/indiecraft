@@ -35,7 +35,7 @@ import { consentActionsEnabled } from '@/lib/consent'
 import { getCharacter, wasRemoved } from '@/lib/queries'
 import { realmLabel } from '@/lib/realm'
 
-export const revalidate = 300
+export const revalidate = 86400
 
 type Props = { params: Promise<{ handle: string }> }
 
