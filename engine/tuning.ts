@@ -1335,7 +1335,7 @@ export const SLOTS: readonly SlotDef[] = [
         rarity: 'rare',
         min: 3,
         name: 'Trueship Shoulders',
-        icon: 'inv_shoulder_10',
+        icon: 'inv_shoulder_11',
         after: 'Truestrike Shoulders',
       },
       // Alt King's: 0.3% ship five.
@@ -1350,7 +1350,7 @@ export const SLOTS: readonly SlotDef[] = [
         rarity: 'legendary',
         min: 7,
         name: "Shipmaster's Pauldrons",
-        icon: 'inv_shoulder_40',
+        icon: 'inv_shoulder_10',
         after: "Dragonstalker's Spaulders",
       },
     ],
@@ -1405,7 +1405,7 @@ export const SLOTS: readonly SlotDef[] = [
         rarity: 'legendary',
         min: 2_000,
         name: 'Cloak of the Unchurned',
-        icon: 'inv_misc_cape_26',
+        icon: 'inv_misc_cape_naxxramas_01',
         after: 'Cloak of the Shrouded Mist',
       },
     ],
@@ -1946,7 +1946,7 @@ export const SLOTS: readonly SlotDef[] = [
           cloth: {
             name: 'Slippers of Compounding',
             after: 'Slippers of Avoidance',
-            icon: 'inv_boots_cloth_10',
+            icon: 'inv_boots_cloth_02',
           },
           leather: {
             name: 'Boots of Compounding',
@@ -1956,12 +1956,12 @@ export const SLOTS: readonly SlotDef[] = [
           mail: {
             name: 'Striders of Compounding',
             after: 'Striders of Avoidance',
-            icon: 'inv_boots_chain_10',
+            icon: 'inv_boots_chain_13',
           },
           plate: {
             name: 'Sabatons of Compounding',
             after: 'Sabatons of Avoidance',
-            icon: 'inv_boots_plate_10',
+            icon: 'inv_boots_plate_09',
           },
         },
       },

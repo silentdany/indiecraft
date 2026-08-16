@@ -168,12 +168,13 @@ const QUALITY_RANK: Record<string, number> = {
 
 const DEVIATIONS = new Map<string, string>([
   [
-    "Shipmaster's Pauldrons",
-    // Flipped on purpose. Truestrike wore an invented substitute and it read as
-    // wrong, which it was: a mid-rung item is judged against the source it
-    // names, while a legendary is the one rung that can carry a picture chosen
-    // for it. The real art goes to the item people will check.
-    "Dragonstalker's shares its art with Truestrike, which the rare rung wears",
+    'Trueship Shoulders',
+    // Truestrike and Dragonstalker's are one picture in the game and only one
+    // rung can wear it. It goes to Dragonstalker's, the more recognisable of
+    // the two. The substitute is inv_shoulder_11 — a Tier 3 shoulder, so it is
+    // Classic art rather than a number picked for being free, which is how
+    // inv_shoulder_40 (a Warlords Gladiator icon) briefly got in here.
+    "Truestrike shares its art with Dragonstalker's, which the legendary rung wears",
   ],
   [
     'Framework Gauntlets',
