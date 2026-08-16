@@ -2354,7 +2354,7 @@ export const SLOTS: readonly SlotDef[] = [
           hammer: {
             name: 'Sulfuras, Hand of the Roadmap',
             after: 'Sulfuras, Hand of Ragnaros',
-            icon: 'inv_hammer_20',
+            icon: 'inv_hammer_unique_sulfuras',
           },
           mace: {
             name: 'Hammer of Ten Thousand Tickets',
@@ -2535,7 +2535,7 @@ export const SLOTS: readonly SlotDef[] = [
         rarity: 'legendary',
         min: 20_000,
         name: "Rank'delar, Longbow of the Ancient Referrers",
-        icon: 'inv_weapon_bow_13',
+        icon: 'inv_weapon_bow_01',
         after: "Rhok'delar, Longbow of the Ancient Keepers",
       },
     ],

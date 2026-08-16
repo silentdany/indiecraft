@@ -160,7 +160,18 @@ export interface CharacterPage {
   /** How much of the paper doll is filled. See CharacterSheet.equipped. */
   equipped: { worn: number; total: number }
   characterClass: CharacterClass
+  /** The character's own quality, from its level. Colours the portrait. */
   rarity: Rarity
+  /**
+   * The gear score's quality, from the iLvl — a different band off a different
+   * number, and never the character's.
+   *
+   * The ladder worked this out first: level rarity paints the entire top 20 one
+   * colour, so a sheet that borrowed it for the iLvl was showing a founder the
+   * colour of their level twice and the colour of their gear never. Null when
+   * there is no iLvl to score.
+   */
+  ilvlRarity: Rarity | null
   xp: number
   nProducts: number
   mrrUsd: number
@@ -487,6 +498,7 @@ const getCharacterUncached = async (rawHandle: string): Promise<CharacterPage | 
     equipped: equipmentScore(doll),
     characterClass: row.class as CharacterClass,
     rarity: rarityFor(level),
+    ilvlRarity: row.ilvl === null ? null : rarityFor(row.ilvl),
     xp,
     nProducts: row.n_products,
     mrrUsd,

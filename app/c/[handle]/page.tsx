@@ -94,7 +94,7 @@ export default async function CharacterSheet({ params }: Props) {
     notFound()
   }
 
-  const { rarity, claimed } = character
+  const { rarity, ilvlRarity, claimed } = character
   const faction = character.profile.faction
     ? FACTIONS_BY_KEY.get(character.profile.faction)
     : undefined
@@ -223,7 +223,7 @@ export default async function CharacterSheet({ params }: Props) {
             <Figure
               value={character.ilvl === null ? '—' : String(character.ilvl)}
               label="Item level"
-              color={character.ilvl === null ? undefined : rarity.hex}
+              color={ilvlRarity?.hex}
             />
             <Figure
               value={String(character.achievements.length)}
@@ -269,10 +269,16 @@ export default async function CharacterSheet({ params }: Props) {
           </div>
 
           {/* The two numbers the sheet exists to state, under the portrait
-              exactly where level and item level sit in the reference. */}
+              exactly where level and item level sit in the reference.
+
+              Each wears its OWN band. The iLvl used to wear the level's, which
+              meant a level 60 read orange twice and never said anything about
+              the gear — and the level itself was a flat butter that agreed with
+              neither. One rule now: a number is coloured by the quality of the
+              number it is. */}
           <div className="doll-readouts">
             <span className="sheet-readout">
-              <span className="serif" style={{ color: 'var(--ic-butter)' }}>
+              <span className="serif" style={{ color: rarity.hex }}>
                 {character.level}
               </span>
               <span className="stat-name">Level</span>
@@ -280,7 +286,7 @@ export default async function CharacterSheet({ params }: Props) {
             <span className="sheet-readout">
               <span
                 className="serif"
-                style={{ color: character.ilvl === null ? 'var(--ic-text-muted)' : rarity.hex }}
+                style={{ color: ilvlRarity?.hex ?? 'var(--ic-text-muted)' }}
                 title={
                   character.ilvl === null
                     ? 'No recurring revenue, so there is no monthly score to give.'
