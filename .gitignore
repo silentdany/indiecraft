@@ -19,3 +19,6 @@ next-env.d.ts
 SPEC-v1.md
 .vercel
 .env*
+
+# Wiki answers for pnpm audit-icons. Re-fetchable, and nobody should diff it.
+.cache/

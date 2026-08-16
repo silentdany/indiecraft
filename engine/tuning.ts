@@ -1242,7 +1242,7 @@ export const SLOTS: readonly SlotDef[] = [
         rarity: 'rare',
         min: 30,
         name: 'Helm of the Indexed',
-        icon: 'inv_helmet_21',
+        icon: 'inv_helmet_18',
         after: 'Helm of the Lifegiver',
       },
       // The Authority achievement's threshold, on purpose: 4.3% of the corpus.
@@ -1250,7 +1250,7 @@ export const SLOTS: readonly SlotDef[] = [
         rarity: 'epic',
         min: 50,
         name: 'Linkheart Helm',
-        icon: 'inv_helmet_25',
+        icon: 'inv_helmet_36',
         after: 'Lionheart Helm',
       },
       // Renowned's threshold. 1.6%, and years of somebody else's links.
@@ -1282,14 +1282,14 @@ export const SLOTS: readonly SlotDef[] = [
         rarity: 'uncommon',
         min: 1_000,
         name: 'Pendant of the Timeline',
-        icon: 'inv_jewelry_necklace_13',
+        icon: 'inv_shield_21',
         after: 'Pendant of the Agate Shield',
       },
       {
         rarity: 'rare',
         min: 10_000,
         name: 'Choker of the Feed Lord',
-        icon: 'inv_jewelry_necklace_20',
+        icon: 'inv_jewelry_amulet_05',
         after: 'Choker of the Fire Lord',
       },
       {
@@ -1303,7 +1303,7 @@ export const SLOTS: readonly SlotDef[] = [
         rarity: 'legendary',
         min: 250_000,
         name: 'Talisman of Ephemeral Reach',
-        icon: 'inv_jewelry_necklace_28',
+        icon: 'inv_misc_stonetablet_11',
         after: 'Talisman of Ephemeral Power',
       },
     ],
@@ -1320,14 +1320,14 @@ export const SLOTS: readonly SlotDef[] = [
         rarity: 'common',
         min: 1,
         name: 'Rough Prototype Pads',
-        icon: 'inv_shoulder_09',
+        icon: 'inv_shoulder_01',
         after: 'Rough Leather Shoulders',
       },
       {
         rarity: 'uncommon',
         min: 2,
         name: 'Trueship Shoulders',
-        icon: 'inv_shoulder_02',
+        icon: 'inv_shoulder_04',
         after: 'Truestrike Shoulders',
       },
       // Multiboxer's threshold: 1.2% of the corpus ship three.
@@ -1335,7 +1335,7 @@ export const SLOTS: readonly SlotDef[] = [
         rarity: 'rare',
         min: 3,
         name: 'Mantle of the Second Domain',
-        icon: 'inv_shoulder_18',
+        icon: 'inv_shoulder_09',
         after: 'Mantle of Lost Hope',
       },
       // Alt King's: 0.3% ship five.
@@ -1343,14 +1343,14 @@ export const SLOTS: readonly SlotDef[] = [
         rarity: 'epic',
         min: 5,
         name: "Shipmaster's Pauldrons",
-        icon: 'inv_shoulder_24',
+        icon: 'inv_shoulder_10',
         after: "Dragonstalker's Spaulders",
       },
       {
         rarity: 'legendary',
         min: 7,
         name: 'Spaulders of the Endless Backlog',
-        icon: 'inv_shoulder_29',
+        icon: 'inv_shoulder_30',
         after: 'Spaulders of Valor',
       },
     ],
@@ -1391,21 +1391,21 @@ export const SLOTS: readonly SlotDef[] = [
         rarity: 'rare',
         min: 100,
         name: 'Cape of the Recurring Baron',
-        icon: 'inv_misc_cape_16',
+        icon: 'inv_misc_cape_20',
         after: 'Cape of the Black Baron',
       },
       {
         rarity: 'epic',
         min: 500,
         name: 'Shroud of Subscription',
-        icon: 'inv_misc_cape_18',
+        icon: 'inv_misc_cape_naxxramas_03',
         after: 'Shroud of Dominion',
       },
       {
         rarity: 'legendary',
         min: 2_000,
         name: 'Cloak of the Unchurned',
-        icon: 'inv_misc_cape_20',
+        icon: 'inv_misc_cape_26',
         after: 'Cloak of the Shrouded Mist',
       },
     ],
@@ -1425,7 +1425,7 @@ export const SLOTS: readonly SlotDef[] = [
         rarity: 'common',
         min: 1,
         name: 'Tattered Trial Vest',
-        icon: 'inv_chest_cloth_01',
+        icon: 'inv_shirt_black_01',
         after: 'Tattered Cloth Vest',
         variants: {
           cloth: {
@@ -1454,7 +1454,7 @@ export const SLOTS: readonly SlotDef[] = [
         rarity: 'uncommon',
         min: 15,
         name: 'Chestguard of the Early Adopter',
-        icon: 'inv_chest_chain_05',
+        icon: 'inv_chest_chain_03',
         after: 'Chestguard of the Fallen Hero',
         variants: {
           cloth: {
@@ -1483,7 +1483,7 @@ export const SLOTS: readonly SlotDef[] = [
         rarity: 'rare',
         min: 100,
         name: 'Robe of the Arch-Renewal',
-        icon: 'inv_chest_cloth_18',
+        icon: 'inv_chest_cloth_38',
         after: 'Robe of the Archmage',
         variants: {
           cloth: {
@@ -1513,7 +1513,7 @@ export const SLOTS: readonly SlotDef[] = [
         rarity: 'epic',
         min: 600,
         name: 'Breastplate of the Paid Tier',
-        icon: 'inv_chest_plate06',
+        icon: 'inv_chest_plate16',
         after: 'Breastplate of Might',
         variants: {
           cloth: {
@@ -1543,7 +1543,7 @@ export const SLOTS: readonly SlotDef[] = [
         rarity: 'legendary',
         min: 3_000,
         name: 'Cuirass of the Thousandfold Base',
-        icon: 'inv_chest_plate16',
+        icon: 'inv_chest_plate30',
         after: 'Cuirass of the Immortal',
         variants: {
           cloth: {
@@ -1564,7 +1564,7 @@ export const SLOTS: readonly SlotDef[] = [
           plate: {
             name: 'Cuirass of the Thousandfold Base',
             after: 'Cuirass of the Immortal',
-            icon: 'inv_chest_plate16',
+            icon: 'inv_chest_plate30',
           },
         },
       },
@@ -1589,14 +1589,14 @@ export const SLOTS: readonly SlotDef[] = [
         rarity: 'uncommon',
         min: 10,
         name: 'Bracers of Modest Pricing',
-        icon: 'inv_bracer_07',
+        icon: 'inv_bracer_19',
         after: 'Bracers of Might',
       },
       {
         rarity: 'rare',
         min: 50,
         name: 'Wristguards of Stable Pricing',
-        icon: 'inv_bracer_13',
+        icon: 'inv_bracer_04',
         after: 'Wristguards of Stability',
       },
       // The Rogue rule's ARPU floor, on purpose: few marks, big scores.
@@ -1611,7 +1611,7 @@ export const SLOTS: readonly SlotDef[] = [
         rarity: 'legendary',
         min: 1_000,
         name: 'Bracelets of the Annual Contract',
-        icon: 'inv_bracer_19',
+        icon: 'inv_bracer_13',
         after: 'Bracelets of Royal Redemption',
       },
     ],
@@ -1636,14 +1636,14 @@ export const SLOTS: readonly SlotDef[] = [
         rarity: 'uncommon',
         min: 3,
         name: 'Framework Gauntlets',
-        icon: 'inv_gauntlets_29',
+        icon: 'inv_gauntlets_04',
         after: 'Flameguard Gauntlets',
       },
       {
         rarity: 'rare',
         min: 6,
         name: 'DevOps Gauntlets',
-        icon: 'inv_gauntlets_25',
+        icon: 'inv_gauntlets_26',
         after: 'Devilsaur Gauntlets',
       },
       // Tinker's threshold: 3.9%. Edgemaster's is the best-known glove in the
@@ -1652,14 +1652,14 @@ export const SLOTS: readonly SlotDef[] = [
         rarity: 'epic',
         min: 10,
         name: 'Edge Runtime Handguards',
-        icon: 'inv_gauntlets_04',
+        icon: 'inv_gauntlets_30',
         after: "Edgemaster's Handguards",
       },
       {
         rarity: 'legendary',
         min: 15,
         name: 'Gauntlets of Infinite Migrations',
-        icon: 'inv_gauntlets_30',
+        icon: 'inv_gauntlets_31',
         after: 'Sacrificial Gauntlets',
       },
     ],
@@ -1690,7 +1690,7 @@ export const SLOTS: readonly SlotDef[] = [
         rarity: 'rare',
         min: 80,
         name: 'Girdle of Operational Fury',
-        icon: 'inv_belt_23',
+        icon: 'inv_belt_32',
         after: 'Girdle of Elemental Fury',
       },
       // Alchemist's threshold: 17.1%, which is high for an epic and correct —
@@ -1699,14 +1699,14 @@ export const SLOTS: readonly SlotDef[] = [
         rarity: 'epic',
         min: 95,
         name: 'Overhead Girdle',
-        icon: 'inv_belt_27',
+        icon: 'inv_belt_29',
         after: 'Onslaught Girdle',
       },
       {
         rarity: 'legendary',
         min: 100,
         name: 'Belt of Never-Ending Runway',
-        icon: 'inv_belt_29',
+        icon: 'inv_belt_26',
         after: 'Belt of Never-Ending Agony',
       },
     ],
@@ -1731,7 +1731,7 @@ export const SLOTS: readonly SlotDef[] = [
         rarity: 'common',
         min: 1,
         name: 'Patched Payout Pants',
-        icon: 'inv_pants_09',
+        icon: 'inv_pants_leather_38',
         after: 'Patched Pants',
         variants: {
           cloth: {
@@ -1789,7 +1789,7 @@ export const SLOTS: readonly SlotDef[] = [
         rarity: 'rare',
         min: 5_000,
         name: 'Legguards of Steady Takings',
-        icon: 'inv_pants_03',
+        icon: 'inv_pants_mail_15',
         after: 'Cryptstalker Legguards',
         variants: {
           cloth: {
@@ -1889,7 +1889,7 @@ export const SLOTS: readonly SlotDef[] = [
         rarity: 'common',
         min: 0,
         name: 'Worn Bootstraps',
-        icon: 'inv_boots_05',
+        icon: 'inv_boots_06',
         after: 'Worn Leather Boots',
         variants: {
           cloth: {
@@ -1914,7 +1914,7 @@ export const SLOTS: readonly SlotDef[] = [
         rarity: 'uncommon',
         min: 5,
         name: 'Windshear Runners',
-        icon: 'inv_boots_08',
+        icon: 'inv_boots_chain_05',
         after: 'Windshear Boots',
         variants: {
           cloth: {
@@ -1940,13 +1940,13 @@ export const SLOTS: readonly SlotDef[] = [
         rarity: 'rare',
         min: 20,
         name: 'Boots of Compounding',
-        icon: 'inv_boots_09',
+        icon: 'inv_boots_plate_05',
         after: 'Boots of Avoidance',
         variants: {
           cloth: {
             name: 'Slippers of Compounding',
             after: 'Slippers of Avoidance',
-            icon: 'inv_boots_cloth_05',
+            icon: 'inv_boots_cloth_10',
           },
           leather: {
             name: 'Boots of Compounding',
@@ -1956,12 +1956,12 @@ export const SLOTS: readonly SlotDef[] = [
           mail: {
             name: 'Striders of Compounding',
             after: 'Striders of Avoidance',
-            icon: 'inv_boots_chain_05',
+            icon: 'inv_boots_chain_10',
           },
           plate: {
             name: 'Sabatons of Compounding',
             after: 'Sabatons of Avoidance',
-            icon: 'inv_boots_plate_04',
+            icon: 'inv_boots_plate_10',
           },
         },
       },
@@ -1969,7 +1969,7 @@ export const SLOTS: readonly SlotDef[] = [
         rarity: 'epic',
         min: 100,
         name: 'Boots of the Hockey Stick',
-        icon: 'inv_boots_02',
+        icon: 'inv_boots_cloth_05',
         after: 'Boots of the Shadow Flame',
         variants: {
           cloth: {
@@ -1999,7 +1999,7 @@ export const SLOTS: readonly SlotDef[] = [
         rarity: 'legendary',
         min: 260,
         name: 'Sabatons of the Doubling',
-        icon: 'inv_boots_03',
+        icon: 'inv_boots_plate_04',
         after: 'Sabatons of Might',
         variants: {
           cloth: {
@@ -2038,14 +2038,14 @@ export const SLOTS: readonly SlotDef[] = [
         rarity: 'common',
         min: 0,
         name: 'Ring of the First Commit',
-        icon: 'inv_jewelry_ring_03',
+        icon: 'inv_jewelry_ring_14',
         after: 'Ring of Precision',
       },
       {
         rarity: 'uncommon',
         min: 1,
         name: 'Band of the First Year',
-        icon: 'inv_jewelry_ring_15',
+        icon: 'inv_jewelry_ring_17',
         after: 'Band of the Hierophant',
       },
       // Veteran's threshold: 17.5%.
@@ -2061,7 +2061,7 @@ export const SLOTS: readonly SlotDef[] = [
         rarity: 'epic',
         min: 5,
         name: "Master Bootstrapper's Ring",
-        icon: 'inv_jewelry_ring_35',
+        icon: 'inv_jewelry_ring_41',
         after: "Master Dragonslayer's Ring",
       },
       // Classic's: 0.9% have been at it a decade.
@@ -2069,7 +2069,7 @@ export const SLOTS: readonly SlotDef[] = [
         rarity: 'legendary',
         min: 10,
         name: 'Band of Recurring Eternity',
-        icon: 'inv_jewelry_ring_43',
+        icon: 'inv_jewelry_ring_15',
         after: 'Band of Accuria',
       },
     ],
@@ -2098,28 +2098,28 @@ export const SLOTS: readonly SlotDef[] = [
         rarity: 'uncommon',
         min: 1,
         name: 'Ring of Binding Equity',
-        icon: 'inv_jewelry_ring_12',
+        icon: 'inv_jewelry_ring_13',
         after: 'Ring of Binding',
       },
       {
         rarity: 'rare',
         min: 2,
         name: 'Circle of Applied Founders',
-        icon: 'inv_jewelry_ring_21',
+        icon: 'inv_jewelry_ring_37',
         after: 'Circle of Applied Force',
       },
       {
         rarity: 'epic',
         min: 3,
         name: 'Seal of the Cap Table',
-        icon: 'inv_jewelry_ring_30',
+        icon: 'inv_misc_armorkit_18',
         after: 'Seal of the Dawn',
       },
       {
         rarity: 'legendary',
         min: 5,
         name: 'Band of the Founding Council',
-        icon: 'inv_jewelry_ring_40',
+        icon: 'inv_jewelry_ring_16',
         after: 'Band of Servitude',
       },
     ],
@@ -2144,28 +2144,28 @@ export const SLOTS: readonly SlotDef[] = [
         rarity: 'uncommon',
         min: 2,
         name: 'Hand of Just Ship It',
-        icon: 'inv_misc_bone_10',
+        icon: 'inv_jewelry_talisman_01',
         after: 'Hand of Justice',
       },
       {
         rarity: 'rare',
         min: 3,
         name: 'Briarwood Backlog',
-        icon: 'inv_wand_01',
+        icon: 'inv_misc_root_02',
         after: 'Briarwood Reed',
       },
       {
         rarity: 'epic',
         min: 4,
         name: 'Insignia of the Second Market',
-        icon: 'inv_misc_note_01',
+        icon: 'inv_jewelry_trinketpvp_02',
         after: 'Insignia of the Horde',
       },
       {
         rarity: 'legendary',
         min: 5,
         name: 'Eye of the Portfolio',
-        icon: 'inv_misc_eye_01',
+        icon: 'inv_jewelry_talisman_08',
         after: 'Eye of the Beast',
       },
     ],
@@ -2191,28 +2191,28 @@ export const SLOTS: readonly SlotDef[] = [
         rarity: 'uncommon',
         min: 2,
         name: 'Drip Campaign Talisman',
-        icon: 'inv_misc_monsterfang_01',
+        icon: 'inv_misc_bone_06',
         after: 'Drake Fang Talisman',
       },
       {
         rarity: 'rare',
         min: 4,
         name: "Growth Loop's Breadth",
-        icon: 'inv_misc_stonetablet_05',
+        icon: 'inv_misc_armorkit_09',
         after: "Blackhand's Breadth",
       },
       {
         rarity: 'epic',
         min: 6,
         name: 'Diamond Distribution Flask',
-        icon: 'inv_potion_27',
+        icon: 'inv_drink_01',
         after: 'Diamond Flask',
       },
       {
         rarity: 'legendary',
         min: 10,
         name: 'Talisman of the Omnichannel',
-        icon: 'inv_misc_gem_variety_01',
+        icon: 'inv_jewelry_amulet_04',
         after: 'Talisman of Binding Shard',
       },
     ],
@@ -2251,7 +2251,7 @@ export const SLOTS: readonly SlotDef[] = [
         rarity: 'uncommon',
         min: 100,
         name: 'Kroll Blade',
-        icon: 'inv_sword_35',
+        icon: 'inv_sword_18',
         after: 'Krol Blade',
         variants: {
           sword: { name: 'Kroll Blade', after: 'Krol Blade', icon: 'inv_sword_35' },
@@ -2272,7 +2272,7 @@ export const SLOTS: readonly SlotDef[] = [
         rarity: 'rare',
         min: 1_000,
         name: "Quel'Server",
-        icon: 'inv_sword_38',
+        icon: 'inv_sword_01',
         after: "Quel'Serrar",
         variants: {
           sword: { name: "Quel'Server", after: "Quel'Serrar", icon: 'inv_sword_38' },
@@ -2390,7 +2390,7 @@ export const SLOTS: readonly SlotDef[] = [
         rarity: 'common',
         min: 1,
         name: 'Battered Ledger Buckler',
-        icon: 'inv_shield_04',
+        icon: 'inv_shield_09',
         after: 'Battered Buckler',
         variants: {
           focus: { name: 'Battered Ledger', after: 'Battered Tome', icon: 'inv_misc_book_09' },
@@ -2406,7 +2406,7 @@ export const SLOTS: readonly SlotDef[] = [
         rarity: 'uncommon',
         min: 1_000,
         name: 'Drillborer Dashboard',
-        icon: 'inv_shield_09',
+        icon: 'inv_shield_10',
         after: 'Drillborer Disk',
         variants: {
           focus: {
@@ -2426,7 +2426,7 @@ export const SLOTS: readonly SlotDef[] = [
         rarity: 'rare',
         min: 10_000,
         name: 'Aegis of Runway',
-        icon: 'inv_shield_21',
+        icon: 'spell_holy_blessingofprotection',
         after: 'Aegis of Preservation',
         variants: {
           focus: {
@@ -2446,7 +2446,7 @@ export const SLOTS: readonly SlotDef[] = [
         rarity: 'epic',
         min: 100_000,
         name: 'Lei of the Lifetime',
-        icon: 'inv_shield_18',
+        icon: 'inv_misc_flower_04',
         after: 'Lei of the Lifegiver',
         variants: {
           focus: {
@@ -2466,7 +2466,7 @@ export const SLOTS: readonly SlotDef[] = [
         rarity: 'legendary',
         min: 1_000_000,
         name: "Perdition's Ledger",
-        icon: 'inv_shield_30',
+        icon: 'inv_sword_48',
         after: "Perdition's Blade",
         variants: {
           focus: {
@@ -2508,21 +2508,21 @@ export const SLOTS: readonly SlotDef[] = [
         rarity: 'uncommon',
         min: 60,
         name: 'Bow of Searing Sessions',
-        icon: 'inv_weapon_bow_08',
+        icon: 'inv_weapon_bow_09',
         after: 'Bow of Searing Arrows',
       },
       {
         rarity: 'rare',
         min: 500,
         name: "Seeker's Mark",
-        icon: 'inv_weapon_crossbow_02',
+        icon: 'inv_weapon_bow_08',
         after: "Striker's Mark",
       },
       {
         rarity: 'epic',
         min: 4_000,
         name: "Ashjre'thul, Crossbow of Inbound",
-        icon: 'inv_weapon_crossbow_10',
+        icon: 'inv_weapon_crossbow_09',
         after: "Ashjre'thul, Crossbow of Smiting",
       },
       /*
