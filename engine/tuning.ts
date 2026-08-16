@@ -2346,10 +2346,18 @@ export const SLOTS: readonly SlotDef[] = [
         rarity: 'legendary',
         min: 100_000,
         name: 'Cashbringer',
-        icon: 'inv_sword_62',
-        after: 'Ashbringer',
+        icon: 'inv_sword_2h_ashbringercorrupt',
+        // Corrupted Ashbringer rather than Ashbringer: the pure one is a lore
+        // object and a GM item, and the blade a Classic founder could actually
+        // be holding is the one that came out of Naxxramas. Sourcing the name
+        // from the item that exists is also what makes this row auditable.
+        after: 'Corrupted Ashbringer',
         variants: {
-          sword: { name: 'Cashbringer', after: 'Ashbringer', icon: 'inv_sword_62' },
+          sword: {
+            name: 'Cashbringer',
+            after: 'Corrupted Ashbringer',
+            icon: 'inv_sword_2h_ashbringercorrupt',
+          },
           axe: { name: 'Growthhowl', after: 'Gorehowl', icon: 'inv_axe_21' },
           hammer: {
             name: 'Sulfuras, Hand of the Roadmap',
