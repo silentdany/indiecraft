@@ -1326,17 +1326,17 @@ export const SLOTS: readonly SlotDef[] = [
       {
         rarity: 'uncommon',
         min: 2,
-        name: 'Trueship Shoulders',
-        icon: 'inv_shoulder_04',
-        after: 'Truestrike Shoulders',
+        name: 'Mantle of the Second Domain',
+        icon: 'inv_shoulder_09',
+        after: 'Mantle of Lost Hope',
       },
       // Multiboxer's threshold: 1.2% of the corpus ship three.
       {
         rarity: 'rare',
         min: 3,
-        name: 'Mantle of the Second Domain',
-        icon: 'inv_shoulder_09',
-        after: 'Mantle of Lost Hope',
+        name: 'Trueship Shoulders',
+        icon: 'inv_shoulder_10',
+        after: 'Truestrike Shoulders',
       },
       // Alt King's: 0.3% ship five.
       {
@@ -1350,7 +1350,7 @@ export const SLOTS: readonly SlotDef[] = [
         rarity: 'legendary',
         min: 7,
         name: "Shipmaster's Pauldrons",
-        icon: 'inv_shoulder_10',
+        icon: 'inv_shoulder_40',
         after: "Dragonstalker's Spaulders",
       },
     ],
@@ -2190,16 +2190,16 @@ export const SLOTS: readonly SlotDef[] = [
       {
         rarity: 'uncommon',
         min: 2,
-        name: "Growth Loop's Breadth",
-        icon: 'inv_misc_armorkit_09',
-        after: "Blackhand's Breadth",
+        name: 'Diamond Distribution Flask',
+        icon: 'inv_drink_01',
+        after: 'Diamond Flask',
       },
       {
         rarity: 'rare',
         min: 4,
-        name: 'Diamond Distribution Flask',
-        icon: 'inv_drink_01',
-        after: 'Diamond Flask',
+        name: "Growth Loop's Breadth",
+        icon: 'inv_misc_armorkit_09',
+        after: "Blackhand's Breadth",
       },
       {
         rarity: 'epic',

@@ -168,8 +168,12 @@ const QUALITY_RANK: Record<string, number> = {
 
 const DEVIATIONS = new Map<string, string>([
   [
-    'Trueship Shoulders',
-    "Truestrike shares its art with Dragonstalker's, which the legendary rung wears",
+    "Shipmaster's Pauldrons",
+    // Flipped on purpose. Truestrike wore an invented substitute and it read as
+    // wrong, which it was: a mid-rung item is judged against the source it
+    // names, while a legendary is the one rung that can carry a picture chosen
+    // for it. The real art goes to the item people will check.
+    "Dragonstalker's shares its art with Truestrike, which the rare rung wears",
   ],
   [
     'Framework Gauntlets',
