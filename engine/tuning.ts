@@ -1234,24 +1234,24 @@ export const SLOTS: readonly SlotDef[] = [
       {
         rarity: 'uncommon',
         min: 10,
-        name: 'Backlink Hood',
-        icon: 'inv_helmet_41',
-        after: 'Bloodfang Hood',
+        name: 'Helm of the Indexed',
+        icon: 'inv_helmet_18',
+        after: 'Helm of the Lifegiver',
       },
       {
         rarity: 'rare',
         min: 30,
-        name: 'Helm of the Indexed',
-        icon: 'inv_helmet_18',
-        after: 'Helm of the Lifegiver',
+        name: 'Linkheart Helm',
+        icon: 'inv_helmet_36',
+        after: 'Lionheart Helm',
       },
       // The Authority achievement's threshold, on purpose: 4.3% of the corpus.
       {
         rarity: 'epic',
         min: 50,
-        name: 'Linkheart Helm',
-        icon: 'inv_helmet_36',
-        after: 'Lionheart Helm',
+        name: 'Backlink Hood',
+        icon: 'inv_helmet_41',
+        after: 'Bloodfang Hood',
       },
       // Renowned's threshold. 1.6%, and years of somebody else's links.
       {
