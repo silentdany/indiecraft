@@ -2366,7 +2366,7 @@ export const SLOTS: readonly SlotDef[] = [
             after: 'Atiesh, Greatstaff of the Guardian',
             icon: 'inv_staff_31',
           },
-          dagger: { name: 'Cashfall', after: 'Kingsfall', icon: 'inv_weapon_shortblade_30' },
+          dagger: { name: 'Cashfall', after: 'Kingsfall', icon: 'inv_weapon_shortblade_37' },
           fist: {
             name: 'Shipfury, Blessed Fists of the Bootstrapper',
             after: 'Thunderfury, Blessed Blade of the Windseeker',
@@ -2477,7 +2477,7 @@ export const SLOTS: readonly SlotDef[] = [
           blade: {
             name: "Perdition's Shiv",
             after: "Perdition's Blade",
-            icon: 'inv_weapon_shortblade_22',
+            icon: 'inv_sword_48',
           },
         },
       },
