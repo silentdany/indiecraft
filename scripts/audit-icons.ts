@@ -39,7 +39,7 @@ import { iconCensus } from '../lib/icon-census'
 
 /** Somebody else's wiki. One at a time, spaced out, and cache everything. */
 const PAUSE_MS = 250
-const CACHE_PATH = '.cache/wiki-icons.v2.json'
+const CACHE_PATH = '.cache/wiki-icons.v3.json'
 const UA = 'indiecraft-icon-audit/1.0 (paper doll icon verification; contact via repo)'
 
 /** What the wiki knows about one source item. */
@@ -53,7 +53,7 @@ interface Lookup {
    * name against the item we asked about makes a mis-attribution impossible
    * rather than merely unlikely.
    */
-  items: { icon: string; name: string }[]
+  items: { icon: string; name: string; quality: string }[]
   /** The page it actually landed on, after redirects. Null when there is none. */
   title: string | null
 }
@@ -118,9 +118,16 @@ async function lookup(name: string): Promise<Lookup> {
    */
   const items = [
     ...text.matchAll(
-      /tt-icon[^>]*>\s*<a href="\/wiki\/File:([A-Za-z0-9_]+)\.png[\s\S]{0,400}?<li class="name">[\s\S]{0,120}?<b>([^<]+)<\/b>/g,
+      /tt-icon[^>]*>\s*<a href="\/wiki\/File:([A-Za-z0-9_]+)\.png[\s\S]{0,400}?<li class="name">\s*<span class="qc-(\w+)">\s*<b>([^<]+)<\/b>/g,
     ),
-  ].map((m) => ({ icon: m[1]!.toLowerCase(), name: m[2]!.trim() }))
+  ].map((m) => ({
+    icon: m[1]!.toLowerCase(),
+    // `qc-epic` on the name is the game's own quality for this item, and the
+    // reason it is worth capturing: a rung that calls itself rare while its
+    // source item is a green is a ladder lying about its own colours.
+    quality: m[2]!.toLowerCase(),
+    name: m[3]!.trim(),
+  }))
   const found: Lookup = { items, title: body.parse?.title ?? null }
   cache[name] = found
   return found
@@ -149,12 +156,25 @@ const TITLE_OVERRIDES = new Map<string, string>([
   ['Crown of Destruction', 'Crown of Destruction (item)'],
 ])
 
+/** WoW's own quality order, so a ladder can be checked for climbing. */
+const QUALITY_RANK: Record<string, number> = {
+  poor: 0,
+  common: 1,
+  uncommon: 2,
+  rare: 3,
+  epic: 4,
+  legendary: 5,
+}
+
 const DEVIATIONS = new Map<string, string>([
   [
     'Trueship Shoulders',
-    "Truestrike shares its art with Dragonstalker's, which the epic rung wears",
+    "Truestrike shares its art with Dragonstalker's, which the legendary rung wears",
   ],
-  ['Framework Gauntlets', 'Flameguard shares its art with Devilsaur, which the rare rung wears'],
+  [
+    'Framework Gauntlets',
+    'Flameguard shares its art with Devilsaur, which the uncommon rung wears',
+  ],
 ])
 
 async function main() {
@@ -182,6 +202,10 @@ async function main() {
   const noTooltip: { name: string; after: string; title: string }[] = []
   const failed: string[] = []
   const deviated: string[] = []
+  /** slot -> the source quality of each rung, in table order. */
+  const ladders = new Map<string, (string | null)[]>()
+  const offQuality: { slot: string; name: string; after: string; ours: string; theirs: string }[] =
+    []
   let matched = 0
 
   for (const entry of entries) {
@@ -196,6 +220,17 @@ async function main() {
             .map((i) => i.icon),
         ),
       ]
+      const source = items.find((i) => i.name.toLowerCase() === entry.after.toLowerCase())
+      ladders.set(entry.slot, [...(ladders.get(entry.slot) ?? []), source?.quality ?? null])
+      if (source && entry.rarity && source.quality !== entry.rarity) {
+        offQuality.push({
+          slot: entry.slot,
+          name: entry.name,
+          after: entry.after,
+          ours: entry.rarity,
+          theirs: source.quality,
+        })
+      }
       if (title === null) noItem.push({ name: entry.name, after: entry.after })
       else if (theirs.length === 0) noTooltip.push({ name: entry.name, after: entry.after, title })
       else if (theirs.includes(entry.icon)) matched++
@@ -237,6 +272,47 @@ async function main() {
     }
   }
 
+  /*
+   * The check that survived the rest of this file being written.
+   *
+   * Classic's famous items are raid epics, so most rungs cite one and an exact
+   * quality match is not on offer — there is one legendary in the whole table
+   * and no legendary ring, belt or bracer exists to find. What IS on offer is
+   * that a ladder never goes DOWN: a legendary sourced from a blue sitting
+   * above an uncommon sourced from a purple is the ladder contradicting its own
+   * colours, and that was true of seven of the seventeen.
+   */
+  const inverted: string[] = []
+  for (const [slot, seq] of ladders) {
+    const known = seq.filter((q): q is string => q !== null).map((q) => QUALITY_RANK[q] ?? -1)
+    if (known.some((rank, i) => i > 0 && known[i - 1]! > rank)) {
+      inverted.push(`${slot.padEnd(10)} ${seq.map((q) => q ?? '—').join(' → ')}`)
+    }
+  }
+  if (inverted.length > 0) {
+    console.log(`\n${inverted.length} ladder(s) whose source quality goes DOWN as the rung rises:`)
+    for (const line of inverted) console.log(`  ${line}`)
+  }
+
+  /*
+   * Reported as a count, not a list, because closing this gap is not on offer.
+   * The table cites 44 epics and one legendary where an exact match would need
+   * seventeen of each quality: Classic's famous items are raid epics, and there
+   * is no legendary ring, belt or bracer in the game to find. What the ladders
+   * are held to is the check above — that they climb. Pass --all to read the
+   * gap anyway.
+   */
+  if (offQuality.length > 0) {
+    console.log(`\n${offQuality.length} on a rung that is not their source item's exact quality.`)
+    if (process.argv.includes('--all')) {
+      for (const q of offQuality.sort((a, b) => a.slot.localeCompare(b.slot))) {
+        console.log(
+          `  ${q.slot.padEnd(10)} ${q.ours.padEnd(10)} but ${q.theirs.padEnd(10)} ${q.name}  ← ${q.after}`,
+        )
+      }
+    }
+  }
+
   if (deviated.length > 0) {
     console.log(`\n${deviated.length} deliberately not wearing their source's icon:`)
     for (const name of deviated) console.log(`  ${name.padEnd(24)} ${DEVIATIONS.get(name)}`)
@@ -251,7 +327,7 @@ async function main() {
 
   if (failed.length > 0) console.log(`\n${failed.length} lookups failed:\n  ${failed.join('\n  ')}`)
 
-  if (wrong.length > 0) process.exitCode = 1
+  if (wrong.length > 0 || inverted.length > 0) process.exitCode = 1
   else console.log('\n✓ every checkable item wears its source item’s picture')
 }
 

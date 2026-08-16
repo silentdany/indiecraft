@@ -143,13 +143,13 @@ describe('equipmentFor', () => {
 
   it('picks the highest item whose floor the stat clears', () => {
     // $10,000 MRR is the epic floor exactly; $9,999 is still the rare below it.
-    // A Warrior swings an axe, which is what makes this one the Reaper.
+    // A Warrior swings an axe, so both names are that rung's axe variant.
     const warrior = { characterClass: 'Warrior' as const }
     expect(at(equipmentFor(input({ ...warrior, mrrUsd: 10_000 })), 'mainHand').item?.name).toBe(
-      'Arcanite Revenuer',
+      'Ravager of Retainers',
     )
     expect(at(equipmentFor(input({ ...warrior, mrrUsd: 9_999 })), 'mainHand').item?.name).toBe(
-      'Ravager of Retainers',
+      'Deprecated Hatchet',
     )
     expect(at(equipmentFor(input({ mrrUsd: 250_000 })), 'mainHand').item?.rarity.name).toBe(
       'legendary',
@@ -163,7 +163,7 @@ describe('equipmentFor', () => {
     ).item
     expect(main?.valueLabel).toBe('$1,500')
     // The upgrade is named as THIS class will wear it, not as the base entry.
-    expect(main?.next).toMatchObject({ name: 'Arcanite Revenuer', min: 10_000 })
+    expect(main?.next).toMatchObject({ name: 'Ravager of Retainers', min: 10_000 })
     expect(main?.next?.minLabel).toBe('$10K')
   })
 
@@ -192,7 +192,7 @@ describe('empty slots', () => {
     // Reading the subscription count on its own is what makes this founder
     // dressed rather than penalised for what TrustMRR never filled in.
     const thin = equipmentFor(input({ activeSubscriptions: 40, mrrUsd: 900 }))
-    expect(at(thin, 'back').item?.name).toBe('Cloak of Renewals')
+    expect(at(thin, 'back').item?.name).toBe('Cape of the Recurring Baron')
     expect(at(thin, 'chest').item?.name).toBe('Robe of the Early Adopter')
     expect(at(thin, 'mainHand').item).not.toBeNull()
   })
@@ -208,7 +208,7 @@ describe('empty slots', () => {
     const slots = equipmentFor(
       input({ activeSubscriptions: 120, visitors30d: 4_000, last30dUsd: 30_000 }),
     )
-    expect(at(slots, 'back').item?.name).toBe('Cape of the Recurring Baron')
+    expect(at(slots, 'back').item?.name).toBe('Cloak of Renewals')
     expect(at(slots, 'ranged').item?.name).toBe("Ashjre'thul, Crossbow of Inbound")
     // Cloth, because the default fixture is an Adventurer: the variant axis
     // still applies to a slot that changed what it measures.

@@ -1342,16 +1342,16 @@ export const SLOTS: readonly SlotDef[] = [
       {
         rarity: 'epic',
         min: 5,
-        name: "Shipmaster's Pauldrons",
-        icon: 'inv_shoulder_10',
-        after: "Dragonstalker's Spaulders",
+        name: 'Spaulders of the Endless Backlog',
+        icon: 'inv_shoulder_30',
+        after: 'Spaulders of Valor',
       },
       {
         rarity: 'legendary',
         min: 7,
-        name: 'Spaulders of the Endless Backlog',
-        icon: 'inv_shoulder_30',
-        after: 'Spaulders of Valor',
+        name: "Shipmaster's Pauldrons",
+        icon: 'inv_shoulder_10',
+        after: "Dragonstalker's Spaulders",
       },
     ],
   },
@@ -1383,16 +1383,16 @@ export const SLOTS: readonly SlotDef[] = [
       {
         rarity: 'uncommon',
         min: 15,
-        name: 'Cloak of Renewals',
-        icon: 'inv_misc_cape_08',
-        after: 'Cloak of Flames',
+        name: 'Cape of the Recurring Baron',
+        icon: 'inv_misc_cape_20',
+        after: 'Cape of the Black Baron',
       },
       {
         rarity: 'rare',
         min: 100,
-        name: 'Cape of the Recurring Baron',
-        icon: 'inv_misc_cape_20',
-        after: 'Cape of the Black Baron',
+        name: 'Cloak of Renewals',
+        icon: 'inv_misc_cape_08',
+        after: 'Cloak of Flames',
       },
       {
         rarity: 'epic',
@@ -1588,24 +1588,24 @@ export const SLOTS: readonly SlotDef[] = [
       {
         rarity: 'uncommon',
         min: 10,
-        name: 'Bracers of Modest Pricing',
-        icon: 'inv_bracer_19',
-        after: 'Bracers of Might',
+        name: 'Enterprise Armbraces',
+        icon: 'inv_bracer_17',
+        after: 'Battleborn Armbraces',
       },
       {
         rarity: 'rare',
         min: 50,
-        name: 'Wristguards of Stable Pricing',
-        icon: 'inv_bracer_04',
-        after: 'Wristguards of Stability',
+        name: 'Bracers of Modest Pricing',
+        icon: 'inv_bracer_19',
+        after: 'Bracers of Might',
       },
       // The Rogue rule's ARPU floor, on purpose: few marks, big scores.
       {
         rarity: 'epic',
         min: 300,
-        name: 'Enterprise Armbraces',
-        icon: 'inv_bracer_17',
-        after: 'Battleborn Armbraces',
+        name: 'Wristguards of Stable Pricing',
+        icon: 'inv_bracer_04',
+        after: 'Wristguards of Stability',
       },
       {
         rarity: 'legendary',
@@ -1635,32 +1635,32 @@ export const SLOTS: readonly SlotDef[] = [
       {
         rarity: 'uncommon',
         min: 3,
-        name: 'Framework Gauntlets',
-        icon: 'inv_gauntlets_04',
-        after: 'Flameguard Gauntlets',
+        name: 'DevOps Gauntlets',
+        icon: 'inv_gauntlets_26',
+        after: 'Devilsaur Gauntlets',
       },
       {
         rarity: 'rare',
         min: 6,
-        name: 'DevOps Gauntlets',
-        icon: 'inv_gauntlets_26',
-        after: 'Devilsaur Gauntlets',
+        name: 'Gauntlets of Infinite Migrations',
+        icon: 'inv_gauntlets_31',
+        after: 'Sacrificial Gauntlets',
       },
       // Tinker's threshold: 3.9%. Edgemaster's is the best-known glove in the
       // game and "edge runtime" is a real thing people deploy to.
       {
         rarity: 'epic',
         min: 10,
-        name: 'Edge Runtime Handguards',
-        icon: 'inv_gauntlets_30',
-        after: "Edgemaster's Handguards",
+        name: 'Framework Gauntlets',
+        icon: 'inv_gauntlets_04',
+        after: 'Flameguard Gauntlets',
       },
       {
         rarity: 'legendary',
         min: 15,
-        name: 'Gauntlets of Infinite Migrations',
-        icon: 'inv_gauntlets_31',
-        after: 'Sacrificial Gauntlets',
+        name: 'Edge Runtime Handguards',
+        icon: 'inv_gauntlets_30',
+        after: "Edgemaster's Handguards",
       },
     ],
   },
@@ -2097,23 +2097,23 @@ export const SLOTS: readonly SlotDef[] = [
       {
         rarity: 'uncommon',
         min: 1,
+        name: 'Seal of the Cap Table',
+        icon: 'inv_misc_armorkit_18',
+        after: 'Seal of the Dawn',
+      },
+      {
+        rarity: 'rare',
+        min: 2,
         name: 'Ring of Binding Equity',
         icon: 'inv_jewelry_ring_13',
         after: 'Ring of Binding',
       },
       {
-        rarity: 'rare',
-        min: 2,
+        rarity: 'epic',
+        min: 3,
         name: 'Circle of Applied Founders',
         icon: 'inv_jewelry_ring_37',
         after: 'Circle of Applied Force',
-      },
-      {
-        rarity: 'epic',
-        min: 3,
-        name: 'Seal of the Cap Table',
-        icon: 'inv_misc_armorkit_18',
-        after: 'Seal of the Dawn',
       },
       {
         rarity: 'legendary',
@@ -2190,23 +2190,23 @@ export const SLOTS: readonly SlotDef[] = [
       {
         rarity: 'uncommon',
         min: 2,
-        name: 'Drip Campaign Talisman',
-        icon: 'inv_misc_bone_06',
-        after: 'Drake Fang Talisman',
-      },
-      {
-        rarity: 'rare',
-        min: 4,
         name: "Growth Loop's Breadth",
         icon: 'inv_misc_armorkit_09',
         after: "Blackhand's Breadth",
       },
       {
-        rarity: 'epic',
-        min: 6,
+        rarity: 'rare',
+        min: 4,
         name: 'Diamond Distribution Flask',
         icon: 'inv_drink_01',
         after: 'Diamond Flask',
+      },
+      {
+        rarity: 'epic',
+        min: 6,
+        name: 'Drip Campaign Talisman',
+        icon: 'inv_misc_bone_06',
+        after: 'Drake Fang Talisman',
       },
       {
         rarity: 'legendary',
@@ -2250,68 +2250,6 @@ export const SLOTS: readonly SlotDef[] = [
       {
         rarity: 'uncommon',
         min: 100,
-        name: 'Kroll Blade',
-        icon: 'inv_sword_18',
-        after: 'Krol Blade',
-        variants: {
-          sword: { name: 'Kroll Blade', after: 'Krol Blade', icon: 'inv_sword_35' },
-          axe: { name: 'Deprecated Hatchet', after: 'Deadly Hatchet', icon: 'inv_axe_04' },
-          hammer: { name: 'Vesting Fist', after: "Verigan's Fist", icon: 'inv_hammer_08' },
-          mace: { name: 'Mass of Metrics', after: 'Mass of McGowan', icon: 'inv_mace_08' },
-          staff: { name: 'Staff of Standups', after: 'Staff of Jordan', icon: 'inv_staff_13' },
-          dagger: { name: 'Shadowbank', after: 'Shadowfang', icon: 'inv_weapon_shortblade_11' },
-          fist: {
-            name: 'Cold Outreach Knuckles',
-            after: 'Cold Forged Knuckles',
-            icon: 'inv_weapon_hand_03',
-          },
-        },
-      },
-      // Ramen Profitable's threshold: 16.5%.
-      {
-        rarity: 'rare',
-        min: 1_000,
-        name: "Quel'Server",
-        icon: 'inv_sword_01',
-        after: "Quel'Serrar",
-        variants: {
-          sword: { name: "Quel'Server", after: "Quel'Serrar", icon: 'inv_sword_38' },
-          axe: { name: 'Ravager of Retainers', after: 'Ravager', icon: 'inv_axe_14' },
-          hammer: {
-            name: 'Hammer of the Northern Launch',
-            after: 'Hammer of the Northern Wind',
-            icon: 'inv_hammer_05',
-          },
-          mace: { name: 'Sceptre of Standups', after: 'Sceptre of Smiting', icon: 'inv_mace_10' },
-          staff: {
-            name: 'Serpent Staff of Shipping',
-            after: 'Serpentine Staff',
-            icon: 'inv_staff_20',
-          },
-          dagger: {
-            name: 'Cohort Tooth',
-            after: 'Core Hound Tooth',
-            icon: 'inv_weapon_shortblade_15',
-          },
-          fist: {
-            name: 'Claw of the Cohort',
-            after: 'Claw of the Black Drake',
-            icon: 'inv_weapon_hand_07',
-          },
-        },
-      },
-      /*
-       * Raid Boss Slayer's threshold: 9.3%.
-       *
-       * "Arcanite Refunder" was the first draft and read better as a joke. It is
-       * out under the never-demeaning rule: a refund is a bad day, and this is
-       * the item somebody screenshots on their best month. "Revenuer" keeps the
-       * -er cadence and the two opening syllables, which is all the recognition
-       * the derivation needs.
-       */
-      {
-        rarity: 'epic',
-        min: 10_000,
         name: 'Arcanite Revenuer',
         icon: 'inv_axe_09',
         after: 'Arcanite Reaper',
@@ -2338,6 +2276,68 @@ export const SLOTS: readonly SlotDef[] = [
             name: 'Fists of the Founder',
             after: 'Fists of the Unrelenting',
             icon: 'inv_weapon_hand_10',
+          },
+        },
+      },
+      // Ramen Profitable's threshold: 16.5%.
+      {
+        rarity: 'rare',
+        min: 1_000,
+        name: 'Kroll Blade',
+        icon: 'inv_sword_18',
+        after: 'Krol Blade',
+        variants: {
+          sword: { name: 'Kroll Blade', after: 'Krol Blade', icon: 'inv_sword_35' },
+          axe: { name: 'Deprecated Hatchet', after: 'Deadly Hatchet', icon: 'inv_axe_04' },
+          hammer: { name: 'Vesting Fist', after: "Verigan's Fist", icon: 'inv_hammer_08' },
+          mace: { name: 'Mass of Metrics', after: 'Mass of McGowan', icon: 'inv_mace_08' },
+          staff: { name: 'Staff of Standups', after: 'Staff of Jordan', icon: 'inv_staff_13' },
+          dagger: { name: 'Shadowbank', after: 'Shadowfang', icon: 'inv_weapon_shortblade_11' },
+          fist: {
+            name: 'Cold Outreach Knuckles',
+            after: 'Cold Forged Knuckles',
+            icon: 'inv_weapon_hand_03',
+          },
+        },
+      },
+      /*
+       * Raid Boss Slayer's threshold: 9.3%.
+       *
+       * "Arcanite Refunder" was the first draft and read better as a joke. It is
+       * out under the never-demeaning rule: a refund is a bad day, and this is
+       * the item somebody screenshots on their best month. "Revenuer" keeps the
+       * -er cadence and the two opening syllables, which is all the recognition
+       * the derivation needs.
+       */
+      {
+        rarity: 'epic',
+        min: 10_000,
+        name: "Quel'Server",
+        icon: 'inv_sword_01',
+        after: "Quel'Serrar",
+        variants: {
+          sword: { name: "Quel'Server", after: "Quel'Serrar", icon: 'inv_sword_38' },
+          axe: { name: 'Ravager of Retainers', after: 'Ravager', icon: 'inv_axe_14' },
+          hammer: {
+            name: 'Hammer of the Northern Launch',
+            after: 'Hammer of the Northern Wind',
+            icon: 'inv_hammer_05',
+          },
+          mace: { name: 'Sceptre of Standups', after: 'Sceptre of Smiting', icon: 'inv_mace_10' },
+          staff: {
+            name: 'Serpent Staff of Shipping',
+            after: 'Serpentine Staff',
+            icon: 'inv_staff_20',
+          },
+          dagger: {
+            name: 'Cohort Tooth',
+            after: 'Core Hound Tooth',
+            icon: 'inv_weapon_shortblade_15',
+          },
+          fist: {
+            name: 'Claw of the Cohort',
+            after: 'Claw of the Black Drake',
+            icon: 'inv_weapon_hand_07',
           },
         },
       },
