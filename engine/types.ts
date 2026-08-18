@@ -224,6 +224,70 @@ export interface AchievementDef {
   progress?: (p: AchievementProgressInput) => { current: number; target: number } | null
 }
 
+/* ---------------------------------------------------------------------------
+ * Quests — what to do next
+ *
+ * A quest is not new data. Every ingredient was already being computed and then
+ * printed in a different panel: the next rung of a worn item, the first rung of
+ * an empty one, an achievement's distance to its target, the XP left in a
+ * level. The four panels never spoke to each other, so a founder could read all
+ * of them and still not know which single thing to go and do.
+ *
+ * So this is a ranking problem wearing a content problem's clothes. Generating
+ * seventy candidates is trivial; choosing three is the whole feature.
+ * ------------------------------------------------------------------------- */
+
+export type QuestKind = 'equip' | 'upgrade' | 'achievement' | 'level'
+
+export interface Quest {
+  /** Stable across recomputes: `equip:ranged`, `achievement:ding_sixty`. */
+  code: string
+  kind: QuestKind
+  /**
+   * The line a founder reads.
+   *
+   * Never phrased as an accusation, and that is a data constraint rather than a
+   * matter of taste. TrustMRR's API sends 0 rather than null for an unfilled
+   * field — 96% of listings report zero customers, including ones with real
+   * MRR — so "you have not reported your customers" is a guess that is wrong
+   * about half the time. An empty slot is stated as an empty slot, which is
+   * true whether the zero is real or a default, and it is what a founder can
+   * act on either way.
+   */
+  title: string
+  /** What finishes it, in the units the slot or badge already uses. */
+  requirement: string
+  /** What changes on the sheet when it does. */
+  reward: string
+  /**
+   * How close, when the distance is knowable.
+   *
+   * Null for a slot whose stat has no usable value: there is no "current" to
+   * measure from, and inventing 0 would draw an empty bar that reads as failure
+   * rather than as silence.
+   */
+  progress: { current: number; target: number; ratio: number } | null
+  /** Sort key, descending. Set by the ranker, never by a generator. */
+  weight: number
+}
+
+/**
+ * What the quest log reads.
+ *
+ * The doll and the progress input arrive already built rather than being
+ * re-derived, for the same reason `equipmentInput` takes the class from its
+ * caller: two places computing the same thing is two places to disagree, and
+ * the sheet has to agree with itself.
+ */
+export interface QuestInput {
+  doll: EquippedSlot[]
+  /** Codes already earned, so a finished badge is not offered as a quest. */
+  earned: string[]
+  progress: AchievementProgressInput
+  level: number
+  xp: number
+}
+
 export interface Rarity {
   name: string
   hex: string
@@ -380,6 +444,20 @@ export type EmptyReason = 'unreported' | 'unearned'
 
 export interface SlotDef {
   key: SlotKey
+  /**
+   * Share of the corpus with a usable value for this stat, 0–1.
+   *
+   * Measured, and the quest log's only substitute for a distance. An empty slot
+   * has no "current" to measure from, so every equip quest would otherwise
+   * score identically and each thin sheet would be handed the same three in
+   * alphabetical order. This says instead how attainable the slot is: a stat
+   * four founders in five manage to have on record is an easier win than one
+   * only two in ten do, and the easy wins are what the reporting phase is for.
+   *
+   * Remeasure by counting `unreported` empties per slot across the corpus; a
+   * stale figure only reorders advice slightly, so it is not worth a job.
+   */
+  reportedShare: number
   /**
    * Which axis this slot's `variants` are keyed on, if any.
    *

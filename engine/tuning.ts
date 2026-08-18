@@ -1141,6 +1141,52 @@ const positive = (v: number): number | null => (v > 0 ? v : null)
  * Keys not present here simply keep their drawing, which is the correct
  * outcome for anything the reference has no word for.
  */
+/**
+ * The quest log's only tunables: when to stop asking for data, and what a kind
+ * of quest is worth while we are still asking.
+ *
+ * Two phases, because the two goals genuinely conflict. A founder whose sheet
+ * is half empty gets more out of filling their TrustMRR listing than out of
+ * chasing a rung they cannot reach; a founder whose sheet is already dressed
+ * gets nothing from being told to fill in what they filled in. So the log
+ * pushes for coverage first and for growth after, and `completeAt` is the line
+ * between them.
+ *
+ * 0.75 — thirteen of seventeen slots — is measured, not chosen for roundness:
+ * it leaves roughly 60% of the corpus in the reporting phase and graduates the
+ * rest, which is the split that makes the switch mean something. The mean
+ * founder wears 10.2.
+ *
+ * Weights are relative and nothing more. A quest's final score is its kind's
+ * weight moved by how close it is, so the ordering within a kind is distance
+ * and the ordering between kinds is this table.
+ */
+export const QUESTS = {
+  completeAt: 0.75,
+  weights: {
+    /** Sheet is thin: equipping an empty slot beats everything. */
+    reporting: { equip: 100, achievement: 45, upgrade: 30, level: 20 },
+    /** Sheet is dressed: the numbers themselves have to move. */
+    growing: { equip: 35, achievement: 65, upgrade: 75, level: 85 },
+  },
+  /**
+   * How much of the score proximity may swing, against the kind's weight.
+   *
+   * At 0 the log is a fixed list by kind and ignores the founder entirely; at 1
+   * a nearly-finished trivial quest outranks a valuable one every time. 0.6
+   * keeps the kind in charge while letting "you are eight visitors away" rise.
+   */
+  proximityShare: 0.6,
+  /**
+   * What an unknowable distance counts as.
+   *
+   * Not 0. A slot whose stat has no usable value has no measurable distance,
+   * and scoring that as "infinitely far" would bury exactly the quests the
+   * reporting phase exists to surface. Neutral is the honest value.
+   */
+  unknownProximity: 0.5,
+} as const
+
 export const STAT_ICONS: Record<string, string> = {
   characters: 'inv_misc_grouplooking',
   level: 'achievement_level_10',
@@ -1218,6 +1264,7 @@ export const SLOTS: readonly SlotDef[] = [
   // --- Left column ---------------------------------------------------------
   {
     key: 'head',
+    reportedShare: 0.85,
     label: 'Head',
     stat: 'Domain rating',
     glyph: 'helm',
@@ -1265,6 +1312,7 @@ export const SLOTS: readonly SlotDef[] = [
   },
   {
     key: 'neck',
+    reportedShare: 0.91,
     label: 'Neck',
     stat: 'Followers',
     glyph: 'pendant',
@@ -1310,6 +1358,7 @@ export const SLOTS: readonly SlotDef[] = [
   },
   {
     key: 'shoulders',
+    reportedShare: 1.0,
     label: 'Shoulders',
     stat: 'Products shipped',
     glyph: 'pauldron',
@@ -1357,6 +1406,7 @@ export const SLOTS: readonly SlotDef[] = [
   },
   {
     key: 'back',
+    reportedShare: 0.46,
     label: 'Back',
     stat: 'Subscribers',
     glyph: 'cloak',
@@ -1412,6 +1462,7 @@ export const SLOTS: readonly SlotDef[] = [
   },
   {
     key: 'chest',
+    reportedShare: 0.47,
     varyBy: 'armor',
     label: 'Chest',
     stat: 'Customers',
@@ -1572,6 +1623,7 @@ export const SLOTS: readonly SlotDef[] = [
   },
   {
     key: 'wrist',
+    reportedShare: 0.47,
     label: 'Wrist',
     stat: 'Per customer',
     glyph: 'bracer',
@@ -1619,6 +1671,7 @@ export const SLOTS: readonly SlotDef[] = [
   // --- Right column --------------------------------------------------------
   {
     key: 'hands',
+    reportedShare: 0.62,
     label: 'Hands',
     stat: 'Technologies',
     glyph: 'gauntlet',
@@ -1666,6 +1719,7 @@ export const SLOTS: readonly SlotDef[] = [
   },
   {
     key: 'waist',
+    reportedShare: 0.41,
     label: 'Waist',
     stat: 'Profit margin',
     glyph: 'girdle',
@@ -1713,6 +1767,7 @@ export const SLOTS: readonly SlotDef[] = [
   },
   {
     key: 'legs',
+    reportedShare: 0.53,
     varyBy: 'armor',
     label: 'Legs',
     stat: 'Last 30 days',
@@ -1876,6 +1931,7 @@ export const SLOTS: readonly SlotDef[] = [
   },
   {
     key: 'feet',
+    reportedShare: 0.47,
     varyBy: 'armor',
     label: 'Feet',
     stat: 'Growth 30d',
@@ -2028,6 +2084,7 @@ export const SLOTS: readonly SlotDef[] = [
   },
   {
     key: 'ring1',
+    reportedShare: 0.89,
     label: 'Ring 1',
     stat: 'Shipping for',
     glyph: 'band',
@@ -2076,6 +2133,7 @@ export const SLOTS: readonly SlotDef[] = [
   },
   {
     key: 'ring2',
+    reportedShare: 1.0,
     label: 'Ring 2',
     stat: 'Cofounders',
     glyph: 'band',
@@ -2126,6 +2184,7 @@ export const SLOTS: readonly SlotDef[] = [
   },
   {
     key: 'trinket1',
+    reportedShare: 0.95,
     label: 'Trinket 1',
     stat: 'Categories',
     glyph: 'talisman',
@@ -2172,6 +2231,7 @@ export const SLOTS: readonly SlotDef[] = [
   },
   {
     key: 'trinket2',
+    reportedShare: 0.22,
     label: 'Trinket 2',
     stat: 'Channels',
     glyph: 'talisman',
@@ -2220,6 +2280,7 @@ export const SLOTS: readonly SlotDef[] = [
   // --- Weapons -------------------------------------------------------------
   {
     key: 'mainHand',
+    reportedShare: 0.47,
     varyBy: 'weapon',
     label: 'Main Hand',
     stat: 'Monthly revenue',
@@ -2386,6 +2447,7 @@ export const SLOTS: readonly SlotDef[] = [
   },
   {
     key: 'offHand',
+    reportedShare: 0.77,
     varyBy: 'offhand',
     label: 'Off Hand',
     stat: 'Lifetime revenue',
@@ -2493,6 +2555,7 @@ export const SLOTS: readonly SlotDef[] = [
   },
   {
     key: 'ranged',
+    reportedShare: 0.19,
     label: 'Ranged',
     stat: 'Visitors',
     glyph: 'longbow',

@@ -10,6 +10,7 @@ export {
   xpFrom,
 } from './character'
 export { equipmentFor, equipmentInput, equipmentScore, scoreOnSlot } from './equipment'
+export { completion, QUEST_KINDS, questsFor } from './quests'
 export type { FactionDef } from './tuning'
 export {
   ACHIEVEMENTS,
@@ -24,6 +25,7 @@ export {
   FUNDING_POLICY,
   LEVEL_THRESHOLDS,
   MAX_LEVEL,
+  QUESTS,
   RARITY_BANDS,
   RARITY_BY_NAME,
   SLOTS,
@@ -44,6 +46,9 @@ export type {
   FounderAggregate,
   ItemDef,
   ProductInput,
+  Quest,
+  QuestInput,
+  QuestKind,
   Rarity,
   RarityName,
   SlotDef,
