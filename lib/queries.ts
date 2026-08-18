@@ -524,6 +524,9 @@ const getCharacterUncached = async (rawHandle: string): Promise<CharacterPage | 
    */
   const quests = questsFor({
     doll,
+    // The founder page rather than a product page: a founder may have five
+    // listings and the quest is about the person, not one of them.
+    listingUrl: `https://trustmrr.com/founder/${row.handle}`,
     earned: earned.map((a) => a.code),
     progress: progressInput,
     level,

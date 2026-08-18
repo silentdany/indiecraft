@@ -3550,11 +3550,18 @@ a.share-copy {
     0 1px 0 rgba(0, 0, 0, 0.6);
 }
 .doll-bang {
-  /* Pushed to the end of the tile rather than floated over it: the stat line
-     wraps on the narrow columns, and an overlay landed on top of it. */
+  /*
+   * Pushed to the end of the tile rather than floated over it: the stat line
+   * wraps on the narrow columns, and an overlay landed on top of it.
+   *
+   * One auto margin does both columns, because the right one is `row-reverse`:
+   * in the left column the marker lands on the tile's inner edge, and in the
+   * right column that same rule lands it on ITS inner edge. Both face the
+   * portrait, which is the direction the reference makes everything face.
+   */
   margin-left: auto;
-  padding-left: 6px;
-  font-size: 16px;
+  padding: 0 9px;
+  font-size: 21px;
 }
 .quest-bang {
   margin-right: 10px;
@@ -3612,4 +3619,42 @@ a.share-copy {
 .quest-bar-fill {
   height: 100%;
   background: var(--ic-gold);
+}
+
+/* The quest behind the marker, in the layer the worn items already use. */
+.quest-tip-name {
+  color: var(--ic-butter);
+}
+.doll-quest {
+  /* Hover and focus light the whole tile, not just the mark: the tooltip is
+     anchored to the tile, so the tile is what has to look reachable. */
+  cursor: help;
+}
+.doll-quest:hover,
+.doll-quest:focus-within {
+  border-color: var(--ic-gold);
+  outline: none;
+}
+.quest-do {
+  margin: 6px 0 0;
+  font-size: 12px;
+  color: var(--ic-gold);
+}
+.quest-foot {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 16px;
+  margin-top: 14px;
+}
+.quest-foot .quest-do {
+  margin: 0;
+  font-size: 13px;
+}
+.quest-cta {
+  display: inline-flex;
+}
+.quest-tip-do {
+  margin-top: 8px;
+  color: var(--ic-gold);
 }

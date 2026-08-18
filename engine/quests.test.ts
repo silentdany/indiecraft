@@ -63,6 +63,7 @@ function progress(over: Partial<AchievementProgressInput> = {}): AchievementProg
 function input(over: Partial<QuestInput> = {}, agg: Partial<FounderAggregate> = {}): QuestInput {
   return {
     doll: equipmentFor(equipmentInput(aggregate(agg), 'Adventurer')),
+    listingUrl: 'https://trustmrr.com/founder/someone',
     earned: [],
     progress: progress(),
     level: 1,
@@ -93,9 +94,17 @@ describe('questsFor', () => {
    * a field nobody filled in, so a quest cannot tell a founder what they did or
    * did not report without being wrong about half the time.
    */
+  it('tells a founder where the number is entered', () => {
+    // The condition alone is not a quest: the first person to read "Followers
+    // of 1" had no idea where a follower count is declared.
+    const ranged = questsFor(input()).find((q) => q.code === 'equip:ranged')
+    expect(ranged?.action).toContain('TrustMRR')
+    expect(ranged?.href).toBe('https://trustmrr.com/founder/someone')
+  })
+
   it('never claims a founder failed to report anything', () => {
     const text = questsFor(input())
-      .flatMap((q) => [q.title, q.requirement, q.reward])
+      .flatMap((q) => [q.title, q.requirement, q.reward, q.action])
       .join(' ')
       .toLowerCase()
     for (const phrase of ['not reported', 'unreported', 'missing', 'you have not', "you haven't"]) {

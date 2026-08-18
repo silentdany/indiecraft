@@ -109,6 +109,15 @@ function equipQuests(input: QuestInput): Candidate[] {
         first.min > 0 ? `${def.stat} of ${def.format(first.min)}` : `${def.stat} — any value`,
       reward: `${first.name} (${first.rarity})`,
       /*
+       * The stat is not repeated here on purpose. Three of the seventeen labels
+       * are column headings rather than nouns — "Shipping for", "Per customer",
+       * "Last 30 days" — and "Set your shipping for on your listing" is not a
+       * sentence. The requirement directly above already names the number, so
+       * the action only has to name the place.
+       */
+      action: 'Set it on your TrustMRR listing',
+      href: input.listingUrl,
+      /*
        * No bar. 'unearned' would have a real distance, but 'unreported' has no
        * "current" at all, and drawing one from zero would claim a founder is at
        * zero — the exact claim the docblock above forbids. One kind of quest
@@ -134,6 +143,14 @@ function upgradeQuests(input: QuestInput): Candidate[] {
       title: `Upgrade your ${slot.label} slot`,
       requirement: `${slot.stat} of ${next.minLabel}`,
       reward: `${next.name} (${next.rarity.name})`,
+      /*
+       * Different verb from an equip quest, and the difference is real: this
+       * slot already has a number flowing, so the work is to move it. The link
+       * still goes to TrustMRR because that is where the new figure has to land
+       * before this page can see it.
+       */
+      action: `Grow it past ${next.minLabel}, then update TrustMRR`,
+      href: input.listingUrl,
       progress: {
         current: slot.item.value,
         target: next.min,
@@ -164,6 +181,8 @@ function achievementQuests(input: QuestInput): Candidate[] {
       title: `Earn ${def.label}`,
       requirement: def.description,
       reward: `${def.label} (${def.rarity})`,
+      action: 'Tracked from your TrustMRR listing — keep it current',
+      href: input.listingUrl,
       progress: { current: p.current, target: p.target, ratio: ratio(p.current, p.target) },
     })
   }
@@ -181,6 +200,10 @@ function levelQuest(input: QuestInput): Candidate[] {
       title: `Reach level ${input.level + 1}`,
       requirement: `${usd(next - input.xp)} more lifetime revenue`,
       reward: `Level ${input.level + 1}`,
+      // Levels are lifetime revenue and nothing else, so the instruction can be
+      // exact rather than a general nudge to tidy the listing.
+      action: 'Lifetime revenue is the only thing that levels you',
+      href: input.listingUrl,
       progress: {
         current: input.xp - current,
         target: next - current,

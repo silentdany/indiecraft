@@ -32,7 +32,6 @@ import {
   FACTIONS_BY_KEY,
   QUESTS,
 } from '@/engine'
-import type { SlotKey } from '@/engine/types'
 import { sessionHandle } from '@/lib/auth'
 import { consentActionsEnabled } from '@/lib/consent'
 import { getCharacter, wasRemoved } from '@/lib/queries'
@@ -274,13 +273,11 @@ export default async function CharacterSheet({ params }: Props) {
 
         <PaperDoll
           doll={character.doll}
-          // Only the slots the log is actually showing carry a "!". Marking
-          // every empty slot would put eleven of them on a thin sheet, which is
+          // Only the quests the log is actually showing carry a "!". Marking
+          // every empty slot would put fifteen of them on a thin sheet, which is
           // wallpaper rather than a signal — in the game a "!" means there is
           // something here for you now, not that the world has quests in it.
-          questSlots={shown
-            .filter((q) => q.kind === 'equip')
-            .map((q) => q.code.slice('equip:'.length) as SlotKey)}
+          quests={shown}
           tabard={
             faction && {
               label: 'Tabard',
@@ -381,8 +378,6 @@ export default async function CharacterSheet({ params }: Props) {
           </a>
         </PaperDoll>
 
-        <QuestLog quests={shown} />
-
         {/*
           Products, inside the frame and under the weapons.
 
@@ -415,6 +410,11 @@ export default async function CharacterSheet({ params }: Props) {
           )}
         </div>
       </Frame>
+
+      {/* Under the products, not above them: the frame is who this founder is
+          and what they built, and the log is what to do about it. Advice before
+          the businesses it is advice about reads as a nag. */}
+      <QuestLog quests={shown} />
 
       {/*
         Tabs, because the reference has tabs: Character, Talents, Raid

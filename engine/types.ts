@@ -260,6 +260,19 @@ export interface Quest {
   /** What changes on the sheet when it does. */
   reward: string
   /**
+   * What to actually go and do, in the imperative.
+   *
+   * The condition alone was not a quest. "Followers of 1" states when the slot
+   * fills and leaves a founder with no idea where the number is entered, and
+   * the first person to read it said so. Every stat on this site arrives
+   * through a TrustMRR listing, so the instruction is the same whether the zero
+   * behind an empty slot is real or a default — which is what makes it sayable
+   * at all, given we cannot tell those two apart.
+   */
+  action: string
+  /** Where the action happens. Null when there is nowhere to send anybody. */
+  href: string | null
+  /**
    * How close, when the distance is knowable.
    *
    * Null for a slot whose stat has no usable value: there is no "current" to
@@ -281,6 +294,12 @@ export interface Quest {
  */
 export interface QuestInput {
   doll: EquippedSlot[]
+  /**
+   * The founder's TrustMRR page, which is where every number on the sheet is
+   * entered. Passed in rather than built here: the engine knows nothing about
+   * hosts, exactly as it knows nothing about which CDN serves the icons.
+   */
+  listingUrl: string | null
   /** Codes already earned, so a finished badge is not offered as a quest. */
   earned: string[]
   progress: AchievementProgressInput

@@ -21,6 +21,14 @@ import type { Quest } from '@/engine'
  */
 export function QuestLog({ quests }: { quests: Quest[] }) {
   if (quests.length === 0) return null
+  const link = quests.find((q) => q.href)?.href ?? null
+  /*
+   * When every quest asks for the same thing — which is the whole reporting
+   * phase, where all three are "set it on your listing" — say it once at the
+   * foot instead of three times in a column. Three identical gold lines read as
+   * a stutter, and the eye stops seeing the one that matters.
+   */
+  const shared = quests.every((q) => q.action === quests[0]?.action) ? quests[0]?.action : null
 
   return (
     <section className="sheet-section">
@@ -44,6 +52,12 @@ export function QuestLog({ quests }: { quests: Quest[] }) {
               <span className="quest-reward">{quest.reward}</span>
             </p>
             {/*
+              The instruction, which is the part that was missing. A condition
+              is not a quest: "Followers of 1" says when the slot fills and
+              nothing about where a follower count is entered.
+            */}
+            {!shared && <p className="quest-do">{quest.action}</p>}
+            {/*
               A bar only where there is a distance to draw. An equip quest has
               no "current" — the stat has no usable value — and a bar from zero
               would state the founder is at zero, which is the one claim this
@@ -60,6 +74,19 @@ export function QuestLog({ quests }: { quests: Quest[] }) {
           </li>
         ))}
       </ol>
+      {/*
+        One link for the panel rather than one per row: every quest here ends at
+        the same page, and three identical buttons would read as three different
+        destinations.
+      */}
+      <div className="quest-foot">
+        {shared && <p className="quest-do">{shared}</p>}
+        {link && (
+          <a className="quest-cta share-x" href={link} rel="noreferrer" target="_blank">
+            Open your TrustMRR listing
+          </a>
+        )}
+      </div>
     </section>
   )
 }

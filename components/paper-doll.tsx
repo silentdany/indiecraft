@@ -1,7 +1,7 @@
 import Link from 'next/link'
 import { WowIcon } from '@/components/wow-icon'
 import { EMPTY_SLOT_ICONS } from '@/engine'
-import type { EquipmentGlyph, EquippedSlot, SlotKey } from '@/engine/types'
+import type { EquipmentGlyph, EquippedSlot, Quest, SlotKey } from '@/engine/types'
 
 /**
  * The paper doll: seventeen slots, one per stat.
@@ -72,30 +72,37 @@ export interface CosmeticSlot {
  */
 export function PaperDoll({
   doll,
-  questSlots,
+  quests,
   tabard,
   shirt,
   children,
 }: {
   doll: EquippedSlot[]
   /**
-   * Slots the quest log has something to say about.
+   * The quests the log is showing, so a marked slot can say what it wants.
    *
-   * Passed in rather than inferred from `item === null`, which would be true
-   * today and quietly wrong the first time a quest is filtered out: the marker
-   * has to promise there is a quest, because clicking it goes to one.
+   * The whole quest rather than a flag: a "!" that reveals nothing on hover is
+   * a decoration, and the tile already owns a tooltip layer for exactly this.
+   * Passed in rather than inferred from `item === null`, which is true today
+   * and quietly wrong the first time a quest is filtered out — the marker has
+   * to promise there is a quest behind it.
    */
-  questSlots?: SlotKey[]
+  quests?: Quest[]
   tabard?: CosmeticSlot | null
   shirt?: CosmeticSlot | null
   children?: React.ReactNode
 }) {
   const by = new Map(doll.map((s) => [s.slot, s]))
-  const quested = new Set(questSlots ?? [])
+  // Keyed off the code the engine already mints, so the mapping cannot drift.
+  const quested = new Map(
+    (quests ?? [])
+      .filter((q) => q.kind === 'equip')
+      .map((q) => [q.code.slice('equip:'.length) as SlotKey, q] as const),
+  )
   const column = (keys: SlotKey[]) =>
     keys.map((key) => {
       const slot = by.get(key)
-      return slot ? <Slot key={key} slot={slot} quest={quested.has(key)} /> : null
+      return slot ? <Slot key={key} slot={slot} quest={quested.get(key)} /> : null
     })
 
   return (
@@ -126,12 +133,17 @@ function Cosmetic({ slot }: { slot: CosmeticSlot }) {
   )
 }
 
-function Slot({ slot, quest }: { slot: EquippedSlot; quest?: boolean }) {
+function Slot({ slot, quest }: { slot: EquippedSlot; quest?: Quest }) {
   const { item } = slot
 
   if (!item) {
     return (
-      <div className={`doll-slot doll-empty doll-${slot.empty}${quest ? ' doll-quest' : ''}`}>
+      <div
+        className={`doll-slot doll-empty doll-${slot.empty}${quest ? ' doll-quest' : ''}`}
+        /* Focusable only when there is a tooltip to reach. A tab stop on
+           fifteen inert empty tiles is a keyboard trap with nothing in it. */
+        tabIndex={quest ? 0 : undefined}
+      >
         {/* The greyed silhouette of what belongs here. An empty slot that still
             says "helm" is a gap in a character; a blank square is a layout
             artifact, and the two should not look the same. */}
@@ -177,6 +189,24 @@ function Slot({ slot, quest }: { slot: EquippedSlot; quest?: boolean }) {
           <span className="doll-bang" aria-hidden="true">
             !
           </span>
+        )}
+        {/*
+          Same tooltip layer the worn items use, so hovering an empty slot
+          answers the question the "!" raises instead of leaving it hanging.
+          :hover for a mouse, :focus-within for a keyboard, no JavaScript.
+        */}
+        {quest && (
+          <div className="tooltip" role="tooltip">
+            <div className="tooltip-name serif quest-tip-name">{quest.title}</div>
+            <div className="tooltip-sub">{quest.requirement}</div>
+            <div className="tooltip-stats">
+              <div className="tooltip-stat">
+                <span>Reward</span>
+                <span className="tooltip-stat-v">{quest.reward}</span>
+              </div>
+            </div>
+            <div className="tooltip-sub quest-tip-do">{quest.action}</div>
+          </div>
         )}
       </div>
     )
