@@ -6,13 +6,15 @@ export const revalidate = 3600
 const BASE = process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000'
 
 /**
- * Character sheets appear here only once claimed.
+ * Every sheet with something on it, plus the three standing pages.
  *
- * Every sheet carries `noindex` until its founder claims it, so listing an
- * unclaimed one would be inviting a crawler to a page that turns it away —
- * noise at best, and at worst an end-run around the one consent rule the
- * product has. Right now that means the sitemap is three URLs, which is the
- * correct answer rather than a bug.
+ * This was three URLs until TrustMRR's founder agreed to the corpus being
+ * indexed: sheets carried `noindex` until claimed, one founder in 3,900 ever
+ * claimed, and the sitemap correctly reflected that nothing was indexable. The
+ * permission changed, so the file did.
+ *
+ * `getIndexableHandles` decides which sheets qualify and says why — consent is
+ * absolute there, thinness is a judgement.
  */
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const [handles, computedAt] = await Promise.all([

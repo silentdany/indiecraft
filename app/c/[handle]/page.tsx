@@ -46,12 +46,42 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
   const title = `${character.displayName} — level ${character.level} ${character.characterClass}`
 
+  /*
+   * No money in the description.
+   *
+   * The sheet states revenue plainly and always has; a search snippet is a
+   * different surface, read by people who never opened the page and shown
+   * beside somebody's name in a result they did not ask to be in. The class,
+   * the realm and the rank identify the page perfectly well without putting a
+   * dollar figure into Google's index.
+   */
+  const realm = character.profile.realm ? realmLabel(character.profile.realm) : null
+  const earned = character.achievements.length
+  const description =
+    `Level ${character.level} ${character.characterClass}` +
+    `${realm ? ` on the ${realm} realm` : ''}. ` +
+    `Ranked #${character.rank} on the Indiecraft ladder` +
+    `${earned > 0 ? ` with ${earned} achievement${earned > 1 ? 's' : ''}` : ''}.`
+
   return {
     title,
-    description: `Rank ${character.rank} on the Indiecraft ladder. ${character.nProducts} product${character.nProducts > 1 ? 's' : ''}.`,
-    // Non-negotiable rule: an unclaimed sheet is noindex. Claiming unlocks
-    // indexing. Consent and the growth loop are the same gesture.
-    robots: character.claimed ? undefined : { index: false, follow: false },
+    description,
+    /*
+     * Every sheet is indexable, and that is a decision somebody made rather
+     * than a default.
+     *
+     * It used to be claimed-only: consent and the growth loop as one gesture.
+     * The gesture never happened — one claim in 3,900 — and the cost was that
+     * the only free discovery channel the site has was switched off, so the
+     * founders whose numbers are already public on TrustMRR could not find the
+     * page about them either. TrustMRR's own founder has since agreed to the
+     * whole corpus being indexed, which is the permission that was actually
+     * missing.
+     *
+     * What did NOT change: opting out still 404s, immediately, and removal is
+     * still one click. Indexing is reversible per founder; that is the part
+     * that makes this defensible.
+     */
     alternates: { canonical: `/c/${character.handle}` },
     // No `images` here on purpose. opengraph-image.tsx in this same segment
     // supplies the URL along with its width, height and type, and naming one
@@ -135,12 +165,12 @@ export default async function CharacterSheet({ params }: Props) {
       <ViewTracker handle={character.handle} claimed={claimed} />
 
       {/*
-        Claimed sheets only. An unclaimed one is `noindex`, so structured data
-        about that person would be describing them to machines on a page that
-        asks the same machines to forget it — and consent is the whole reason
-        the noindex is there.
+        On every sheet now, following the indexing rule above: structured data
+        was gated on `claimed` only because an unclaimed sheet asked crawlers to
+        forget it, and describing a person to machines on such a page was
+        incoherent. No sheet asks that any more.
       */}
-      {claimed && (
+      {
         <JsonLd
           data={{
             '@context': 'https://schema.org',
@@ -156,7 +186,7 @@ export default async function CharacterSheet({ params }: Props) {
             },
           }}
         />
-      )}
+      }
 
       {/*
         The armory itself: an identity bar, then the character standing inside

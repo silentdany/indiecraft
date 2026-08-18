@@ -1020,6 +1020,22 @@ export async function wasRemoved(rawHandle: string): Promise<boolean> {
  * them to go away. The rule the spec cares about — nobody is indexed until they
  * ask to be — has to hold in both places or it holds in neither.
  */
+/**
+ * The sheets worth submitting to a crawler.
+ *
+ * Two conditions, and they are not the same kind of rule.
+ *
+ * `opted_out_at is null` is consent and is absolute — a removed founder 404s,
+ * so listing one would be advertising a dead URL as well as ignoring them.
+ *
+ * The revenue-or-products condition is an SEO judgement instead. 819 of the
+ * 3,886 sheets report no revenue at all and a single product, which makes them
+ * near-identical pages with nothing on them; a sitemap that asks Google to
+ * crawl those spends the site's crawl budget proving they are thin. They are
+ * still perfectly indexable and still reachable from the ladder — they are just
+ * not submitted, which is the difference between hiding a page and not
+ * recommending it.
+ */
 export const getIndexableHandles = cache(
   async (): Promise<{ handle: string; updatedAt: string }[]> => {
     const sql = db()
@@ -1028,9 +1044,9 @@ export const getIndexableHandles = cache(
       from characters c
       join founders f on f.handle = c.handle
       where f.opted_out_at is null
-        and f.claimed_at is not null
+        and (c.revenue_total_cents > 0 or c.mrr_cents > 0 or c.n_products > 1)
       order by c.level desc
-      limit 5000
+      limit 45000
     `
     return rows.map((r) => ({ handle: r.handle, updatedAt: r.at }))
   },

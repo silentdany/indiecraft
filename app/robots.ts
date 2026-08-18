@@ -14,9 +14,10 @@ const BASE = process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000'
  * The images now live at /c/<handle>/opengraph-image, inside the segment they
  * describe. Nothing under /api/ may ever be referenced from a meta tag again.
  *
- * Unclaimed character sheets are not blocked here — they carry `noindex`
- * instead, deliberately. A crawler has to be allowed to fetch a page to read
- * the tag that tells it to forget the page.
+ * Character sheets are not blocked here and no longer carry `noindex` either:
+ * the corpus is indexed with TrustMRR's agreement. Consent is enforced one
+ * founder at a time instead — opting out 404s the sheet, which removes it from
+ * an index far more completely than a crawler rule ever could.
  */
 export default function robots(): MetadataRoute.Robots {
   return {
