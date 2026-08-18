@@ -1943,7 +1943,11 @@ a.pager-num:hover {
   display: flex;
   align-items: center;
   gap: 10px;
-  padding: 6px 8px;
+  /* The right side is the marker's gutter, reserved on every tile whether or
+     not one is showing: a marker that takes space only when present moves the
+     text on the tiles that have it, and a column of text starting in two
+     different places is what this padding exists to stop. */
+  padding: 6px 26px 6px 8px;
   background: var(--ic-surface);
   border: 1px solid transparent;
   min-width: 0;
@@ -1954,6 +1958,7 @@ a.pager-num:hover {
 
 .doll-body {
   display: flex;
+  flex: 1;
   flex-direction: column;
   gap: 1px;
   min-width: 0;
@@ -2046,13 +2051,6 @@ a.pager-num:hover {
   .doll-dressed,
   .doll-rail {
     grid-template-columns: 1fr;
-  }
-  .doll-col-right .doll-slot {
-    flex-direction: row;
-    text-align: left;
-  }
-  .doll-col-right .doll-body {
-    align-items: flex-start;
   }
 }
 
@@ -2679,12 +2677,36 @@ ol + .rules-note,
 /* Mirrored, exactly as the reference does it: the icons face the character on
    both sides, so the eye reads outward from the portrait rather than left to
    right across a table. */
+/*
+ * The icons still face the portrait; the TEXT no longer does.
+ *
+ * Right-aligning it mirrored the reference exactly and made every line in the
+ * column start at a different x — three words and eleven words began nowhere
+ * near each other, and the eye had no edge to run down. The icons carry the
+ * mirroring on their own.
+ */
 .doll-col-right .doll-slot {
   flex-direction: row-reverse;
-  text-align: right;
+  text-align: left;
+  padding: 6px 8px 6px 26px;
 }
 .doll-col-right .doll-body {
-  align-items: flex-end;
+  align-items: flex-start;
+}
+
+/*
+ * One column on a narrow screen, so nothing is mirrored and the marker goes
+ * back to the trailing edge with its gutter.
+ *
+ * These lived a thousand lines up with the other narrow-screen rules and never
+ * applied: same specificity as the block above, earlier in the file, so the
+ * desktop rule won at every width. Kept beside what they override.
+ */
+@media (max-width: 620px) {
+  .doll-col-right .doll-slot {
+    flex-direction: row;
+    padding: 6px 26px 6px 8px;
+  }
 }
 .doll-col-right .tooltip {
   left: auto;
@@ -3551,16 +3573,21 @@ a.share-copy {
 }
 .doll-bang {
   /*
-   * Pushed to the end of the tile rather than floated over it: the stat line
-   * wraps on the narrow columns, and an overlay landed on top of it.
+   * Out of the flow and into the gutter `.doll-slot` reserves for it.
    *
-   * The mirrored column needs the opposite margin, not the same one — see the
-   * rule below. Both end up on the tile's inner edge, facing the portrait,
-   * which is the direction the reference makes everything face.
+   * It was a flex item for two rounds, which was wrong in both directions: with
+   * an auto margin it pushed the text sideways by its own width, so a marked
+   * tile's text started further in than its neighbours'. The gutter is on every
+   * tile, so the marker can be absolute without ever landing on a word.
+   *
+   * Inner edge in both columns — right here, left in the mirrored one — which
+   * is the direction the reference makes everything face.
    */
-  margin-left: auto;
-  padding: 0 9px;
+  position: absolute;
+  top: 50%;
+  right: 7px;
   font-size: 21px;
+  transform: translateY(-50%);
 }
 /*
  * The mirrored column needs the OPPOSITE margin, which the first attempt got
@@ -3574,8 +3601,8 @@ a.share-copy {
  * line up down the column the way they do on the left-hand side.
  */
 .doll-col-right .doll-bang {
-  margin-left: 0;
-  margin-right: auto;
+  right: auto;
+  left: 7px;
 }
 /* The narrow layout un-mirrors the tiles, so the marker goes back to the
    trailing edge. Kept here rather than with the other narrow-screen rules a
@@ -3583,8 +3610,8 @@ a.share-copy {
    is what `noDescendingSpecificity` exists to catch. */
 @media (max-width: 620px) {
   .doll-col-right .doll-bang {
-    margin-left: auto;
-    margin-right: 0;
+    right: 7px;
+    left: auto;
   }
 }
 .quest-bang {
