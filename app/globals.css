@@ -3611,26 +3611,30 @@ a.share-copy {
 }
 /* The whole row is the target, not a link buried in it: the quest and the place
    it happens are one gesture. */
+/* The whole row is the target, not a link buried in it: the quest and the place
+   it happens are one gesture. */
 .quest-row {
   display: flex;
   align-items: flex-start;
-  gap: 13px;
-  padding: 12px 14px;
+  gap: 14px;
+  padding: 13px 15px;
   color: inherit;
   text-decoration: none;
 }
-.quest:hover {
-  border-color: var(--ic-line-2);
-  border-left-color: var(--ic-gold);
-}
-.quest:focus-within {
-  border-color: var(--ic-gold);
-}
-.quest-row:focus-visible {
-  outline: none;
-}
-.quest-icon {
+/* Icon and its caption travel together — the label is what makes the picture
+   mean "this is what you get" rather than "this is the slot". */
+.quest-gift {
+  display: flex;
   flex: none;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+  width: 52px;
+}
+.quest-tag {
+  color: var(--ic-text-muted);
+  font-size: 9px;
+  letter-spacing: 0.14em;
 }
 .quest-body {
   display: flex;
@@ -3644,37 +3648,50 @@ a.share-copy {
   justify-content: space-between;
   gap: 12px;
 }
+/* The instruction leads, quieter than the prize: what to do is the sentence,
+   what you get is the headline under it. */
 .quest-title {
-  font-size: 15px;
-  letter-spacing: 0.02em;
+  font-size: 13px;
+  color: var(--ic-text-muted);
+  letter-spacing: 0.04em;
 }
 .quest-pct {
   flex: none;
   color: var(--ic-text-muted);
   font-variant-numeric: tabular-nums;
 }
-.quest-need {
-  margin-top: 3px;
-  font-size: 13px;
+.quest-reward {
+  margin-top: 1px;
+  font-size: 15px;
+  line-height: 1.25;
 }
-.quest-arrow {
+.quest-need {
+  margin-top: 4px;
+  color: var(--ic-text-muted);
+  font-size: 12.5px;
+}
+.quest-key {
+  margin-right: 5px;
   color: var(--ic-frame);
+  font-size: 10px;
+  letter-spacing: 0.12em;
 }
 .quest-do {
-  margin-top: 5px;
+  margin-top: 8px;
   color: var(--ic-gold);
   font-size: 12px;
 }
 .quest-out {
   color: var(--ic-frame);
 }
-.quest-row:hover .quest-do {
+.quest-row:hover .quest-do,
+.doll-quest:hover .quest-do {
   color: var(--ic-gold-bright);
 }
 .quest-bar {
   display: block;
   height: 4px;
-  margin-top: 9px;
+  margin-top: 8px;
   background: var(--ic-well);
   border: 1px solid var(--ic-line);
 }

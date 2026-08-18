@@ -31,18 +31,24 @@ export function QuestCard({ quest }: { quest: Quest }) {
   return (
     <>
       {/*
-        The reward, as a quality square. The log was the one place on the site
-        that talked about gear without showing any, which made it read as a form
-        rather than as part of the armory — and the colour says what "(common)"
-        used to say in parentheses, so the name gets to be just a name.
+        The reward, captioned.
+        
+        It was a bare square before, and a picture with no label is a decoration
+        — nobody could tell whether it stood for the slot, the stat or the prize.
+        The word under it is small enough to ignore once you have learnt it and
+        decisive the first time.
       */}
-      <WowIcon
-        slug={quest.rewardIcon}
-        glyph={FALLBACK[quest.kind]}
-        size={44}
-        color={hex}
-        className="quest-icon"
-      />
+      <span className="quest-gift">
+        <WowIcon
+          slug={quest.rewardIcon}
+          glyph={FALLBACK[quest.kind]}
+          size={44}
+          color={hex}
+          className="quest-icon"
+        />
+        <span className="quest-tag label">Reward</span>
+      </span>
+
       <span className="quest-body">
         <span className="quest-head">
           <span className="quest-title serif">{quest.title}</span>
@@ -50,22 +56,19 @@ export function QuestCard({ quest }: { quest: Quest }) {
             <span className="quest-pct label">{Math.round(quest.progress.ratio * 100)}%</span>
           )}
         </span>
-        <span className="quest-need muted">
-          {quest.requirement} <span className="quest-arrow">→</span>{' '}
-          <span className="quest-reward" style={{ color: hex }}>
-            {quest.reward}
-          </span>
-        </span>
+
         {/*
-          The instruction, which is the part that was missing before anybody
-          could act on this. A condition is not a quest: "Followers of 1" says
-          when the slot fills and nothing about where a follower count is
-          entered.
+          Reward and requirement on their own lines, each named. They used to
+          share one line joined by an arrow, which read as a single sentence
+          about neither and repeated what the icon was already showing.
         */}
-        <span className="quest-do">
-          {quest.action}
-          {quest.href && <span className="quest-out"> ↗</span>}
+        <span className="quest-reward" style={{ color: hex }}>
+          {quest.reward}
         </span>
+        <span className="quest-need">
+          <span className="quest-key label">Requires</span> {quest.requirement}
+        </span>
+
         {/*
           A bar only where there is a distance to draw. An equip quest has no
           "current" — the stat has no usable value — and a bar from zero would
@@ -80,6 +83,17 @@ export function QuestCard({ quest }: { quest: Quest }) {
             />
           </span>
         )}
+
+        {/*
+          The instruction, which is the part that was missing before anybody
+          could act on this. A condition is not a quest: "Followers of 1" says
+          when the slot fills and nothing about where a follower count is
+          entered.
+        */}
+        <span className="quest-do">
+          {quest.action}
+          {quest.href && <span className="quest-out"> ↗</span>}
+        </span>
       </span>
     </>
   )

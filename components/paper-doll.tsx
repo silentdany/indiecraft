@@ -94,11 +94,18 @@ export function PaperDoll({
   children?: React.ReactNode
 }) {
   const by = new Map(doll.map((s) => [s.slot, s]))
-  // Keyed off the code the engine already mints, so the mapping cannot drift.
+  /*
+   * Both slot-shaped kinds, not just `equip`.
+   *
+   * Marking only the empty slots left every upgrade in the log with nothing to
+   * point at: "Upgrade your Chest slot" sat in the panel while the chest tile
+   * looked exactly like the fifteen tiles with nothing to do. A "!" means there
+   * is something here for you, and a worn slot with a rung above it qualifies.
+   */
   const quested = new Map(
     (quests ?? [])
-      .filter((q) => q.kind === 'equip')
-      .map((q) => [q.code.slice('equip:'.length) as SlotKey, q] as const),
+      .filter((q) => q.kind === 'equip' || q.kind === 'upgrade')
+      .map((q) => [q.code.slice(q.code.indexOf(':') + 1) as SlotKey, q] as const),
   )
   const column = (keys: SlotKey[]) =>
     keys.map((key) => {
@@ -209,7 +216,11 @@ function Slot({ slot, quest }: { slot: EquippedSlot; quest?: Quest }) {
   }
 
   return (
-    <div className="doll-slot" style={{ color: item.rarity.hex }}>
+    <div
+      className={`doll-slot${quest ? ' doll-quest' : ''}`}
+      style={{ color: item.rarity.hex }}
+      tabIndex={quest ? 0 : undefined}
+    >
       <WowIcon slug={item.icon} glyph={slot.glyph} size={38} className="doll-icon" />
 
       <span className="doll-body">
@@ -225,6 +236,11 @@ function Slot({ slot, quest }: { slot: EquippedSlot; quest?: Quest }) {
           <span className="doll-ilvl"> · {item.itemLevel}</span>
         </span>
       </span>
+      {quest && (
+        <span className="doll-bang" aria-hidden="true">
+          !
+        </span>
+      )}
 
       <div className="tooltip" role="tooltip">
         <div className="tooltip-name serif" style={{ color: item.rarity.hex }}>
@@ -253,6 +269,18 @@ function Slot({ slot, quest }: { slot: EquippedSlot; quest?: Quest }) {
           </div>
         ) : (
           <div className="tooltip-req">Best in slot.</div>
+        )}
+
+        {/*
+          The instruction, when the log is pointing at this slot. The item
+          tooltip already priced the next rung; what it never said was where the
+          new number has to land before this page can see it.
+        */}
+        {quest && (
+          <div className="quest-do">
+            {quest.action}
+            {quest.href && <span className="quest-out"> ↗</span>}
+          </div>
         )}
       </div>
     </div>
