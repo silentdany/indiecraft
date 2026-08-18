@@ -32,6 +32,7 @@ import {
   CLASS_REASONS,
   FACTIONS_BY_KEY,
   QUESTS,
+  STAT_ICONS,
 } from '@/engine'
 import { sessionHandle } from '@/lib/auth'
 import { consentActionsEnabled } from '@/lib/consent'
@@ -182,7 +183,9 @@ export default async function CharacterSheet({ params }: Props) {
       key: `level:${character.recentLevelUp.level}`,
       kicker: 'DING!',
       line: `${character.displayName} reached level ${character.recentLevelUp.level}`,
+      icon: STAT_ICONS.level ?? null,
       hex: rarity.hex,
+      badge: String(character.recentLevelUp.level),
     })
   }
   if (character.recentAchievement) {
@@ -192,6 +195,7 @@ export default async function CharacterSheet({ params }: Props) {
         key: `achievement:${def.code}`,
         kicker: 'ACHIEVEMENT EARNED',
         line: `${character.displayName} earned ${def.label}`,
+        icon: def.icon,
         hex: achievementRarityHex(def.rarity),
       })
     }

@@ -3765,43 +3765,84 @@ a.share-copy {
   display: flex;
   flex-direction: column;
   gap: 8px;
-  max-width: min(360px, calc(100vw - 36px));
+  max-width: min(430px, calc(100vw - 36px));
 }
 .ding {
   position: relative;
   display: flex;
-  flex-direction: column;
-  gap: 3px;
-  padding: 13px 38px 13px 16px;
-  background: var(--ic-panel);
+  align-items: center;
+  gap: 11px;
+  padding: 10px 34px 10px 11px;
+  /*
+   * A gold band with a sunken plaque in it, which is the shape of the
+   * reference's announcement once the leafwork is taken off. The gradient is
+   * two stops and no bevel: this house draws flat, and a banner trying to look
+   * stamped out of metal beside a flat wordmark reads as a different product.
+   */
+  background: linear-gradient(180deg, #3a2a10 0%, #241809 100%);
   border: 2px solid var(--ic-gold);
   box-shadow: 0 8px 26px rgba(0, 0, 0, 0.75);
   animation: ding-in 260ms ease-out;
 }
+.ding-icon {
+  flex: none;
+}
+/* The sunken middle: the reference's darker inset, where both lines are
+   centred and the kicker is the quiet one. */
+.ding-plaque {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  min-width: 0;
+  padding: 5px 10px;
+  background: rgba(0, 0, 0, 0.34);
+  border: 1px solid rgba(248, 183, 0, 0.28);
+  text-align: center;
+}
 .ding-kicker {
-  color: var(--ic-butter);
-  font-size: 13px;
-  letter-spacing: 0.16em;
+  color: var(--ic-gold);
+  font-family: var(--ic-sans);
+  font-size: 9.5px;
+  letter-spacing: 0.18em;
 }
 .ding-line {
-  font-size: 13.5px;
-  line-height: 1.35;
-  color: var(--ic-text);
+  font-size: 14px;
+  line-height: 1.25;
+  color: var(--ic-butter);
+  overflow-wrap: anywhere;
+}
+/* The crest, where the reference keeps achievement points. Ours holds a level,
+   and holds nothing at all when the event has no number to put in it. */
+.ding-crest {
+  display: flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  min-width: 34px;
+  height: 34px;
+  padding: 0 6px;
+  color: var(--ic-butter);
+  font-size: 16px;
+  background: rgba(0, 0, 0, 0.4);
+  border: 1px solid var(--ic-gold);
+  font-variant-numeric: tabular-nums;
 }
 .ding-close {
   position: absolute;
-  top: 6px;
-  right: 8px;
-  padding: 2px 6px;
-  color: var(--ic-text-muted);
-  font-size: 16px;
+  top: 5px;
+  right: 7px;
+  padding: 2px 5px;
+  color: var(--ic-frame);
+  font-size: 15px;
   line-height: 1;
   background: none;
   border: none;
   cursor: pointer;
 }
 .ding-close:hover {
-  color: var(--ic-text);
+  color: var(--ic-butter);
 }
 @keyframes ding-in {
   from {

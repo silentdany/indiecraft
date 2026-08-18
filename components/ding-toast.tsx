@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { WowIcon } from '@/components/wow-icon'
 
 /**
  * "DING!" — the level-up and achievement announcement.
@@ -34,8 +35,18 @@ export interface DingEvent {
   key: string
   kicker: string
   line: string
+  /** The borrowed picture: the badge's own icon, or the level crest. */
+  icon: string | null
   /** Quality colour for the frame, when the event has one. */
   hex?: string
+  /**
+   * The number in the right-hand crest.
+   *
+   * The reference puts achievement points there. We have no points, so a level
+   * goes in it and a badge leaves it empty rather than inventing a score — an
+   * ornament with a made-up number in it is worse than no ornament.
+   */
+  badge?: string
 }
 
 const SEEN_PREFIX = 'indiecraft:seen:'
@@ -81,8 +92,26 @@ export function DingToast({ handle, events }: { handle: string; events: DingEven
     <div className="dings" role="status" aria-live="polite">
       {live.map((e) => (
         <div className="ding" key={e.key} style={e.hex ? { borderColor: e.hex } : undefined}>
-          <span className="ding-kicker serif">{e.kicker}</span>
-          <span className="ding-line">{e.line}</span>
+          {/*
+            Laid out like the game's own announcement: framed icon on the left,
+            a sunken plaque carrying a thin kicker over the name, and a crest on
+            the right for the number. What is deliberately NOT copied is the
+            ornamental leafwork around the reference's frame — that is Blizzard's
+            artwork, where an item icon is a borrowed picture we already ask for
+            by name.
+          */}
+          <WowIcon
+            className="ding-icon"
+            color={e.hex}
+            glyph="achievement"
+            size={48}
+            slug={e.icon}
+          />
+          <span className="ding-plaque">
+            <span className="ding-kicker">{e.kicker}</span>
+            <span className="ding-line serif">{e.line}</span>
+          </span>
+          {e.badge && <span className="ding-crest serif">{e.badge}</span>}
           <button
             className="ding-close"
             onClick={() => setLive((rest) => rest.filter((x) => x.key !== e.key))}
