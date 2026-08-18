@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import { QuestCard } from '@/components/quest-card'
 import { WowIcon } from '@/components/wow-icon'
 import { EMPTY_SLOT_ICONS } from '@/engine'
 import type { EquipmentGlyph, EquippedSlot, Quest, SlotKey } from '@/engine/types'
@@ -196,16 +197,11 @@ function Slot({ slot, quest }: { slot: EquippedSlot; quest?: Quest }) {
           :hover for a mouse, :focus-within for a keyboard, no JavaScript.
         */}
         {quest && (
-          <div className="tooltip" role="tooltip">
-            <div className="tooltip-name serif quest-tip-name">{quest.title}</div>
-            <div className="tooltip-sub">{quest.requirement}</div>
-            <div className="tooltip-stats">
-              <div className="tooltip-stat">
-                <span>Reward</span>
-                <span className="tooltip-stat-v">{quest.reward}</span>
-              </div>
-            </div>
-            <div className="tooltip-sub quest-tip-do">{quest.action}</div>
+          <div className="tooltip quest-tip" role="tooltip">
+            {/* The same card the log draws, so the two cannot drift again: the
+                tooltip used to omit the reward's picture, bury its name in a
+                stats table, and order its lines differently. */}
+            <QuestCard quest={quest} />
           </div>
         )}
       </div>
