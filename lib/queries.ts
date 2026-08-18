@@ -7,6 +7,7 @@ import {
   equipmentInput,
   equipmentScore,
   levelBounds,
+  questsFor,
   RARITY_BY_NAME,
   rarityFor,
   scoreOnSlot,
@@ -16,6 +17,7 @@ import type {
   CharacterClass,
   EquippedSlot,
   Faction,
+  Quest,
   Rarity,
 } from '@/engine/types'
 import { toProduct } from '@/lib/compute'
@@ -197,6 +199,11 @@ export interface CharacterPage {
   cofounders: string[]
   /** The live numbers every locked achievement measures itself against. */
   progressInput: AchievementProgressInput
+  /**
+   * What to do next, best first and all of it — the page decides how many to
+   * show. Derived, never stored: see engine/quests.ts.
+   */
+  quests: Quest[]
   /** Drives the OG image variant. */
   recentLevelUp: { level: number; at: string } | null
   recentAchievement: { code: string; earnedOn: string } | null
@@ -478,10 +485,50 @@ const getCharacterUncached = async (rawHandle: string): Promise<CharacterPage | 
     ),
   )
 
+  const progressInput: AchievementProgressInput = {
+    revenueTotalUsd,
+    mrrUsd,
+    customers,
+    activeSubscriptions,
+    nProducts: row.n_products,
+    retention,
+    hasRetentionSignal,
+    growthMrr30d: growthMrr30d ?? 0,
+    domainRating,
+    level,
+    cofounders: edges.length,
+    // Null here means the column predates this founder's last compute, not
+    // that the value is zero — but a progress bar has to draw something, and
+    // the next nightly run fills them in. Only profitMargin keeps its null,
+    // because that one distinguishes "no margin reported" from "0% margin".
+    visitors30d: row.visitors_30d ?? 0,
+    categories: row.categories ?? 0,
+    stackSize: row.stack_size ?? 0,
+    profitMargin30d: row.profit_margin_30d === null ? null : Number(row.profit_margin_30d),
+    googleImpressions30d: Number(row.google_impressions_30d ?? 0),
+    productsEarning: row.products_earning ?? 0,
+  }
+
   const knownSince = new Date(asIso(row.first_seen_at) ?? 0).getTime()
   // Normalised once, here, so no caller ever has to know what postgres.js
   // hands back.
   const earned = achievements.map((a) => ({ code: a.code, earnedOn: asDay(a.earned_on) ?? '' }))
+
+  /*
+   * The quest log, derived here rather than stored — same argument as the doll.
+   *
+   * It reads the doll and the progress input that this function has already
+   * built, so the log cannot disagree with the panels beside it: the slot a
+   * quest says is empty is the slot the grid draws empty, because it is the
+   * same object.
+   */
+  const quests = questsFor({
+    doll,
+    earned: earned.map((a) => a.code),
+    progress: progressInput,
+    level,
+    xp,
+  })
   const freshAchievement = earned.find((a) => {
     const at = new Date(a.earnedOn).getTime()
     return at > sevenDaysAgo && at > knownSince
@@ -557,29 +604,7 @@ const getCharacterUncached = async (rawHandle: string): Promise<CharacterPage | 
       mrrUsd: Number(h.mrr ?? 0) / 100,
       revenueTotalUsd: Number(h.total ?? 0) / 100,
     })),
-    progressInput: {
-      revenueTotalUsd,
-      mrrUsd,
-      customers,
-      activeSubscriptions,
-      nProducts: row.n_products,
-      retention,
-      hasRetentionSignal,
-      growthMrr30d: growthMrr30d ?? 0,
-      domainRating,
-      level,
-      cofounders: edges.length,
-      // Null here means the column predates this founder's last compute, not
-      // that the value is zero — but a progress bar has to draw something, and
-      // the next nightly run fills them in. Only profitMargin keeps its null,
-      // because that one distinguishes "no margin reported" from "0% margin".
-      visitors30d: row.visitors_30d ?? 0,
-      categories: row.categories ?? 0,
-      stackSize: row.stack_size ?? 0,
-      profitMargin30d: row.profit_margin_30d === null ? null : Number(row.profit_margin_30d),
-      googleImpressions30d: Number(row.google_impressions_30d ?? 0),
-      productsEarning: row.products_earning ?? 0,
-    },
+    progressInput,
     progress: {
       current,
       next,
@@ -587,6 +612,7 @@ const getCharacterUncached = async (rawHandle: string): Promise<CharacterPage | 
     },
     achievements: earned,
     doll,
+    quests,
     equipment: products.map((p) => {
       const productMrr = Number(p.mrr_cents ?? 0) / 100
       /*

@@ -3520,3 +3520,96 @@ a.share-copy {
 .census-slug:hover {
   color: var(--ic-gold);
 }
+
+/* ---------------------------------------------------------------------------
+ * Quests — the "!" and the log.
+ *
+ * The marker is the reference's own gesture, redrawn rather than imported: a
+ * yellow exclamation over the thing you can go and do. In the game it hangs in
+ * the world above an NPC, it does not move, and you walk to it — so it belongs
+ * ON the empty slot, not in a toast. A toast is transient and unprompted; a
+ * quest log is a list you come back to, and the two are opposite objects.
+ *
+ * Drawn in CSS with no JavaScript, same commitment as the tooltips and the tabs.
+ * ------------------------------------------------------------------------- */
+.doll-quest {
+  /* The tile stops reading as an absence once something is offered in it. */
+  border-color: rgba(248, 183, 0, 0.4);
+}
+.doll-bang,
+.quest-bang {
+  font-family: var(--ic-serif);
+  font-weight: 700;
+  color: var(--ic-butter);
+  line-height: 1;
+  /* The glow is the whole reason it reads as the game's marker rather than as
+     a warning triangle. Kept to a soft halo: a hard drop shadow on a 13px
+     glyph turns to mud. */
+  text-shadow:
+    0 0 6px rgba(248, 183, 0, 0.75),
+    0 1px 0 rgba(0, 0, 0, 0.6);
+}
+.doll-bang {
+  /* Pushed to the end of the tile rather than floated over it: the stat line
+     wraps on the narrow columns, and an overlay landed on top of it. */
+  margin-left: auto;
+  padding-left: 6px;
+  font-size: 16px;
+}
+.quest-bang {
+  margin-right: 10px;
+  font-size: 18px;
+}
+.quests {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.quest {
+  padding: 11px 14px;
+  background: var(--ic-surface);
+  border: 1px solid var(--ic-line);
+  /* The kind, as a spine down the left edge. Cheaper to scan than a chip and it
+     does not compete with the reward's own colour. */
+  border-left: 3px solid var(--ic-frame);
+}
+.quest-equip {
+  border-left-color: var(--ic-butter);
+}
+.quest-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+}
+.quest-title {
+  font-size: 15px;
+  letter-spacing: 0.02em;
+}
+.quest-pct {
+  color: var(--ic-text-muted);
+  font-variant-numeric: tabular-nums;
+}
+.quest-need {
+  margin: 3px 0 0;
+  font-size: 13px;
+}
+.quest-arrow {
+  color: var(--ic-frame);
+}
+.quest-reward {
+  color: var(--ic-text);
+}
+.quest-bar {
+  height: 4px;
+  margin-top: 9px;
+  background: var(--ic-well);
+  border: 1px solid var(--ic-line);
+}
+.quest-bar-fill {
+  height: 100%;
+  background: var(--ic-gold);
+}

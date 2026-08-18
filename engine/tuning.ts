@@ -1163,6 +1163,8 @@ const positive = (v: number): number | null => (v > 0 ? v : null)
  */
 export const QUESTS = {
   completeAt: 0.75,
+  /** How many the sheet shows. The engine always returns all of them. */
+  shown: 3,
   weights: {
     /** Sheet is thin: equipping an empty slot beats everything. */
     reporting: { equip: 100, achievement: 45, upgrade: 30, level: 20 },

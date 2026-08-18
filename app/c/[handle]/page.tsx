@@ -9,6 +9,7 @@ import { GearItem } from '@/components/gear-item'
 import { ACHIEVEMENT_ICONS } from '@/components/icon'
 import { JsonLd } from '@/components/json-ld'
 import { PaperDoll } from '@/components/paper-doll'
+import { QuestLog } from '@/components/quest-log'
 import { RestoreSheet } from '@/components/restore-sheet'
 import { ShareSheet } from '@/components/share-sheet'
 import {
@@ -29,7 +30,9 @@ import {
   CLASS_ICONS,
   CLASS_REASONS,
   FACTIONS_BY_KEY,
+  QUESTS,
 } from '@/engine'
+import type { SlotKey } from '@/engine/types'
 import { sessionHandle } from '@/lib/auth'
 import { consentActionsEnabled } from '@/lib/consent'
 import { getCharacter, wasRemoved } from '@/lib/queries'
@@ -160,6 +163,11 @@ export default async function CharacterSheet({ params }: Props) {
     { at: character.firstSeenAt, kind: 'joined' as const, label: 'Entered the armory' },
   ].sort((a, b) => b.at.localeCompare(a.at))
 
+  // The engine ranks all of them; the sheet shows the top of the list. Cut here
+  // rather than in the engine so the "!" markers and the panel below cannot
+  // disagree about which quests are live.
+  const shown = character.quests.slice(0, QUESTS.shown)
+
   return (
     <main className="page">
       <ViewTracker handle={character.handle} claimed={claimed} />
@@ -266,6 +274,13 @@ export default async function CharacterSheet({ params }: Props) {
 
         <PaperDoll
           doll={character.doll}
+          // Only the slots the log is actually showing carry a "!". Marking
+          // every empty slot would put eleven of them on a thin sheet, which is
+          // wallpaper rather than a signal — in the game a "!" means there is
+          // something here for you now, not that the world has quests in it.
+          questSlots={shown
+            .filter((q) => q.kind === 'equip')
+            .map((q) => q.code.slice('equip:'.length) as SlotKey)}
           tabard={
             faction && {
               label: 'Tabard',
@@ -365,6 +380,8 @@ export default async function CharacterSheet({ params }: Props) {
             @{character.handle}
           </a>
         </PaperDoll>
+
+        <QuestLog quests={shown} />
 
         {/*
           Products, inside the frame and under the weapons.

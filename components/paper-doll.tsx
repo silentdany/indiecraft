@@ -72,20 +72,30 @@ export interface CosmeticSlot {
  */
 export function PaperDoll({
   doll,
+  questSlots,
   tabard,
   shirt,
   children,
 }: {
   doll: EquippedSlot[]
+  /**
+   * Slots the quest log has something to say about.
+   *
+   * Passed in rather than inferred from `item === null`, which would be true
+   * today and quietly wrong the first time a quest is filtered out: the marker
+   * has to promise there is a quest, because clicking it goes to one.
+   */
+  questSlots?: SlotKey[]
   tabard?: CosmeticSlot | null
   shirt?: CosmeticSlot | null
   children?: React.ReactNode
 }) {
   const by = new Map(doll.map((s) => [s.slot, s]))
+  const quested = new Set(questSlots ?? [])
   const column = (keys: SlotKey[]) =>
     keys.map((key) => {
       const slot = by.get(key)
-      return slot ? <Slot key={key} slot={slot} /> : null
+      return slot ? <Slot key={key} slot={slot} quest={quested.has(key)} /> : null
     })
 
   return (
@@ -116,12 +126,12 @@ function Cosmetic({ slot }: { slot: CosmeticSlot }) {
   )
 }
 
-function Slot({ slot }: { slot: EquippedSlot }) {
+function Slot({ slot, quest }: { slot: EquippedSlot; quest?: boolean }) {
   const { item } = slot
 
   if (!item) {
     return (
-      <div className={`doll-slot doll-empty doll-${slot.empty}`}>
+      <div className={`doll-slot doll-empty doll-${slot.empty}${quest ? ' doll-quest' : ''}`}>
         {/* The greyed silhouette of what belongs here. An empty slot that still
             says "helm" is a gap in a character; a blank square is a layout
             artifact, and the two should not look the same. */}
@@ -133,19 +143,41 @@ function Slot({ slot }: { slot: EquippedSlot }) {
         />
         <span className="doll-body">
           {/*
-            The two empties are not the same fact and must not read as one.
-            "Not reported" is TrustMRR's silence and nothing the founder did;
-            "Nothing yet" is a number they can go and move. Saying "—" to both
-            would blame somebody for a blank field, which is the mistake the
-            retention penalty already taught this engine not to make.
+            "Empty", not "Not reported", and that is a correction rather than a
+            rewording.
+
+            The old copy asserted TrustMRR's silence. It cannot: the API sends 0
+            rather than null for a field nobody filled in — 96% of listings
+            report zero customers, including listings with real MRR — so "not
+            reported" was a guess that was wrong about half the time, told to
+            the one person who knows better. "Nothing yet" survives because it
+            is only used when a real number arrived and sat below the first
+            rung, which is a fact we do have.
           */}
           <span className="doll-name doll-nothing">
-            {slot.empty === 'unearned' ? 'Nothing yet' : 'Not reported'}
+            {slot.empty === 'unearned' ? 'Nothing yet' : 'Empty'}
           </span>
           <span className="doll-meta label">
             {slot.label} · {slot.stat}
           </span>
         </span>
+        {/*
+          The quest marker, and it is the reference's own gesture rather than a
+          badge invented for this grid: in the game the yellow "!" hangs over
+          the thing you can go and do, it does not move, and you walk to it. An
+          empty slot with something available in it is exactly that. Drawn in
+          CSS on the tile, never as a toast — a toast is transient and the log
+          is a list you come back to.
+
+          Last child and a flex item rather than an overlay: these tiles hold a
+          stat name that wraps, and an absolutely positioned marker sat on top
+          of it at the narrow end of the grid.
+        */}
+        {quest && (
+          <span className="doll-bang" aria-hidden="true">
+            !
+          </span>
+        )}
       </div>
     )
   }
