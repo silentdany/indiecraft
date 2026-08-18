@@ -4,6 +4,7 @@ import { notFound } from 'next/navigation'
 import type { CSSProperties } from 'react'
 import { BadgeBlock } from '@/components/badge-block'
 import { ConsentActions } from '@/components/consent-actions'
+import { type DingEvent, DingToast } from '@/components/ding-toast'
 import { Frame } from '@/components/frame'
 import { GearItem } from '@/components/gear-item'
 import { ACHIEVEMENT_ICONS } from '@/components/icon'
@@ -166,6 +167,35 @@ export default async function CharacterSheet({ params }: Props) {
   // rather than in the engine so the "!" markers and the panel below cannot
   // disagree about which quests are live.
   const shown = character.quests.slice(0, QUESTS.shown)
+
+  /*
+   * What is worth announcing, if this viewer has not seen it.
+   *
+   * Both are already computed for the OG image's DING variant — `recentLevelUp`
+   * and `recentAchievement` are the last seven days, with backfill excluded, so
+   * a founder's first crawl does not congratulate them thirty-five times. The
+   * keys are stable per event so a recompute does not replay one.
+   */
+  const dings: DingEvent[] = []
+  if (character.recentLevelUp) {
+    dings.push({
+      key: `level:${character.recentLevelUp.level}`,
+      kicker: 'DING!',
+      line: `${character.displayName} reached level ${character.recentLevelUp.level}`,
+      hex: rarity.hex,
+    })
+  }
+  if (character.recentAchievement) {
+    const def = ACHIEVEMENTS_BY_CODE.get(character.recentAchievement.code)
+    if (def) {
+      dings.push({
+        key: `achievement:${def.code}`,
+        kicker: 'ACHIEVEMENT EARNED',
+        line: `${character.displayName} earned ${def.label}`,
+        hex: achievementRarityHex(def.rarity),
+      })
+    }
+  }
 
   return (
     <main className="page">
@@ -415,6 +445,8 @@ export default async function CharacterSheet({ params }: Props) {
           and what they built, and the log is what to do about it. Advice before
           the businesses it is advice about reads as a nag. */}
       <QuestLog quests={shown} />
+
+      <DingToast events={dings} handle={character.handle} />
 
       {/*
         Tabs, because the reference has tabs: Character, Talents, Raid

@@ -3748,3 +3748,74 @@ a.share-copy {
   height: 100%;
   background: var(--ic-gold);
 }
+
+/* --- DING ------------------------------------------------------------------
+   The level-up and achievement announcement, bottom-right and out of the way.
+
+   Fixed rather than in the flow: it is news about the page, not part of it, and
+   a banner that pushes the sheet down on arrival moves the thing somebody came
+   to read. The frame takes the event's own quality colour — a legendary badge
+   announces itself in orange, the way it will sit in the grid afterwards.
+   ------------------------------------------------------------------------- */
+.dings {
+  position: fixed;
+  right: 18px;
+  bottom: 18px;
+  z-index: 60;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-width: min(360px, calc(100vw - 36px));
+}
+.ding {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding: 13px 38px 13px 16px;
+  background: var(--ic-panel);
+  border: 2px solid var(--ic-gold);
+  box-shadow: 0 8px 26px rgba(0, 0, 0, 0.75);
+  animation: ding-in 260ms ease-out;
+}
+.ding-kicker {
+  color: var(--ic-butter);
+  font-size: 13px;
+  letter-spacing: 0.16em;
+}
+.ding-line {
+  font-size: 13.5px;
+  line-height: 1.35;
+  color: var(--ic-text);
+}
+.ding-close {
+  position: absolute;
+  top: 6px;
+  right: 8px;
+  padding: 2px 6px;
+  color: var(--ic-text-muted);
+  font-size: 16px;
+  line-height: 1;
+  background: none;
+  border: none;
+  cursor: pointer;
+}
+.ding-close:hover {
+  color: var(--ic-text);
+}
+@keyframes ding-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+/* An announcement that slides is a flourish; one that appears is information. */
+@media (prefers-reduced-motion: reduce) {
+  .ding {
+    animation: none;
+  }
+}
