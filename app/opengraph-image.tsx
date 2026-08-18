@@ -2,7 +2,7 @@ import { ImageResponse } from '@vercel/og'
 import { BrandMark } from '@/components/brand-mark'
 import { OG, OG_SIZE, OgCard, OgIcon } from '@/components/og-card'
 import { RARITY_BY_NAME, SLOTS_BY_KEY, STAT_ICONS } from '@/engine'
-import type { RarityName, SlotKey } from '@/engine/types'
+import type { ArmorType, OffHandKind, RarityName, SlotKey, WeaponFamily } from '@/engine/types'
 import { wowIcons } from '@/lib/og-fetch'
 import { ogFonts } from '@/lib/og-fonts'
 import { getRealmStats } from '@/lib/queries'
@@ -37,7 +37,12 @@ export default async function Image() {
     return {
       label: g.label,
       hex: RARITY_BY_NAME.get(g.rarity)?.hex ?? OG.frame,
-      icon: slot?.items.find((i) => i.rarity === g.rarity)?.icon ?? '',
+      icon: (() => {
+        const item = slot?.items.find((i) => i.rarity === g.rarity)
+        // Variants carry the famous ones: Sulfuras is the hammer a Shaman or a
+        // Warrior wears, never the base entry.
+        return (g.variant ? item?.variants?.[g.variant]?.icon : undefined) ?? item?.icon ?? ''
+      })(),
     }
   })
 
@@ -114,11 +119,16 @@ export default async function Image() {
             value={stats.characters.toLocaleString('en-US')}
             label="CHARACTERS"
           />
+          {/* Products, not the highest level on the realm. A top level is one
+              person's number and it barely moves; the product count is the size
+              of the thing being measured, which is what a stranger seeing this
+              card for the first time is actually asking. "TRACKED" because the
+              strip above already uses PRODUCTS for a founder's own count. */}
           <Stat
-            icon="level"
-            src={icons.get(STAT_ICONS.level ?? '')}
-            value={String(stats.maxLevel)}
-            label="HIGHEST LEVEL"
+            icon="gear"
+            src={icons.get(STAT_ICONS.gear ?? '')}
+            value={stats.products.toLocaleString('en-US')}
+            label="PRODUCTS TRACKED"
           />
           <Stat
             icon="revenue"
@@ -140,24 +150,38 @@ export default async function Image() {
 }
 
 /**
- * One slot per quality, ascending.
+ * One slot per quality, ascending — and within that, the most recognisable item
+ * the table has at each rung.
  *
- * Chosen so the five labels are the five least ambiguous words in the corpus —
- * somebody who has never seen the site should read the row and understand that
- * a business number is being worn as a piece of gear. The icons come from the
- * live table rather than being pasted here, so a rebalance that moves an item
- * moves the card with it.
+ * Two audiences read this card and the row has to work for both. A founder sees
+ * five business metrics worn as gear, which is the product in one line. Someone
+ * who played Classic should get a jolt of recognition instead: Sulfuras and
+ * Bloodfang and Striker's Mark are not generic fantasy squares, they are items
+ * people farmed for months, and a stranger who recognises one of them will read
+ * the rest of the card.
+ *
+ * That second test is what picked these over the prettier ones. Commons are the
+ * hard rung — no white item in the game is famous — so it goes to the Battered
+ * Buckler, which is at least the shield everybody started with.
+ *
+ * The silhouettes are deliberately five different shapes: shield, gauntlets,
+ * gun, hood, hammer. Five squares of the same outline in five colours reads as
+ * a palette; five different outlines reads as an inventory.
+ *
+ * Icons come from the live table rather than being pasted here, so a rebalance
+ * that moves an item moves the card with it.
  */
-const GEAR: { slot: SlotKey; rarity: RarityName; label: string }[] = [
-  // head at common and shoulders at rare, not the other way round: the common
-  // shoulder is inv_shoulder_01, which is nearly black and reads as an empty
-  // square at thumbnail size. The first cell is the one that has to survive
-  // being small, so it gets the coif.
-  { slot: 'head', rarity: 'common', label: 'DOMAIN' },
-  { slot: 'neck', rarity: 'uncommon', label: 'FOLLOWERS' },
-  { slot: 'shoulders', rarity: 'rare', label: 'PRODUCTS' },
-  { slot: 'chest', rarity: 'epic', label: 'CUSTOMERS' },
-  { slot: 'mainHand', rarity: 'legendary', label: 'MRR' },
+const GEAR: {
+  slot: SlotKey
+  rarity: RarityName
+  label: string
+  variant?: ArmorType | OffHandKind | WeaponFamily
+}[] = [
+  { slot: 'offHand', rarity: 'common', label: 'REVENUE' },
+  { slot: 'hands', rarity: 'uncommon', label: 'TECH STACK' },
+  { slot: 'ranged', rarity: 'rare', label: 'VISITORS' },
+  { slot: 'head', rarity: 'epic', label: 'DOMAIN' },
+  { slot: 'mainHand', rarity: 'legendary', label: 'MRR', variant: 'hammer' },
 ]
 
 function Stat({
@@ -166,7 +190,7 @@ function Stat({
   value,
   label,
 }: {
-  icon: 'characters' | 'level' | 'revenue'
+  icon: 'characters' | 'gear' | 'revenue'
   /** The borrowed picture, when it arrived. `icon` is the fallback drawing. */
   src: string | undefined
   value: string
