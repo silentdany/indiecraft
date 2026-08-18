@@ -3609,6 +3609,20 @@ a.share-copy {
 .quest-equip {
   border-left-color: var(--ic-butter);
 }
+/*
+ * The quest behind a marker, in the layer the worn items already use — and laid
+ * out exactly like a log row, because it is the same component.
+ *
+ * Wider than an item tooltip, because it carries two columns rather than a
+ * stack of lines: at the 360px default the reward name broke to one word a line.
+ */
+.quest-tip {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  width: min(430px, calc(100vw - 48px));
+}
+
 /* The whole row is the target, not a link buried in it: the quest and the place
    it happens are one gesture. */
 /* The whole row is the target, not a link buried in it: the quest and the place
@@ -3621,15 +3635,24 @@ a.share-copy {
   color: inherit;
   text-decoration: none;
 }
-/* Icon and its caption travel together — the label is what makes the picture
-   mean "this is what you get" rather than "this is the slot". */
+/*
+ * The prize, in its own column with a rule down its left edge.
+ *
+ * Separated rather than stacked with the rest: the left block is what to do and
+ * this is what it hands over, and when they shared one column the eye read four
+ * lines of one paragraph. The caption is what makes the picture mean "this is
+ * what you get" rather than "this is the slot".
+ */
 .quest-gift {
   display: flex;
   flex: none;
   flex-direction: column;
   align-items: center;
-  gap: 5px;
-  width: 52px;
+  gap: 6px;
+  width: 132px;
+  padding-left: 15px;
+  border-left: 1px solid var(--ic-line);
+  text-align: center;
 }
 .quest-tag {
   color: var(--ic-text-muted);
@@ -3648,12 +3671,10 @@ a.share-copy {
   justify-content: space-between;
   gap: 12px;
 }
-/* The instruction leads, quieter than the prize: what to do is the sentence,
-   what you get is the headline under it. */
+/* Heading of the left block, which is the half about doing something. */
 .quest-title {
-  font-size: 13px;
-  color: var(--ic-text-muted);
-  letter-spacing: 0.04em;
+  font-size: 15px;
+  letter-spacing: 0.02em;
 }
 .quest-pct {
   flex: none;
@@ -3661,12 +3682,12 @@ a.share-copy {
   font-variant-numeric: tabular-nums;
 }
 .quest-reward {
-  margin-top: 1px;
-  font-size: 15px;
+  font-size: 13.5px;
   line-height: 1.25;
+  overflow-wrap: anywhere;
 }
 .quest-need {
-  margin-top: 4px;
+  margin-top: 5px;
   color: var(--ic-text-muted);
   font-size: 12.5px;
 }

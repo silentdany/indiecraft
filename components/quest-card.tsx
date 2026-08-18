@@ -31,24 +31,14 @@ export function QuestCard({ quest }: { quest: Quest }) {
   return (
     <>
       {/*
-        The reward, captioned.
+        The quest on the left, the prize on the right, and a rule between them.
         
-        It was a bare square before, and a picture with no label is a decoration
-        — nobody could tell whether it stood for the slot, the stat or the prize.
-        The word under it is small enough to ignore once you have learnt it and
-        decisive the first time.
+        They were one column before and read as one paragraph — an instruction,
+        a condition and an item name stacked at similar weight, with a 44px
+        picture at the head that could have stood for the slot, the stat or the
+        reward. Two blocks say what one could not: this is what you do, and that
+        is what you get.
       */}
-      <span className="quest-gift">
-        <WowIcon
-          slug={quest.rewardIcon}
-          glyph={FALLBACK[quest.kind]}
-          size={44}
-          color={hex}
-          className="quest-icon"
-        />
-        <span className="quest-tag label">Reward</span>
-      </span>
-
       <span className="quest-body">
         <span className="quest-head">
           <span className="quest-title serif">{quest.title}</span>
@@ -57,14 +47,6 @@ export function QuestCard({ quest }: { quest: Quest }) {
           )}
         </span>
 
-        {/*
-          Reward and requirement on their own lines, each named. They used to
-          share one line joined by an arrow, which read as a single sentence
-          about neither and repeated what the icon was already showing.
-        */}
-        <span className="quest-reward" style={{ color: hex }}>
-          {quest.reward}
-        </span>
         <span className="quest-need">
           <span className="quest-key label">Requires</span> {quest.requirement}
         </span>
@@ -94,6 +76,21 @@ export function QuestCard({ quest }: { quest: Quest }) {
           {quest.action}
           {quest.href && <span className="quest-out"> ↗</span>}
         </span>
+      </span>
+
+      {/* Captioned, because a picture with no label is a decoration. */}
+      <span className="quest-gift">
+        <WowIcon
+          slug={quest.rewardIcon}
+          glyph={FALLBACK[quest.kind]}
+          size={44}
+          color={hex}
+          className="quest-icon"
+        />
+        <span className="quest-reward" style={{ color: hex }}>
+          {quest.reward}
+        </span>
+        <span className="quest-tag label">Reward</span>
       </span>
     </>
   )
