@@ -134,6 +134,17 @@ describe('questsFor', () => {
     expect(withBadge.some((q) => q.code === 'achievement:mobile')).toBe(false)
   })
 
+  it('never offers a rung that only time can reach', () => {
+    // Ring 1 is years shipping. A founder who has shipped for one year cannot
+    // act on "reach two", and a log that says so has spent its credibility.
+    const shipping = questsFor(input({}, { foundedFirst: '2024-01-01' }))
+    expect(shipping.some((q) => q.code === 'upgrade:ring1')).toBe(false)
+    expect(shipping.some((q) => q.code === 'upgrade:ring2')).toBe(false)
+    // The equip half survives: declaring a founding date is data entry.
+    const bare = questsFor(input())
+    expect(bare.some((q) => q.code === 'equip:ring1')).toBe(true)
+  })
+
   it('stops at max level rather than offering a level 61', () => {
     expect(questsFor(input({ level: 60 })).some((q) => q.kind === 'level')).toBe(false)
   })

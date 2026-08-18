@@ -1266,6 +1266,7 @@ export const SLOTS: readonly SlotDef[] = [
   // --- Left column ---------------------------------------------------------
   {
     key: 'head',
+    movable: true,
     reportedShare: 0.85,
     label: 'Head',
     stat: 'Domain rating',
@@ -1314,6 +1315,7 @@ export const SLOTS: readonly SlotDef[] = [
   },
   {
     key: 'neck',
+    movable: true,
     reportedShare: 0.91,
     label: 'Neck',
     stat: 'Followers',
@@ -1360,6 +1362,7 @@ export const SLOTS: readonly SlotDef[] = [
   },
   {
     key: 'shoulders',
+    movable: true,
     reportedShare: 1.0,
     label: 'Shoulders',
     stat: 'Products shipped',
@@ -1408,6 +1411,7 @@ export const SLOTS: readonly SlotDef[] = [
   },
   {
     key: 'back',
+    movable: true,
     reportedShare: 0.46,
     label: 'Back',
     stat: 'Subscribers',
@@ -1464,6 +1468,7 @@ export const SLOTS: readonly SlotDef[] = [
   },
   {
     key: 'chest',
+    movable: true,
     reportedShare: 0.47,
     varyBy: 'armor',
     label: 'Chest',
@@ -1625,6 +1630,7 @@ export const SLOTS: readonly SlotDef[] = [
   },
   {
     key: 'wrist',
+    movable: true,
     reportedShare: 0.47,
     label: 'Wrist',
     stat: 'Per customer',
@@ -1673,6 +1679,7 @@ export const SLOTS: readonly SlotDef[] = [
   // --- Right column --------------------------------------------------------
   {
     key: 'hands',
+    movable: true,
     reportedShare: 0.62,
     label: 'Hands',
     stat: 'Technologies',
@@ -1721,6 +1728,7 @@ export const SLOTS: readonly SlotDef[] = [
   },
   {
     key: 'waist',
+    movable: true,
     reportedShare: 0.41,
     label: 'Waist',
     stat: 'Profit margin',
@@ -1769,6 +1777,7 @@ export const SLOTS: readonly SlotDef[] = [
   },
   {
     key: 'legs',
+    movable: true,
     reportedShare: 0.53,
     varyBy: 'armor',
     label: 'Legs',
@@ -1933,6 +1942,7 @@ export const SLOTS: readonly SlotDef[] = [
   },
   {
     key: 'feet',
+    movable: true,
     reportedShare: 0.47,
     varyBy: 'armor',
     label: 'Feet',
@@ -2086,6 +2096,7 @@ export const SLOTS: readonly SlotDef[] = [
   },
   {
     key: 'ring1',
+    movable: false,
     reportedShare: 0.89,
     label: 'Ring 1',
     stat: 'Shipping for',
@@ -2135,6 +2146,7 @@ export const SLOTS: readonly SlotDef[] = [
   },
   {
     key: 'ring2',
+    movable: false,
     reportedShare: 1.0,
     label: 'Ring 2',
     stat: 'Cofounders',
@@ -2186,6 +2198,7 @@ export const SLOTS: readonly SlotDef[] = [
   },
   {
     key: 'trinket1',
+    movable: true,
     reportedShare: 0.95,
     label: 'Trinket 1',
     stat: 'Categories',
@@ -2233,6 +2246,7 @@ export const SLOTS: readonly SlotDef[] = [
   },
   {
     key: 'trinket2',
+    movable: true,
     reportedShare: 0.22,
     label: 'Trinket 2',
     stat: 'Channels',
@@ -2282,6 +2296,7 @@ export const SLOTS: readonly SlotDef[] = [
   // --- Weapons -------------------------------------------------------------
   {
     key: 'mainHand',
+    movable: true,
     reportedShare: 0.47,
     varyBy: 'weapon',
     label: 'Main Hand',
@@ -2449,6 +2464,7 @@ export const SLOTS: readonly SlotDef[] = [
   },
   {
     key: 'offHand',
+    movable: true,
     reportedShare: 0.77,
     varyBy: 'offhand',
     label: 'Off Hand',
@@ -2557,6 +2573,7 @@ export const SLOTS: readonly SlotDef[] = [
   },
   {
     key: 'ranged',
+    movable: true,
     reportedShare: 0.19,
     label: 'Ranged',
     stat: 'Visitors',

@@ -137,6 +137,13 @@ function upgradeQuests(input: QuestInput): Candidate[] {
   for (const slot of input.doll) {
     const next = slot.item?.next
     if (!slot.item || !next) continue
+    /*
+     * Nothing a founder can do moves years-shipping or a cofounder count, so
+     * the rung above them is not a quest — it is a wait. Equipping those slots
+     * is still offered, because putting a founding date on a listing is data
+     * entry like any other; it is only the "grow it" half that has no verb.
+     */
+    if (!SLOTS_BY_KEY.get(slot.slot)?.movable) continue
     out.push({
       code: `upgrade:${slot.slot}`,
       kind: 'upgrade',

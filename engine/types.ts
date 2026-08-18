@@ -478,6 +478,17 @@ export interface SlotDef {
    */
   reportedShare: number
   /**
+   * Whether effort can move this stat at all.
+   *
+   * False for the two that only time or a life decision changes: years shipping
+   * and cofounders. Both make perfectly good EQUIP quests — declaring a
+   * founding date is data entry like any other — and useless upgrade ones. "Grow
+   * it past 5 years, then update TrustMRR" is not advice, it is a wait, and a
+   * log that hands somebody a wait has spent its credibility on a line nobody
+   * can act on.
+   */
+  movable: boolean
+  /**
    * Which axis this slot's `variants` are keyed on, if any.
    *
    * Stated per slot rather than inferred from the key so that adding a slot
