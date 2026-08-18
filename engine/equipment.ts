@@ -112,6 +112,9 @@ function describe(
         ? null
         : {
             name: nextAs.name,
+            // The variant's icon, not the base entry's: a Warrior's next chest
+            // piece is plate, and the quest log shows the picture.
+            icon: nextAs.icon,
             rarity: rarityOf(upgrade),
             min: upgrade.min,
             minLabel: slot.format(upgrade.min),

@@ -1,6 +1,6 @@
-import { levelBounds } from './character'
-import { ACHIEVEMENTS, QUESTS, SLOTS_BY_KEY } from './tuning'
-import type { Quest, QuestInput, QuestKind } from './types'
+import { levelBounds, rarityFor } from './character'
+import { ACHIEVEMENTS, QUESTS, SLOTS_BY_KEY, STAT_ICONS } from './tuning'
+import type { Quest, QuestInput, QuestKind, RarityName } from './types'
 
 /**
  * The quest log: what to do next, ranked.
@@ -107,7 +107,9 @@ function equipQuests(input: QuestInput): Candidate[] {
        */
       requirement:
         first.min > 0 ? `${def.stat} of ${def.format(first.min)}` : `${def.stat} — any value`,
-      reward: `${first.name} (${first.rarity})`,
+      reward: first.name,
+      rewardIcon: first.icon,
+      rewardRarity: first.rarity,
       /*
        * The stat is not repeated here on purpose. Three of the seventeen labels
        * are column headings rather than nouns — "Shipping for", "Per customer",
@@ -149,7 +151,9 @@ function upgradeQuests(input: QuestInput): Candidate[] {
       kind: 'upgrade',
       title: `Upgrade your ${slot.label} slot`,
       requirement: `${slot.stat} of ${next.minLabel}`,
-      reward: `${next.name} (${next.rarity.name})`,
+      reward: next.name,
+      rewardIcon: next.icon,
+      rewardRarity: next.rarity.name as RarityName,
       /*
        * Different verb from an equip quest, and the difference is real: this
        * slot already has a number flowing, so the work is to move it. The link
@@ -187,7 +191,9 @@ function achievementQuests(input: QuestInput): Candidate[] {
       kind: 'achievement',
       title: `Earn ${def.label}`,
       requirement: def.description,
-      reward: `${def.label} (${def.rarity})`,
+      reward: def.label,
+      rewardIcon: def.icon,
+      rewardRarity: def.rarity,
       action: 'Tracked from your TrustMRR listing — keep it current',
       href: input.listingUrl,
       progress: { current: p.current, target: p.target, ratio: ratio(p.current, p.target) },
@@ -207,6 +213,9 @@ function levelQuest(input: QuestInput): Candidate[] {
       title: `Reach level ${input.level + 1}`,
       requirement: `${usd(next - input.xp)} more lifetime revenue`,
       reward: `Level ${input.level + 1}`,
+      // The level's own band, so the row wears the colour the sheet will.
+      rewardIcon: STAT_ICONS.level ?? null,
+      rewardRarity: rarityFor(input.level + 1).name as RarityName,
       // Levels are lifetime revenue and nothing else, so the instruction can be
       // exact rather than a general nudge to tidy the listing.
       action: 'Lifetime revenue is the only thing that levels you',

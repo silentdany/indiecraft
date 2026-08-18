@@ -257,8 +257,18 @@ export interface Quest {
   title: string
   /** What finishes it, in the units the slot or badge already uses. */
   requirement: string
-  /** What changes on the sheet when it does. */
+  /** What changes on the sheet when it does — the name alone, no quality in it. */
   reward: string
+  /**
+   * The reward's picture and quality.
+   *
+   * The log was the one place on the site that talked about gear without
+   * showing any, which made it read as a form rather than as part of the
+   * armory. The colour also carries what "(common)" used to say in parentheses,
+   * so the name gets to be just a name.
+   */
+  rewardIcon: string | null
+  rewardRarity: RarityName | null
   /**
    * What to actually go and do, in the imperative.
    *
@@ -539,7 +549,7 @@ export interface EquippedItem {
    * The next item up, when there is one. This is the slot's answer to "what do
    * I do about it" — a paper doll that only reports is a table with pictures.
    */
-  next: { name: string; rarity: Rarity; min: number; minLabel: string } | null
+  next: { name: string; icon: string; rarity: Rarity; min: number; minLabel: string } | null
 }
 
 export interface EquippedSlot {

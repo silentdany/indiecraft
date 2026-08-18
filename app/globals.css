@@ -3554,14 +3554,38 @@ a.share-copy {
    * Pushed to the end of the tile rather than floated over it: the stat line
    * wraps on the narrow columns, and an overlay landed on top of it.
    *
-   * One auto margin does both columns, because the right one is `row-reverse`:
-   * in the left column the marker lands on the tile's inner edge, and in the
-   * right column that same rule lands it on ITS inner edge. Both face the
-   * portrait, which is the direction the reference makes everything face.
+   * The mirrored column needs the opposite margin, not the same one — see the
+   * rule below. Both end up on the tile's inner edge, facing the portrait,
+   * which is the direction the reference makes everything face.
    */
   margin-left: auto;
   padding: 0 9px;
   font-size: 21px;
+}
+/*
+ * The mirrored column needs the OPPOSITE margin, which the first attempt got
+ * wrong on the grounds that one rule would serve both.
+ *
+ * An auto margin is physical and a flex direction is not, so in `row-reverse`
+ * the marker is the leftmost item and `margin-left: auto` absorbs the space on
+ * its left — pushing it right, up against the text, where it landed a few
+ * pixels from a different place on every row. `margin-right: auto` takes the
+ * space on the other side and pins it to the tile's left edge, so the markers
+ * line up down the column the way they do on the left-hand side.
+ */
+.doll-col-right .doll-bang {
+  margin-left: 0;
+  margin-right: auto;
+}
+/* The narrow layout un-mirrors the tiles, so the marker goes back to the
+   trailing edge. Kept here rather than with the other narrow-screen rules a
+   thousand lines up: a higher-specificity selector before the base it overrides
+   is what `noDescendingSpecificity` exists to catch. */
+@media (max-width: 620px) {
+  .doll-col-right .doll-bang {
+    margin-left: auto;
+    margin-right: 0;
+  }
 }
 .quest-bang {
   margin-right: 10px;
@@ -3576,15 +3600,43 @@ a.share-copy {
   list-style: none;
 }
 .quest {
-  padding: 11px 14px;
   background: var(--ic-surface);
   border: 1px solid var(--ic-line);
   /* The kind, as a spine down the left edge. Cheaper to scan than a chip and it
-     does not compete with the reward's own colour. */
+     does not compete with the reward's own quality colour. */
   border-left: 3px solid var(--ic-frame);
 }
 .quest-equip {
   border-left-color: var(--ic-butter);
+}
+/* The whole row is the target, not a link buried in it: the quest and the place
+   it happens are one gesture. */
+.quest-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 13px;
+  padding: 12px 14px;
+  color: inherit;
+  text-decoration: none;
+}
+.quest:hover {
+  border-color: var(--ic-line-2);
+  border-left-color: var(--ic-gold);
+}
+.quest:focus-within {
+  border-color: var(--ic-gold);
+}
+.quest-row:focus-visible {
+  outline: none;
+}
+.quest-icon {
+  flex: none;
+}
+.quest-body {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-width: 0;
 }
 .quest-head {
   display: flex;
@@ -3597,62 +3649,39 @@ a.share-copy {
   letter-spacing: 0.02em;
 }
 .quest-pct {
+  flex: none;
   color: var(--ic-text-muted);
   font-variant-numeric: tabular-nums;
 }
 .quest-need {
-  margin: 3px 0 0;
+  margin-top: 3px;
   font-size: 13px;
 }
 .quest-arrow {
   color: var(--ic-frame);
 }
-.quest-reward {
-  color: var(--ic-text);
+.quest-do {
+  margin-top: 5px;
+  color: var(--ic-gold);
+  font-size: 12px;
+}
+.quest-out {
+  color: var(--ic-frame);
+}
+.quest-row:hover .quest-do {
+  color: var(--ic-gold-bright);
 }
 .quest-bar {
+  display: block;
   height: 4px;
   margin-top: 9px;
   background: var(--ic-well);
   border: 1px solid var(--ic-line);
 }
 .quest-bar-fill {
+  display: block;
   height: 100%;
   background: var(--ic-gold);
-}
-
-/* The quest behind the marker, in the layer the worn items already use. */
-.quest-tip-name {
-  color: var(--ic-butter);
-}
-.doll-quest {
-  /* Hover and focus light the whole tile, not just the mark: the tooltip is
-     anchored to the tile, so the tile is what has to look reachable. */
-  cursor: help;
-}
-.doll-quest:hover,
-.doll-quest:focus-within {
-  border-color: var(--ic-gold);
-  outline: none;
-}
-.quest-do {
-  margin: 6px 0 0;
-  font-size: 12px;
-  color: var(--ic-gold);
-}
-.quest-foot {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 8px 16px;
-  margin-top: 14px;
-}
-.quest-foot .quest-do {
-  margin: 0;
-  font-size: 13px;
-}
-.quest-cta {
-  display: inline-flex;
 }
 .quest-tip-do {
   margin-top: 8px;
