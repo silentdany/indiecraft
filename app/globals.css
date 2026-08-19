@@ -3930,3 +3930,60 @@ a.share-copy {
   background: var(--ic-well);
   border: 1px solid var(--ic-line);
 }
+
+/* Difficulty, chain step and the finished strip on a quest ------------------
+   The four difficulty colours are the reference's own: green is close, red is
+   a long way off, and the eye sorts the log before reading a word. */
+.quest-diff {
+  flex: none;
+  padding: 1px 6px;
+  font-size: 9px;
+  border: 1px solid currentColor;
+}
+.quest-diff-close {
+  color: #1eff00;
+}
+.quest-diff-fair {
+  color: var(--ic-butter);
+}
+.quest-diff-hard {
+  color: #ff8000;
+}
+.quest-diff-steep {
+  color: #e01c1c;
+}
+.quest-chain {
+  margin-left: 8px;
+  color: var(--ic-frame);
+  font-size: 10px;
+}
+.quest-pct {
+  margin-left: 8px;
+  color: var(--ic-text-muted);
+  font-variant-numeric: tabular-nums;
+}
+.quests-done {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 0 0 10px;
+  padding: 0;
+  list-style: none;
+}
+.quest-done {
+  display: flex;
+  align-items: baseline;
+  gap: 7px;
+  padding: 6px 11px;
+  font-size: 12.5px;
+  color: var(--ic-text-muted);
+  background: var(--ic-well);
+  border: 1px solid var(--ic-line);
+}
+.quest-done-tick {
+  color: var(--ic-positive);
+}
+.quest-done-on {
+  color: var(--ic-frame);
+  font-variant-numeric: tabular-nums;
+}

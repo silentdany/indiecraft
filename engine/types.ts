@@ -237,7 +237,17 @@ export interface AchievementDef {
  * seventy candidates is trivial; choosing three is the whole feature.
  * ------------------------------------------------------------------------- */
 
-export type QuestKind = 'equip' | 'upgrade' | 'achievement' | 'level'
+export type QuestKind = 'equip' | 'upgrade' | 'achievement' | 'level' | 'product' | 'rank' | 'set'
+
+/**
+ * How far the thing is, in four bands.
+ *
+ * The reference colours a quest by how hard it is relative to you, which is the
+ * single most useful thing you can tell somebody scanning a list of them. Ours
+ * measures distance rather than level difference, but it does the same job: the
+ * eye sorts the log before reading a word of it.
+ */
+export type QuestDifficulty = 'close' | 'fair' | 'hard' | 'steep'
 
 export interface Quest {
   /** Stable across recomputes: `equip:ranged`, `achievement:ding_sixty`. */
@@ -290,8 +300,34 @@ export interface Quest {
    * rather than as silence.
    */
   progress: { current: number; target: number; ratio: number } | null
+  /**
+   * Where this sits in its ladder, when it belongs to one.
+   *
+   * A slot's five rungs are a chain and only ever one link of it was shown, so
+   * a founder saw an instruction with no arc behind it. "Step 2 of 5" is the
+   * difference between a chore and a progression.
+   */
+  chain: { step: number; of: number } | null
+  difficulty: QuestDifficulty
   /** Sort key, descending. Set by the ranker, never by a generator. */
   weight: number
+}
+
+/**
+ * Something that finished, read out of the snapshot history.
+ *
+ * Derived, not stored — the same argument as everything else here. A threshold
+ * crossed between two crawls is a fact already sitting in the table, and a
+ * `completed_quests` row would be a cache of it that could disagree.
+ *
+ * This is the only part of the sheet that is different on a second visit, which
+ * is the whole reason it exists: everything else is a photograph.
+ */
+export interface QuestDone {
+  code: string
+  line: string
+  /** ISO day the crossing was first visible. */
+  on: string
 }
 
 /**
@@ -304,6 +340,22 @@ export interface Quest {
  */
 export interface QuestInput {
   doll: EquippedSlot[]
+  /**
+   * The founder's products, each scored on the Main Hand ladder exactly as the
+   * sheet already scores them. 650 founders have more than one and none of them
+   * had a quest about any of it.
+   */
+  products: { slug: string; name: string; mrrUsd: number }[]
+  /**
+   * Standing, when the caller has it. Not pure — it needs the whole ladder —
+   * so it arrives the same way the class does.
+   *
+   * `aboveRevenueUsd` rather than a rank alone because a rank quest has to name
+   * a number, and the ladder is sorted on lifetime revenue.
+   */
+  rank: { rank: number; aboveRevenueUsd: number | null } | null
+  /** Lifetime revenue, for measuring the climb to the rank above. */
+  revenueTotalUsd: number
   /**
    * The founder's TrustMRR page, which is where every number on the sheet is
    * entered. Passed in rather than built here: the engine knows nothing about

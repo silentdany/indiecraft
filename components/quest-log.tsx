@@ -1,5 +1,5 @@
 import { QuestCard } from '@/components/quest-card'
-import type { Quest } from '@/engine'
+import type { Quest, QuestDone } from '@/engine'
 
 /**
  * The quest log: the three things worth doing next, in order.
@@ -21,8 +21,8 @@ import type { Quest } from '@/engine'
  * the place it happens are one gesture, and a footer CTA made three quests
  * share one destination that only the last of them appeared to own.
  */
-export function QuestLog({ quests }: { quests: Quest[] }) {
-  if (quests.length === 0) return null
+export function QuestLog({ quests, done }: { quests: Quest[]; done: QuestDone[] }) {
+  if (quests.length === 0 && done.length === 0) return null
 
   return (
     <section className="sheet-section">
@@ -32,6 +32,24 @@ export function QuestLog({ quests }: { quests: Quest[] }) {
         </span>
         QUEST LOG
       </h2>
+      {/*
+        What already finished, and the only line on this sheet that is different
+        on a second visit. Everything else is a photograph — the same numbers
+        and the same advice until a threshold moves.
+      */}
+      {done.length > 0 && (
+        <ul className="quests-done">
+          {done.map((d) => (
+            <li className="quest-done" key={d.code}>
+              <span className="quest-done-tick" aria-hidden="true">
+                ✓
+              </span>
+              {d.line}
+              <span className="quest-done-on label">{d.on}</span>
+            </li>
+          ))}
+        </ul>
+      )}
       <ol className="quests">
         {quests.map((quest) => (
           <li className={`quest quest-${quest.kind}`} key={quest.code}>

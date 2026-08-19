@@ -23,6 +23,9 @@ const FALLBACK: Record<QuestKind, IconName> = {
   upgrade: 'rising',
   achievement: 'achievement',
   level: 'level',
+  product: 'stack',
+  rank: 'crest',
+  set: 'gear',
 }
 
 export function QuestCard({ quest }: { quest: Quest }) {
@@ -42,13 +45,28 @@ export function QuestCard({ quest }: { quest: Quest }) {
       <span className="quest-body">
         <span className="quest-head">
           <span className="quest-title serif">{quest.title}</span>
-          {quest.progress && (
-            <span className="quest-pct label">{Math.round(quest.progress.ratio * 100)}%</span>
-          )}
+          {/*
+            How far, as a word the eye reads before any number. The reference
+            colours a quest by difficulty and it is the fastest thing to scan in
+            a list of them; ours measures distance, which does the same job.
+          */}
+          <span className={`quest-diff label quest-diff-${quest.difficulty}`}>
+            {quest.difficulty}
+          </span>
         </span>
 
         <span className="quest-need">
           <span className="quest-key label">Requires</span> {quest.requirement}
+          {/* The rung inside its ladder. One link of a chain shown alone is a
+              chore; the arc behind it is a progression. */}
+          {quest.chain && (
+            <span className="quest-chain label">
+              step {quest.chain.step}/{quest.chain.of}
+            </span>
+          )}
+          {quest.progress && (
+            <span className="quest-pct label">{Math.round(quest.progress.ratio * 100)}%</span>
+          )}
         </span>
 
         {/*

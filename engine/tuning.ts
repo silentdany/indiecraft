@@ -1160,6 +1160,8 @@ const positive = (v: number): number | null => (v > 0 ? v : null)
  * and the ordering between kinds is this table.
  */
 export const QUESTS = {
+  /** How many finished quests the sheet recalls. Recent news, not a history. */
+  doneShown: 3,
   /**
    * How many the sheet shows. The engine always returns all of them.
    *
@@ -1171,10 +1173,43 @@ export const QUESTS = {
   shown: 4,
   weights: {
     /** Sheet is thin: equipping an empty slot beats everything. */
-    reporting: { equip: 100, achievement: 45, upgrade: 30, level: 20 },
+    reporting: {
+      equip: 100,
+      set: 55,
+      achievement: 45,
+      product: 35,
+      upgrade: 30,
+      rank: 25,
+      level: 20,
+    },
     /** Sheet is dressed: the numbers themselves have to move. */
-    growing: { equip: 35, achievement: 65, upgrade: 75, level: 85 },
+    growing: { equip: 35, level: 85, upgrade: 75, product: 70, achievement: 65, rank: 55, set: 50 },
   },
+  /**
+   * Slots left before "finish the set" is worth saying.
+   *
+   * A full set is the reference's oldest carrot and the sheet already counts
+   * toward it — "14 of 17" sits under the portrait. But "fill fifteen slots" is
+   * not a quest, it is a description of being new. Three is where it turns into
+   * something somebody might actually go and do this afternoon.
+   */
+  setWithin: 3,
+  /**
+   * Dollars of lifetime revenue below which a rank quest is not worth making.
+   *
+   * The ladder is densely tied: the median gap to the founder above is $0, and
+   * 971 founders sit at exactly zero revenue. Ungated, this quest would tell
+   * half the corpus they are $0 from a better rank. It only means anything near
+   * the top — median gap is $5,434 in the first 200 and $75 by the thousandth.
+   */
+  rankGapMin: 50,
+  /**
+   * Where a distance stops being close and starts being steep.
+   *
+   * The reference colours a quest by difficulty and it is the fastest thing to
+   * read in a list. Ours measures how far, which does the same job.
+   */
+  difficulty: { close: 0.8, fair: 0.5, hard: 0.25 },
   /**
    * How much of the score proximity may swing, against the kind's weight.
    *

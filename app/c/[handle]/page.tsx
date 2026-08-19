@@ -448,7 +448,7 @@ export default async function CharacterSheet({ params }: Props) {
       {/* Under the products, not above them: the frame is who this founder is
           and what they built, and the log is what to do about it. Advice before
           the businesses it is advice about reads as a nag. */}
-      <QuestLog quests={shown} />
+      <QuestLog done={character.questsDone} quests={shown} />
 
       <DingToast events={dings} handle={character.handle} />
 

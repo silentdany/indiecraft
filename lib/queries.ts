@@ -7,17 +7,21 @@ import {
   equipmentInput,
   equipmentScore,
   levelBounds,
+  levelFromXp,
+  questsDone,
   questsFor,
   RARITY_BY_NAME,
   rarityFor,
   scoreOnSlot,
 } from '@/engine'
+import { XP_PER_PRODUCT } from '@/engine/tuning'
 import type {
   AchievementProgressInput,
   CharacterClass,
   EquippedSlot,
   Faction,
   Quest,
+  QuestDone,
   Rarity,
 } from '@/engine/types'
 import { toProduct } from '@/lib/compute'
@@ -204,6 +208,8 @@ export interface CharacterPage {
    * show. Derived, never stored: see engine/quests.ts.
    */
   quests: Quest[]
+  /** What finished since the corpus started watching. See engine/quests.ts. */
+  questsDone: QuestDone[]
   /** Drives the OG image variant. */
   recentLevelUp: { level: number; at: string } | null
   recentAchievement: { code: string; earnedOn: string } | null
@@ -341,6 +347,7 @@ const getCharacterUncached = async (rawHandle: string): Promise<CharacterPage | 
         above_handle: string | null
         above_level: number | null
         above_mrr: string | null
+        above_total: string | null
         below_handle: string | null
         below_level: number | null
         below_mrr: string | null
@@ -359,6 +366,7 @@ const getCharacterUncached = async (rawHandle: string): Promise<CharacterPage | 
                lag(c.handle)     over w as above_handle,
                lag(c.level)      over w as above_level,
                lag(c.mrr_cents)  over w as above_mrr,
+               lag(c.revenue_total_cents) over w as above_total,
                lead(c.handle)    over w as below_handle,
                lead(c.level)     over w as below_level,
                lead(c.mrr_cents) over w as below_mrr
@@ -509,6 +517,23 @@ const getCharacterUncached = async (rawHandle: string): Promise<CharacterPage | 
     productsEarning: row.products_earning ?? 0,
   }
 
+  /*
+   * What changed since we started watching. Derived from the same history the
+   * chart draws, so nothing is stored and nothing can drift.
+   *
+   * The level is recomputed from revenue plus the current product bonus rather
+   * than from the stored level: a level-up has to be dated to the day the
+   * revenue crossed, and the stored one only knows about today.
+   */
+  const done = questsDone(
+    historyRows.map((h) => ({
+      day: h.day,
+      mrrUsd: Number(h.mrr ?? 0) / 100,
+      revenueTotalUsd: Number(h.total ?? 0) / 100,
+    })),
+    (revenue: number) => levelFromXp(revenue + XP_PER_PRODUCT * row.n_products),
+  )
+
   const knownSince = new Date(asIso(row.first_seen_at) ?? 0).getTime()
   // Normalised once, here, so no caller ever has to know what postgres.js
   // hands back.
@@ -524,6 +549,21 @@ const getCharacterUncached = async (rawHandle: string): Promise<CharacterPage | 
    */
   const quests = questsFor({
     doll,
+    // Each product on its own, rather than folded into the aggregate weapon:
+    // 650 founders have more than one and none of them had a quest about any.
+    products: products.map((p) => ({
+      slug: p.slug,
+      name: p.raw?.name ?? p.slug,
+      mrrUsd: Number(p.mrr_cents ?? 0) / 100,
+    })),
+    rank: rankRowOne
+      ? {
+          rank: Number(rankRowOne.rank),
+          aboveRevenueUsd:
+            rankRowOne.above_total === null ? null : Number(rankRowOne.above_total) / 100,
+        }
+      : null,
+    revenueTotalUsd,
     // The founder page rather than a product page: a founder may have five
     // listings and the quest is about the person, not one of them.
     listingUrl: `https://trustmrr.com/founder/${row.handle}`,
@@ -616,6 +656,7 @@ const getCharacterUncached = async (rawHandle: string): Promise<CharacterPage | 
     achievements: earned,
     doll,
     quests,
+    questsDone: done,
     equipment: products.map((p) => {
       const productMrr = Number(p.mrr_cents ?? 0) / 100
       /*

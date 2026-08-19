@@ -1,6 +1,7 @@
 import { levelBounds, rarityFor } from './character'
+import { scoreOnSlot } from './equipment'
 import { ACHIEVEMENTS, QUESTS, SLOTS_BY_KEY, STAT_ICONS } from './tuning'
-import type { Quest, QuestInput, QuestKind, RarityName } from './types'
+import type { Quest, QuestDifficulty, QuestDone, QuestInput, QuestKind, RarityName } from './types'
 
 /**
  * The quest log: what to do next, ranked.
@@ -47,6 +48,9 @@ export function questsFor(input: QuestInput): Quest[] {
     ...upgradeQuests(input),
     ...achievementQuests(input),
     ...levelQuest(input),
+    ...productQuests(input),
+    ...rankQuest(input),
+    ...setQuest(input),
   ]
 
   /*
@@ -64,8 +68,17 @@ export function questsFor(input: QuestInput): Quest[] {
   const weights = QUESTS.weights[phase]
 
   return quests
-    .map(({ attainability: _internal, ...q }) => ({ ...q, weight: 0 }))
-    .map((q, i) => ({ ...q, weight: score(quests[i]!, weights[q.kind]) }))
+    .map(({ attainability: _internal, ...q }) => ({
+      ...q,
+      chain: q.chain ?? null,
+      difficulty: 'fair' as QuestDifficulty,
+      weight: 0,
+    }))
+    .map((q, i) => ({
+      ...q,
+      difficulty: hardness(quests[i]!),
+      weight: score(quests[i]!, weights[q.kind]),
+    }))
     .sort((a, b) => b.weight - a.weight || a.code.localeCompare(b.code))
 }
 
@@ -90,7 +103,26 @@ function score(quest: Candidate, base: number): number {
 }
 
 /** A quest before it is scored. `attainability` never leaves this file. */
-type Candidate = Omit<Quest, 'weight'> & { attainability?: number }
+type Candidate = Omit<Quest, 'weight' | 'difficulty' | 'chain'> & {
+  attainability?: number
+  chain?: { step: number; of: number } | null
+}
+
+/**
+ * How far, in four bands.
+ *
+ * Same proximity the ranker uses, read as a word instead of a multiplier. A
+ * quest with no measurable distance takes its slot's attainability, which is
+ * the honest stand-in — and a quest with neither lands in the middle rather
+ * than at either extreme.
+ */
+function hardness(quest: Candidate): QuestDifficulty {
+  const near = quest.progress?.ratio ?? quest.attainability ?? QUESTS.unknownProximity
+  if (near >= QUESTS.difficulty.close) return 'close'
+  if (near >= QUESTS.difficulty.fair) return 'fair'
+  if (near >= QUESTS.difficulty.hard) return 'hard'
+  return 'steep'
+}
 
 function ratio(current: number, target: number): number {
   if (target <= 0) return 1
@@ -134,6 +166,7 @@ function equipQuests(input: QuestInput): Candidate[] {
        */
       progress: null,
       attainability: def.reportedShare,
+      chain: { step: 1, of: def.items.length },
     })
   }
   return out
@@ -173,6 +206,15 @@ function upgradeQuests(input: QuestInput): Candidate[] {
         target: next.min,
         ratio: ratio(slot.item.value, next.min),
       },
+      // The rung being aimed at, so a founder sees the arc rather than one step
+      // of it. `next.rarity` names it; the ladder's order gives the number.
+      chain: (() => {
+        const def = SLOTS_BY_KEY.get(slot.slot)
+        const step = def?.items.findIndex((i) => i.rarity === next.rarity.name)
+        return def && step !== undefined && step >= 0
+          ? { step: step + 1, of: def.items.length }
+          : null
+      })(),
     })
   }
   return out
@@ -235,6 +277,115 @@ function levelQuest(input: QuestInput): Candidate[] {
   ]
 }
 
+/**
+ * One per product with a rung above it.
+ *
+ * A product is already scored on the Main Hand ladder — that is what the item
+ * level beside it on the sheet means — and 650 founders have more than one.
+ * Nothing was ever said about any of them: the doll aggregates every product
+ * into one weapon, so a founder with three businesses had three numbers folded
+ * into a single quest about their total.
+ */
+function productQuests(input: QuestInput): Candidate[] {
+  const slot = SLOTS_BY_KEY.get('mainHand')
+  if (!slot) return []
+  const out: Candidate[] = []
+  for (const product of input.products) {
+    const now = scoreOnSlot('mainHand', product.mrrUsd)
+    // The first rung it has NOT cleared. A product with no revenue aims at the
+    // bottom of the ladder, which is the same arithmetic as an empty slot.
+    const step = slot.items.findIndex((item) => product.mrrUsd < item.min)
+    const target = step >= 0 ? slot.items[step] : undefined
+    if (!target) continue
+    out.push({
+      code: `product:${product.slug}`,
+      kind: 'product',
+      title: `Level up ${product.name}`,
+      requirement: `${slot.stat} of ${slot.format(target.min)}`,
+      reward: now
+        ? `Item level ${scoreOnSlot('mainHand', target.min)?.itemLevel ?? ''}`
+        : target.name,
+      rewardIcon: target.icon,
+      rewardRarity: target.rarity,
+      action: `${slot.fill} on TrustMRR`,
+      href: input.listingUrl,
+      progress: {
+        current: product.mrrUsd,
+        target: target.min,
+        ratio: ratio(product.mrrUsd, target.min),
+      },
+      chain: { step: step + 1, of: slot.items.length },
+    })
+  }
+  return out
+}
+
+/**
+ * The climb to the next rank, and only where that is a real distance.
+ *
+ * Gated hard on purpose. The ladder is densely tied — the median gap to the
+ * founder above is $0 and 971 founders sit at exactly zero lifetime revenue —
+ * so an ungated version would tell half the corpus they are $0 from a better
+ * rank. It means something in the first few hundred, where the median gap is
+ * thousands, and nothing at all below.
+ *
+ * It names a rank rather than a person. Putting somebody else's handle in a
+ * stranger's quest log is a different product from this one.
+ */
+function rankQuest(input: QuestInput): Candidate[] {
+  const rank = input.rank
+  if (!rank || rank.rank <= 1 || rank.aboveRevenueUsd === null) return []
+  const gap = rank.aboveRevenueUsd - input.revenueTotalUsd
+  if (gap < QUESTS.rankGapMin) return []
+  return [
+    {
+      code: 'rank:next',
+      kind: 'rank',
+      title: `Climb to rank #${rank.rank - 1}`,
+      requirement: `${usd(gap)} more lifetime revenue`,
+      reward: `Rank #${rank.rank - 1}`,
+      rewardIcon: STAT_ICONS.crest ?? STAT_ICONS.level ?? null,
+      rewardRarity: null,
+      action: 'Lifetime revenue is what the ladder sorts on',
+      href: input.listingUrl,
+      progress: {
+        current: input.revenueTotalUsd,
+        target: rank.aboveRevenueUsd,
+        ratio: ratio(input.revenueTotalUsd, rank.aboveRevenueUsd),
+      },
+      chain: null,
+    },
+  ]
+}
+
+/**
+ * Finish the set — the reference's oldest carrot, and one the sheet already
+ * counts toward without ever naming.
+ *
+ * Only near the end. "Fill fifteen slots" is not a quest, it is a description
+ * of being new, and the equip quests are already saying it one slot at a time.
+ */
+function setQuest(input: QuestInput): Candidate[] {
+  const worn = input.doll.filter((s) => s.item !== null).length
+  const left = input.doll.length - worn
+  if (left === 0 || left > QUESTS.setWithin) return []
+  return [
+    {
+      code: 'set:full',
+      kind: 'set',
+      title: 'Complete the set',
+      requirement: `${left} slot${left > 1 ? 's' : ''} left of ${input.doll.length}`,
+      reward: 'Every slot worn',
+      rewardIcon: STAT_ICONS.gear ?? null,
+      rewardRarity: null,
+      action: 'Each empty slot above says what fills it',
+      href: input.listingUrl,
+      progress: { current: worn, target: input.doll.length, ratio: worn / input.doll.length },
+      chain: null,
+    },
+  ]
+}
+
 function usd(value: number): string {
   return new Intl.NumberFormat('en-US', {
     style: 'currency',
@@ -246,3 +397,85 @@ function usd(value: number): string {
 
 /** The kinds, in the order the tuning table lists them. Handy for tests and docs. */
 export const QUEST_KINDS: readonly QuestKind[] = ['equip', 'upgrade', 'achievement', 'level']
+
+/**
+ * What finished since the corpus started watching.
+ *
+ * The only part of a sheet that differs on a second visit. Everything else is a
+ * photograph: the same numbers, the same advice, until a threshold moves. A
+ * founder has no reason to come back to a photograph.
+ *
+ * Derived from the snapshot history rather than stored, on the same argument as
+ * the rest of this file — a crossing is a fact already sitting in the table, and
+ * a `completed_quests` row would be a cache of it that could quietly disagree.
+ *
+ * Only two ladders can be read this way, because history carries two numbers:
+ * MRR and lifetime revenue. That is the Main Hand and the Off Hand, plus the
+ * level those feed. Reading the other fifteen would need a snapshot of the whole
+ * aggregate per day, which is a table this does not deserve yet.
+ */
+export function questsDone(
+  history: { day: string; mrrUsd: number; revenueTotalUsd: number }[],
+  levelAt: (revenueTotalUsd: number) => number,
+): QuestDone[] {
+  if (history.length < 2) return []
+  const days = [...history].sort((a, b) => a.day.localeCompare(b.day))
+  const out: QuestDone[] = []
+
+  for (let i = 1; i < days.length; i++) {
+    const was = days[i - 1]!
+    const now = days[i]!
+
+    for (const [key, slot, from, to] of [
+      ['mainHand', 'Main Hand', was.mrrUsd, now.mrrUsd],
+      ['offHand', 'Off Hand', was.revenueTotalUsd, now.revenueTotalUsd],
+    ] as const) {
+      /*
+       * Both observations have to be real numbers.
+       *
+       * A jump from zero is almost never a first sale: it is the crawl finally
+       * seeing a figure that was already there. One founder in the sample
+       * "equipped" their Off Hand and reached level 36 on the same day, which
+       * takes a hundred thousand in lifetime revenue — the money was not new,
+       * the reading was. Zero and absent are the same value in this corpus, so
+       * a crossing out of zero cannot be told from data arriving, and the sheet
+       * does not congratulate people for things it cannot verify happened.
+       */
+      if (from <= 0) continue
+      const before = scoreOnSlot(key, from)
+      const after = scoreOnSlot(key, to)
+      // A rung crossing, not a number going up: the sheet only changes visibly
+      // when the quality does, and that is what somebody would notice.
+      if (after && after.rarity.name !== before?.rarity.name && to > from) {
+        /*
+         * Crossing INTO the bottom rung is the slot becoming equipped at all —
+         * a first dollar, a first sale — and "Main Hand reached common" is a
+         * flat way to say the best news a founder gets. Every rung above it is
+         * a quality and reads as one.
+         */
+        out.push({
+          code: `done:${key}:${after.rarity.name}:${now.day}`,
+          line: `${slot} reached ${after.rarity.name}`,
+          on: now.day,
+        })
+      }
+    }
+
+    // Same guard as the rungs, for the same reason: a level computed off a
+    // revenue that was zero yesterday is the crawl catching up, not a founder
+    // levelling. Somebody does not go from no revenue to level 36 overnight.
+    const wasLevel = levelAt(was.revenueTotalUsd)
+    const nowLevel = levelAt(now.revenueTotalUsd)
+    if (was.revenueTotalUsd > 0 && nowLevel > wasLevel) {
+      out.push({
+        code: `done:level:${nowLevel}:${now.day}`,
+        line: `Reached level ${nowLevel}`,
+        on: now.day,
+      })
+    }
+  }
+
+  // Newest first, and only the recent handful: a log of everything that ever
+  // happened is a history page, which this is not.
+  return out.sort((a, b) => b.on.localeCompare(a.on)).slice(0, QUESTS.doneShown)
+}

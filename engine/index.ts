@@ -10,7 +10,7 @@ export {
   xpFrom,
 } from './character'
 export { equipmentFor, equipmentInput, equipmentScore, scoreOnSlot } from './equipment'
-export { completion, QUEST_KINDS, questsFor } from './quests'
+export { completion, QUEST_KINDS, questsDone, questsFor } from './quests'
 export type { FactionDef } from './tuning'
 export {
   ACHIEVEMENTS,
@@ -47,6 +47,8 @@ export type {
   ItemDef,
   ProductInput,
   Quest,
+  QuestDifficulty,
+  QuestDone,
   QuestInput,
   QuestKind,
   Rarity,

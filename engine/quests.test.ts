@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
+import { levelFromXp } from './character'
 import { equipmentFor, equipmentInput } from './equipment'
-import { completion, questsFor } from './quests'
+import { completion, questsDone, questsFor } from './quests'
 import type { AchievementProgressInput, FounderAggregate, QuestInput } from './types'
 
 function aggregate(over: Partial<FounderAggregate> = {}): FounderAggregate {
@@ -63,6 +64,9 @@ function input(over: Partial<QuestInput> = {}, agg: Partial<FounderAggregate> = 
   return {
     doll: equipmentFor(equipmentInput(aggregate(agg), 'Adventurer')),
     listingUrl: 'https://trustmrr.com/founder/someone',
+    products: [],
+    rank: null,
+    revenueTotalUsd: 0,
     earned: [],
     progress: progress(),
     level: 1,
@@ -154,6 +158,56 @@ describe('questsFor', () => {
     expect(one).toEqual(two)
   })
 
+  it('gives each product its own quest, on the Main Hand ladder', () => {
+    // The doll folds every product into one weapon, so a founder with three
+    // businesses had three numbers hidden inside a single quest about the sum.
+    const quests = questsFor(
+      input({ products: [{ slug: 'flexco', name: 'FlexCo', mrrUsd: 400 }] }, { mrrUsd: 400 }),
+    )
+    const p = quests.find((q) => q.code === 'product:flexco')
+    expect(p?.title).toBe('Level up FlexCo')
+    // $400 against the rare floor of $1,000.
+    expect(p?.progress).toMatchObject({ current: 400, target: 1_000 })
+    expect(p?.chain).toEqual({ step: 3, of: 5 })
+  })
+
+  /*
+   * The gate is the whole feature. The ladder is densely tied — median gap to
+   * the founder above is $0, and 971 founders sit at exactly zero revenue — so
+   * ungated this would tell half the corpus they are $0 from a better rank.
+   */
+  it('only offers a rank climb when the gap is a real distance', () => {
+    const tied = questsFor(input({ rank: { rank: 900, aboveRevenueUsd: 10 }, revenueTotalUsd: 10 }))
+    expect(tied.some((q) => q.kind === 'rank')).toBe(false)
+
+    const real = questsFor(
+      input({ rank: { rank: 12, aboveRevenueUsd: 90_000 }, revenueTotalUsd: 50_000 }),
+    )
+    const climb = real.find((q) => q.kind === 'rank')
+    expect(climb?.title).toBe('Climb to rank #11')
+    // A rank, never a person: somebody else's handle in a stranger's quest log
+    // is a different product from this one.
+    expect(climb?.requirement).toBe('$40K more lifetime revenue')
+  })
+
+  it('asks for the full set only when it is nearly done', () => {
+    const bare = questsFor(input())
+    expect(bare.some((q) => q.kind === 'set')).toBe(false)
+  })
+
+  it('reads a chain step off the ladder rather than counting quests', () => {
+    const mid = questsFor(input({}, { mrrUsd: 1_500 })).find((q) => q.code === 'upgrade:mainHand')
+    // $1,500 sits on the rare rung, so the quest aims at the fourth of five.
+    expect(mid?.chain).toEqual({ step: 4, of: 5 })
+  })
+
+  it('bands a quest by how far it is', () => {
+    const near = questsFor(input({}, { mrrUsd: 9_000 })).find((q) => q.code === 'upgrade:mainHand')
+    expect(near?.difficulty).toBe('close')
+    const far = questsFor(input({}, { mrrUsd: 1_100 })).find((q) => q.code === 'upgrade:mainHand')
+    expect(far?.difficulty).toBe('steep')
+  })
+
   describe('the two phases', () => {
     /*
      * The whole point of the feature: a thin sheet is pushed to fill in, a
@@ -207,5 +261,59 @@ describe('questsFor', () => {
       expect(completion(full)).toBe(1)
       expect(questsFor(full)[0]?.kind).not.toBe('equip')
     })
+  })
+})
+
+/*
+ * The only part of a sheet that differs on a second visit. Everything else is a
+ * photograph — the same numbers and the same advice until a threshold moves.
+ */
+describe('questsDone', () => {
+  const levelAt = (revenue: number) => levelFromXp(revenue)
+
+  it('says nothing without two days to compare', () => {
+    expect(questsDone([{ day: '2026-08-01', mrrUsd: 0, revenueTotalUsd: 0 }], levelAt)).toEqual([])
+  })
+
+  it('reports a rung crossed, not a number going up', () => {
+    const done = questsDone(
+      [
+        { day: '2026-08-01', mrrUsd: 900, revenueTotalUsd: 0 },
+        { day: '2026-08-02', mrrUsd: 950, revenueTotalUsd: 0 },
+        { day: '2026-08-03', mrrUsd: 1_400, revenueTotalUsd: 0 },
+      ],
+      levelAt,
+    )
+    // 900 -> 950 stays uncommon and is silent; 950 -> 1,400 crosses into rare.
+    expect(done).toHaveLength(1)
+    expect(done[0]).toMatchObject({ line: 'Main Hand reached rare', on: '2026-08-03' })
+  })
+
+  /*
+   * The guard that cut the result from 326 founders to 184, and was worth it.
+   * Zero and absent are the same value in this corpus, so a jump out of zero is
+   * almost always the crawl catching up: one founder "earned their first
+   * dollar" and reached level 36 on the same day, which takes six figures.
+   */
+  it('will not read a jump out of zero as progress', () => {
+    const done = questsDone(
+      [
+        { day: '2026-08-01', mrrUsd: 0, revenueTotalUsd: 0 },
+        { day: '2026-08-02', mrrUsd: 40_000, revenueTotalUsd: 400_000 },
+      ],
+      levelAt,
+    )
+    expect(done).toEqual([])
+  })
+
+  it('never celebrates a fall', () => {
+    const done = questsDone(
+      [
+        { day: '2026-08-01', mrrUsd: 12_000, revenueTotalUsd: 0 },
+        { day: '2026-08-02', mrrUsd: 200, revenueTotalUsd: 0 },
+      ],
+      levelAt,
+    )
+    expect(done).toEqual([])
   })
 })
