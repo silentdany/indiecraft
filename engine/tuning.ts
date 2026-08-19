@@ -1090,8 +1090,6 @@ const count = (v: number) =>
     maximumFractionDigits: 1,
   }).format(v)
 
-const percent = (v: number) => `${Math.round(v)}%`
-
 /** Years since an ISO date, or null when there is no date to count from. */
 const yearsSince = (iso: string | null): number | null =>
   iso === null ? null : (Date.now() - new Date(iso).getTime()) / YEARS(1)
@@ -1862,14 +1860,41 @@ export const SLOTS: readonly SlotDef[] = [
   {
     key: 'waist',
     sourced: 'declared',
-    fill: 'Fill in profit margin last 30 days',
+    // The only slot with two inputs, so the only instruction that names two.
+    // A margin alone yields nothing — 100% of no revenue is no profit — and a
+    // founder who has typed one and sees this slot empty is missing the other
+    // half, not the half they already filled.
+    fill: 'Fill in profit margin and connect a payment provider',
     movable: true,
     reportedShare: 0.41,
     label: 'Waist',
-    stat: 'Profit margin',
+    stat: 'Monthly profit',
     glyph: 'girdle',
-    read: (i) => i.profitMargin30d,
-    format: percent,
+    /*
+     * The margin applied to the revenue an integration reports, rather than the
+     * margin on its own.
+     *
+     * A percentage typed into a box was the least defensible number on the
+     * sheet: 12% of everybody reporting one typed exactly 100, which is a
+     * business with no costs, and it bought a legendary belt. Worse, it could
+     * not make a ladder at all — 38% of reporters sit between 80 and 94, so the
+     * mass bunches in one band and no set of thresholds produces a pyramid.
+     *
+     * Dollars of profit spread the way every other revenue ladder does, and the
+     * gaming ceiling becomes real money: typing 100% still yields nothing
+     * without revenue behind it, and yields at most the revenue a payment
+     * provider already vouched for.
+     *
+     * It costs coverage — 1,715 founders report a margin, 968 also have revenue
+     * — and that is the right trade rather than a regression. A margin with no
+     * revenue under it is 100% of nothing, and the 747 who lose the slot are
+     * exactly the ones whose figure never meant anything.
+     */
+    read: (i) =>
+      i.profitMargin30d === null || i.last30dUsd <= 0
+        ? null
+        : positive((i.profitMargin30d / 100) * i.last30dUsd),
+    format: usd,
     items: [
       {
         rarity: 'common',
@@ -1887,7 +1912,7 @@ export const SLOTS: readonly SlotDef[] = [
       },
       {
         rarity: 'rare',
-        min: 80,
+        min: 700,
         name: 'Girdle of Operational Fury',
         icon: 'inv_belt_32',
         after: 'Girdle of Elemental Fury',
@@ -1896,14 +1921,14 @@ export const SLOTS: readonly SlotDef[] = [
       // software margins are absurd and the corpus says so.
       {
         rarity: 'epic',
-        min: 95,
+        min: 5_000,
         name: 'Overhead Girdle',
         icon: 'inv_belt_29',
         after: 'Onslaught Girdle',
       },
       {
         rarity: 'legendary',
-        min: 100,
+        min: 15_000,
         name: 'Belt of Never-Ending Runway',
         icon: 'inv_belt_26',
         after: 'Belt of Never-Ending Agony',
