@@ -42,15 +42,26 @@ export function completion(input: Pick<QuestInput, 'doll'>): number {
 
 /** Every quest a founder could take, best first. */
 export function questsFor(input: QuestInput): Quest[] {
-  const phase = completion(input) < QUESTS.completeAt ? 'reporting' : 'growing'
-  const weights = QUESTS.weights[phase]
-
   const quests: Candidate[] = [
     ...equipQuests(input),
     ...upgradeQuests(input),
     ...achievementQuests(input),
     ...levelQuest(input),
   ]
+
+  /*
+   * A blank field is not a small amount of progress, it is a different kind of
+   * work — thirty seconds against months — so the log pushes reporting while
+   * ANY slot is blank, and switches only when none are left.
+   *
+   * It used to switch at a completion percentage, and that was wrong in a way
+   * only a real sheet showed: at 82% equipped a founder was told to raise a
+   * domain rating, which is a season of SEO, while a profit margin and a
+   * marketing-channel list sat empty behind one form. The threshold was mine to
+   * invent and it invented the bug; "until it is complete" was the ask.
+   */
+  const phase = quests.some((q) => q.kind === 'equip') ? 'reporting' : 'growing'
+  const weights = QUESTS.weights[phase]
 
   return quests
     .map(({ attainability: _internal, ...q }) => ({ ...q, weight: 0 }))

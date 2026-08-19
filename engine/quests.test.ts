@@ -1,7 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { equipmentFor, equipmentInput } from './equipment'
 import { completion, questsFor } from './quests'
-import { QUESTS } from './tuning'
 import type { AchievementProgressInput, FounderAggregate, QuestInput } from './types'
 
 function aggregate(over: Partial<FounderAggregate> = {}): FounderAggregate {
@@ -167,6 +166,10 @@ describe('questsFor', () => {
       last30dUsd: 34_000,
       revenueTotalUsd: 400_000,
       customers: 400,
+      // Derived in the real aggregate, literal in this fixture — and the two
+      // slots that read it were the last blanks keeping "dressed" from meaning
+      // seventeen of seventeen.
+      effectiveCustomers: 400,
       activeSubscriptions: 380,
       nProducts: 3,
       growthMrr30d: 25,
@@ -181,15 +184,27 @@ describe('questsFor', () => {
       foundedFirst: '2019-01-01',
     }
 
-    it('puts equipping first while the sheet is thin', () => {
+    it('puts equipping first while any slot is blank', () => {
       const thin = input()
-      expect(completion(thin)).toBeLessThan(QUESTS.completeAt)
       expect(questsFor(thin)[0]?.kind).toBe('equip')
     })
 
-    it('stops leading with equipping once the sheet is dressed', () => {
+    /*
+     * The regression that named the rule. A founder at 82% equipped was being
+     * told to raise a domain rating — a season of SEO — while a profit margin
+     * and a channel list sat empty behind one form, because a completion
+     * percentage counted 82% as done. One blank is enough.
+     */
+    it('leads with the blank even on a nearly-dressed sheet', () => {
+      const nearly = input({}, { ...dressed, profitMargin30d: null, channels: [] })
+      const worn = nearly.doll.filter((s) => s.item !== null).length
+      expect(worn).toBeGreaterThan(nearly.doll.length * 0.75)
+      expect(questsFor(nearly)[0]?.kind).toBe('equip')
+    })
+
+    it('turns to growth only once nothing is blank', () => {
       const full = input({}, dressed)
-      expect(completion(full)).toBeGreaterThanOrEqual(QUESTS.completeAt)
+      expect(completion(full)).toBe(1)
       expect(questsFor(full)[0]?.kind).not.toBe('equip')
     })
   })

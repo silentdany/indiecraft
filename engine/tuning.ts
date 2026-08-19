@@ -1145,24 +1145,21 @@ const positive = (v: number): number | null => (v > 0 ? v : null)
  * The quest log's only tunables: when to stop asking for data, and what a kind
  * of quest is worth while we are still asking.
  *
- * Two phases, because the two goals genuinely conflict. A founder whose sheet
- * is half empty gets more out of filling their TrustMRR listing than out of
- * chasing a rung they cannot reach; a founder whose sheet is already dressed
- * gets nothing from being told to fill in what they filled in. So the log
- * pushes for coverage first and for growth after, and `completeAt` is the line
- * between them.
+ * Two phases, because the two goals genuinely conflict — but the line between
+ * them is not a percentage. It is whether any slot is still blank.
  *
- * 0.75 — thirteen of seventeen slots — is measured, not chosen for roundness:
- * it leaves roughly 60% of the corpus in the reporting phase and graduates the
- * rest, which is the split that makes the switch mean something. The mean
- * founder wears 10.2.
+ * A completion threshold sat here first and produced exactly the wrong advice
+ * on a real sheet: 82% equipped counted as done, so the log asked for a higher
+ * domain rating — a season of SEO — while a profit margin and a channel list
+ * sat empty behind one form. Filling a blank is not a small amount of progress,
+ * it is a different kind of work, and no percentage of the OTHER slots changes
+ * what it costs.
  *
  * Weights are relative and nothing more. A quest's final score is its kind's
  * weight moved by how close it is, so the ordering within a kind is distance
  * and the ordering between kinds is this table.
  */
 export const QUESTS = {
-  completeAt: 0.75,
   /** How many the sheet shows. The engine always returns all of them. */
   shown: 3,
   weights: {
