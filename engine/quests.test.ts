@@ -66,6 +66,8 @@ function input(over: Partial<QuestInput> = {}, agg: Partial<FounderAggregate> = 
     listingUrl: 'https://trustmrr.com/founder/someone',
     products: [],
     rank: null,
+    realm: null,
+    ilvl: null,
     revenueTotalUsd: 0,
     earned: [],
     progress: progress(),

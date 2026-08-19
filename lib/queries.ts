@@ -344,6 +344,8 @@ const getCharacterUncached = async (rawHandle: string): Promise<CharacterPage | 
         realm: string | null
         realm_rank: string | null
         realm_total: string | null
+        realm_above_level: number | null
+        realm_above_ilvl: number | null
         above_handle: string | null
         above_level: number | null
         above_mrr: string | null
@@ -361,8 +363,12 @@ const getCharacterUncached = async (rawHandle: string): Promise<CharacterPage | 
                -- Partitioning by a nullable column groups every realm-less
                -- founder into one bucket, so the rank is only read out below
                -- when the realm is actually set.
-               row_number() over (partition by c.realm order by
-                 c.level desc, c.ilvl desc nulls last, c.handle)  as realm_rank,
+               row_number() over rw                               as realm_rank,
+               -- The neighbour one place up on the SAME realm. The realm ladder
+               -- is ordered by level then item level, so this is the pair a
+               -- realm quest measures against.
+               lag(c.level) over rw                               as realm_above_level,
+               lag(c.ilvl)  over rw                               as realm_above_ilvl,
                lag(c.handle)     over w as above_handle,
                lag(c.level)      over w as above_level,
                lag(c.mrr_cents)  over w as above_mrr,
@@ -373,13 +379,20 @@ const getCharacterUncached = async (rawHandle: string): Promise<CharacterPage | 
         from characters c
         join founders f on f.handle = c.handle
         where f.opted_out_at is null
-        window w as (order by c.level desc, c.ilvl desc nulls last, c.handle)
+        window
+          w as (order by c.level desc, c.ilvl desc nulls last, c.handle),
+          -- Partitioning by a nullable column groups every realm-less founder
+          -- into one bucket, so anything read out of it is only used where the
+          -- realm is actually set. Named rw, not r: the outer query already
+          -- aliases this CTE as r.
+          rw as (partition by c.realm order by c.level desc, c.ilvl desc nulls last, c.handle)
       )
       select r.rank, r.class_rank, r.realm, r.realm_rank,
              (select count(*) from ranked)                          as total,
              (select count(*) from ranked x where x.class = r.class) as class_total,
              (select count(*) from ranked x where x.realm = r.realm) as realm_total,
-             r.above_handle, r.above_level, r.above_mrr,
+             r.realm_above_level, r.realm_above_ilvl,
+             r.above_handle, r.above_level, r.above_mrr, r.above_total,
              r.below_handle, r.below_level, r.below_mrr
       from ranked r
       where r.handle = ${handle}
@@ -556,6 +569,16 @@ const getCharacterUncached = async (rawHandle: string): Promise<CharacterPage | 
       name: p.raw?.name ?? p.slug,
       mrrUsd: Number(p.mrr_cents ?? 0) / 100,
     })),
+    ilvl: row.ilvl,
+    realm: rankRowOne?.realm
+      ? {
+          realm: rankRowOne.realm,
+          rank: Number(rankRowOne.realm_rank),
+          total: Number(rankRowOne.realm_total),
+          aboveLevel: rankRowOne.realm_above_level,
+          aboveIlvl: rankRowOne.realm_above_ilvl,
+        }
+      : null,
     rank: rankRowOne
       ? {
           rank: Number(rankRowOne.rank),

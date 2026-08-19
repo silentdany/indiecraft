@@ -359,8 +359,29 @@ export interface QuestInput {
    * a number, and the ladder is sorted on lifetime revenue.
    */
   rank: { rank: number; aboveRevenueUsd: number | null } | null
+  /**
+   * Standing on the founder's own realm, and the neighbour one place up.
+   *
+   * A better-shaped race than the global ladder. The realm ladder is ordered by
+   * level then item level, and 1,246 founders sit level-tied within eight item
+   * levels of the person above them — an ordering the global list cannot
+   * produce, because there the median gap is $0.
+   *
+   * It is also the only quest that closes the loop: item level is the mean of
+   * the gear worn, so the way to climb a realm is to fill a slot, which is what
+   * every other quest in the log is already asking for.
+   */
+  realm: {
+    realm: string
+    rank: number
+    total: number
+    aboveLevel: number | null
+    aboveIlvl: number | null
+  } | null
   /** Lifetime revenue, for measuring the climb to the rank above. */
   revenueTotalUsd: number
+  /** The founder's own item level, for the realm race. Null when unscored. */
+  ilvl: number | null
   /**
    * The founder's TrustMRR page, which is where every number on the sheet is
    * entered. Passed in rather than built here: the engine knows nothing about
@@ -649,6 +670,15 @@ export interface EquippedSlot {
   /** Null when nothing is worn; `empty` then says which kind of nothing. */
   item: EquippedItem | null
   empty: EmptyReason | null
+  /**
+   * The stat, when there is one but nothing is worn.
+   *
+   * Only ever set alongside `unearned` — a real number that landed under the
+   * first rung. It was being thrown away, which left the quest log unable to
+   * tell "you reported 0.4% and the rung is 1%" from "nobody ever said", and so
+   * it told 1,741 founders to go and report a figure they had already reported.
+   */
+  value: number | null
 }
 
 /**

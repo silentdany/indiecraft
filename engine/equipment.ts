@@ -41,15 +41,22 @@ function equipSlot(slot: SlotDef, input: EquipmentInput): EquippedSlot {
 
   // Never told. Not the same fact as "told, and it is small".
   if (value === null || !Number.isFinite(value)) {
-    return { ...base, item: null, empty: 'unreported' satisfies EmptyReason }
+    return { ...base, item: null, empty: 'unreported' satisfies EmptyReason, value: null }
   }
 
   const worn = highestWearable(slot.items, value)
   if (worn === null) {
-    return { ...base, item: null, empty: 'unearned' satisfies EmptyReason }
+    // Carried, not discarded: this is the one empty where a number exists, and
+    // the difference decides whether the advice is "report it" or "grow it".
+    return { ...base, item: null, empty: 'unearned' satisfies EmptyReason, value }
   }
 
-  return { ...base, item: describe(slot, worn, value, input.characterClass), empty: null }
+  return {
+    ...base,
+    item: describe(slot, worn, value, input.characterClass),
+    empty: null,
+    value,
+  }
 }
 
 /**

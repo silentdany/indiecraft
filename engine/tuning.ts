@@ -1176,14 +1176,14 @@ export const QUESTS = {
     reporting: {
       equip: 100,
       set: 55,
-      achievement: 45,
+      rank: 45,
+      achievement: 42,
       product: 35,
       upgrade: 30,
-      rank: 25,
       level: 20,
     },
     /** Sheet is dressed: the numbers themselves have to move. */
-    growing: { equip: 35, level: 85, upgrade: 75, product: 70, achievement: 65, rank: 55, set: 50 },
+    growing: { equip: 35, level: 85, rank: 80, upgrade: 75, product: 70, achievement: 65, set: 50 },
   },
   /**
    * Slots left before "finish the set" is worth saying.
@@ -1203,6 +1203,15 @@ export const QUESTS = {
    * the top — median gap is $5,434 in the first 200 and $75 by the thousandth.
    */
   rankGapMin: 50,
+  /**
+   * The widest item-level gap a realm race is worth offering across.
+   *
+   * Beyond this it is not a race, it is a different founder. 1,246 sit within
+   * eight of the neighbour above them; another 1,473 are tied on item level too
+   * and separated only by the alphabet, who get no quest at all — which is the
+   * honest answer for a gap that no amount of work closes.
+   */
+  realmIlvlMax: 8,
   /**
    * The floors of the reference's five difficulty bands, grey through red.
    *

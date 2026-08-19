@@ -50,6 +50,7 @@ export function questsFor(input: QuestInput): Quest[] {
     ...levelQuest(input),
     ...productQuests(input),
     ...rankQuest(input),
+    ...realmQuest(input),
     ...setQuest(input),
   ]
 
@@ -150,6 +151,16 @@ function equipQuests(input: QuestInput): Candidate[] {
     const def = SLOTS_BY_KEY.get(slot.slot)
     const first = def?.items[0]
     if (!def || !first) continue
+    /*
+     * Two different jobs wearing one shape.
+     *
+     * `unreported` is a slot with no usable value: the advice is to get the
+     * number onto the listing. `unearned` is a real figure that landed under
+     * the first rung — reported, just small — and telling those founders to go
+     * and report it is the mistake this whole file is built to avoid. 1,741 of
+     * 4,151 have at least one.
+     */
+    const short = slot.empty === 'unearned' && slot.value !== null
     out.push({
       code: `equip:${slot.slot}`,
       kind: 'equip',
@@ -168,16 +179,16 @@ function equipQuests(input: QuestInput): Candidate[] {
       rewardRarity: first.rarity,
       // The words on the listing form. See SlotDef.fill for why they are not
       // the words in the API.
-      action: `${def.fill} on TrustMRR`,
+      action: short ? `Grow it past ${def.format(first.min)}` : `${def.fill} on TrustMRR`,
       href: input.listingUrl,
       /*
-       * No bar. 'unearned' would have a real distance, but 'unreported' has no
-       * "current" at all, and drawing one from zero would claim a founder is at
-       * zero — the exact claim the docblock above forbids. One kind of quest
-       * cannot draw a bar on some sheets and not others without the blank
-       * reading as the bad news.
+       * A bar only where a number exists. `unearned` has one and it is the
+       * whole point of the distinction; `unreported` has no "current" at all,
+       * and drawing one from zero would claim a founder is at zero.
        */
-      progress: null,
+      progress: short
+        ? { current: slot.value!, target: first.min, ratio: ratio(slot.value!, first.min) }
+        : null,
       /*
        * Cost, not popularity. This was `reportedShare` — the share of the
        * corpus with the stat on record — which ordered the log by how many
@@ -188,7 +199,9 @@ function equipQuests(input: QuestInput): Candidate[] {
       attainability:
         QUESTS.effort[def.sourced] * (1 - QUESTS.adoptionNudge) +
         def.reportedShare * QUESTS.adoptionNudge,
-      cost: QUESTS.effort[def.sourced],
+      // A short number is business work, not data entry, so it takes the
+      // distance band rather than the cost of filling in a form.
+      cost: short ? undefined : QUESTS.effort[def.sourced],
       chain: { step: 1, of: def.items.length },
     })
   }
@@ -375,6 +388,53 @@ function rankQuest(input: QuestInput): Candidate[] {
         current: input.revenueTotalUsd,
         target: rank.aboveRevenueUsd,
         ratio: ratio(input.revenueTotalUsd, rank.aboveRevenueUsd),
+      },
+      chain: null,
+    },
+  ]
+}
+
+/**
+ * The race on your own realm, measured in item level.
+ *
+ * The best-shaped quest in the log, and the numbers say why. The global ladder
+ * is tied at the median, so a global rank quest only works near the top; the
+ * realm ladder is ordered by level then item level, and 1,246 founders sit
+ * level-tied within eight item levels of the person above them.
+ *
+ * It is also the only one that closes the loop. Item level is the mean of the
+ * gear worn, so the way to climb a realm is to fill or upgrade a slot — which
+ * is what every other quest here is already asking for. The rest of the log
+ * becomes the method for this one.
+ *
+ * Nothing is offered to the 1,473 who are tied on item level as well: the
+ * ordering below that is alphabetical, and no amount of work closes a gap that
+ * is somebody's handle.
+ */
+function realmQuest(input: QuestInput): Candidate[] {
+  const realm = input.realm
+  if (!realm || realm.rank <= 1 || input.ilvl === null) return []
+  if (realm.aboveLevel === null || realm.aboveIlvl === null) return []
+  // Level first: somebody a level ahead is a different quest, and the level
+  // quest already covers it.
+  if (realm.aboveLevel !== input.level) return []
+  const gap = realm.aboveIlvl - input.ilvl
+  if (gap < 1 || gap > QUESTS.realmIlvlMax) return []
+  return [
+    {
+      code: 'realm:next',
+      kind: 'rank',
+      title: `Take #${realm.rank - 1} on the ${realm.realm} realm`,
+      requirement: `${gap} more item level${gap > 1 ? 's' : ''}`,
+      reward: `#${realm.rank - 1} of ${realm.total}`,
+      rewardIcon: STAT_ICONS.crest ?? null,
+      rewardRarity: null,
+      action: 'Item level is the average of the gear you are wearing',
+      href: null,
+      progress: {
+        current: input.ilvl,
+        target: realm.aboveIlvl,
+        ratio: ratio(input.ilvl, realm.aboveIlvl),
       },
       chain: null,
     },
