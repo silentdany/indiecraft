@@ -372,7 +372,16 @@ function rankQuest(input: QuestInput): Candidate[] {
   const rank = input.rank
   if (!rank || rank.rank <= 1 || rank.aboveRevenueUsd === null) return []
   const gap = rank.aboveRevenueUsd - input.revenueTotalUsd
-  if (gap < QUESTS.rankGapMin) return []
+  /*
+   * `Number.isFinite`, and it is not defensive programming for its own sake.
+   *
+   * A column that was in the CTE but missing from the outer select handed this
+   * `undefined`, which became NaN, and NaN fails every comparison silently — so
+   * `gap < rankGapMin` was false and a quest reading "$NaN more lifetime
+   * revenue" reached production. A threshold cannot be a guard against a value
+   * that refuses to be compared, so the shape is checked before the size.
+   */
+  if (!Number.isFinite(gap) || gap < QUESTS.rankGapMin) return []
   return [
     {
       code: 'rank:next',

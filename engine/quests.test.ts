@@ -192,6 +192,21 @@ describe('questsFor', () => {
     expect(climb?.requirement).toBe('$40K more lifetime revenue')
   })
 
+  /*
+   * The one that actually shipped. A missing column made the gap NaN, NaN loses
+   * every comparison, so the size check passed it straight through and a live
+   * sheet asked somebody for "$NaN more lifetime revenue".
+   */
+  it('refuses a gap that is not a number at all', () => {
+    const broken = questsFor(
+      input({
+        rank: { rank: 12, aboveRevenueUsd: Number.NaN },
+        revenueTotalUsd: 50_000,
+      }),
+    )
+    expect(broken.some((q) => q.kind === 'rank')).toBe(false)
+  })
+
   it('asks for the full set only when it is nearly done', () => {
     const bare = questsFor(input())
     expect(bare.some((q) => q.kind === 'set')).toBe(false)
