@@ -499,6 +499,21 @@ export interface SlotDef {
    */
   movable: boolean
   /**
+   * How a founder actually gets this number onto TrustMRR, in the imperative.
+   *
+   * Read off the real listing form rather than off the API payload, and the
+   * difference mattered: the API exposes `revenue.mrr`, `customers` and
+   * `activeSubscriptions`, so the first version of this told people to "set
+   * your MRR on your listing" — and the form has no such box. Those arrive by
+   * connecting a payment provider. Visitors arrive by connecting DataFast or
+   * Google Analytics. Categories are called Markets. Domain rating is derived
+   * from the website URL and typed in nowhere.
+   *
+   * An instruction that names a field nobody can find is worse than the vague
+   * one it replaced, so these are the words on the form.
+   */
+  fill: string
+  /**
    * Which axis this slot's `variants` are keyed on, if any.
    *
    * Stated per slot rather than inferred from the key so that adding a slot

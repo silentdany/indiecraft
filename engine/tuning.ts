@@ -1270,6 +1270,7 @@ export const SLOTS: readonly SlotDef[] = [
   // --- Left column ---------------------------------------------------------
   {
     key: 'head',
+    fill: 'Add your website URL',
     movable: true,
     reportedShare: 0.85,
     label: 'Head',
@@ -1319,6 +1320,7 @@ export const SLOTS: readonly SlotDef[] = [
   },
   {
     key: 'neck',
+    fill: 'Add your X handle',
     movable: true,
     reportedShare: 0.91,
     label: 'Neck',
@@ -1366,6 +1368,7 @@ export const SLOTS: readonly SlotDef[] = [
   },
   {
     key: 'shoulders',
+    fill: 'List another product',
     movable: true,
     reportedShare: 1.0,
     label: 'Shoulders',
@@ -1415,6 +1418,7 @@ export const SLOTS: readonly SlotDef[] = [
   },
   {
     key: 'back',
+    fill: 'Connect your payment provider',
     movable: true,
     reportedShare: 0.46,
     label: 'Back',
@@ -1472,6 +1476,7 @@ export const SLOTS: readonly SlotDef[] = [
   },
   {
     key: 'chest',
+    fill: 'Connect your payment provider',
     movable: true,
     reportedShare: 0.47,
     varyBy: 'armor',
@@ -1634,6 +1639,7 @@ export const SLOTS: readonly SlotDef[] = [
   },
   {
     key: 'wrist',
+    fill: 'Connect your payment provider',
     movable: true,
     reportedShare: 0.47,
     label: 'Wrist',
@@ -1683,6 +1689,7 @@ export const SLOTS: readonly SlotDef[] = [
   // --- Right column --------------------------------------------------------
   {
     key: 'hands',
+    fill: 'Add your tech stack',
     movable: true,
     reportedShare: 0.62,
     label: 'Hands',
@@ -1732,6 +1739,7 @@ export const SLOTS: readonly SlotDef[] = [
   },
   {
     key: 'waist',
+    fill: 'Fill in profit margin last 30 days',
     movable: true,
     reportedShare: 0.41,
     label: 'Waist',
@@ -1781,6 +1789,7 @@ export const SLOTS: readonly SlotDef[] = [
   },
   {
     key: 'legs',
+    fill: 'Connect your payment provider',
     movable: true,
     reportedShare: 0.53,
     varyBy: 'armor',
@@ -1946,6 +1955,7 @@ export const SLOTS: readonly SlotDef[] = [
   },
   {
     key: 'feet',
+    fill: 'Connect your payment provider',
     movable: true,
     reportedShare: 0.47,
     varyBy: 'armor',
@@ -2100,6 +2110,7 @@ export const SLOTS: readonly SlotDef[] = [
   },
   {
     key: 'ring1',
+    fill: 'Set your founded date',
     movable: false,
     reportedShare: 0.89,
     label: 'Ring 1',
@@ -2150,6 +2161,7 @@ export const SLOTS: readonly SlotDef[] = [
   },
   {
     key: 'ring2',
+    fill: 'Add a cofounder',
     movable: false,
     reportedShare: 1.0,
     label: 'Ring 2',
@@ -2202,6 +2214,7 @@ export const SLOTS: readonly SlotDef[] = [
   },
   {
     key: 'trinket1',
+    fill: 'Pick your markets',
     movable: true,
     reportedShare: 0.95,
     label: 'Trinket 1',
@@ -2250,6 +2263,7 @@ export const SLOTS: readonly SlotDef[] = [
   },
   {
     key: 'trinket2',
+    fill: 'Add your marketing channels',
     movable: true,
     reportedShare: 0.22,
     label: 'Trinket 2',
@@ -2300,6 +2314,7 @@ export const SLOTS: readonly SlotDef[] = [
   // --- Weapons -------------------------------------------------------------
   {
     key: 'mainHand',
+    fill: 'Connect your payment provider',
     movable: true,
     reportedShare: 0.47,
     varyBy: 'weapon',
@@ -2468,6 +2483,7 @@ export const SLOTS: readonly SlotDef[] = [
   },
   {
     key: 'offHand',
+    fill: 'Connect your payment provider',
     movable: true,
     reportedShare: 0.77,
     varyBy: 'offhand',
@@ -2577,6 +2593,7 @@ export const SLOTS: readonly SlotDef[] = [
   },
   {
     key: 'ranged',
+    fill: 'Connect DataFast or Google Analytics',
     movable: true,
     reportedShare: 0.19,
     label: 'Ranged',

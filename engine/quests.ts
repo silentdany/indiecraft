@@ -121,14 +121,9 @@ function equipQuests(input: QuestInput): Candidate[] {
       reward: first.name,
       rewardIcon: first.icon,
       rewardRarity: first.rarity,
-      /*
-       * The stat is not repeated here on purpose. Three of the seventeen labels
-       * are column headings rather than nouns — "Shipping for", "Per customer",
-       * "Last 30 days" — and "Set your shipping for on your listing" is not a
-       * sentence. The requirement directly above already names the number, so
-       * the action only has to name the place.
-       */
-      action: 'Set it on your TrustMRR listing',
+      // The words on the listing form. See SlotDef.fill for why they are not
+      // the words in the API.
+      action: `${def.fill} on TrustMRR`,
       href: input.listingUrl,
       /*
        * No bar. 'unearned' would have a real distance, but 'unreported' has no
