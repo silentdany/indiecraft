@@ -514,6 +514,23 @@ export interface SlotDef {
    */
   fill: string
   /**
+   * Where the number comes from, which decides how much it is worth.
+   *
+   * Read off the listing form. `connected` means TrustMRR gets it from a linked
+   * account or measures it itself — a payment provider, an analytics
+   * integration, Search Console, the X handle — so nobody can type it. `declared`
+   * means the founder wrote it in a box, and `counted` means it is a count of
+   * listings.
+   *
+   * Worth stating out loud because six of the seventeen are declared, and three
+   * of those are tag pickers with a cap: a legendary trinket is five market tags
+   * ticked, and 12% of everybody reporting a profit margin types exactly 100.
+   * The site claims every number on it is falsifiable. Half of them are audited
+   * by an integration; the rest are somebody's word, and a reader is owed the
+   * difference.
+   */
+  sourced: 'connected' | 'declared' | 'counted'
+  /**
    * Which axis this slot's `variants` are keyed on, if any.
    *
    * Stated per slot rather than inferred from the key so that adding a slot

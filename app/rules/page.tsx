@@ -11,6 +11,8 @@ import {
   LEVEL_THRESHOLDS,
   MAX_LEVEL,
   RARITY_BANDS,
+  RARITY_BY_NAME,
+  SLOTS,
 } from '@/engine'
 import { CLASS_RULES, XP_PER_PRODUCT } from '@/engine/tuning'
 import { getClassCounts, getFactionCounts, getRealmCounts } from '@/lib/queries'
@@ -21,7 +23,7 @@ export const revalidate = 86400
 export const metadata: Metadata = {
   title: 'The rules',
   description:
-    'Every number on this site, and how it is worked out. The level table, the class tree, the rarity bands and all fifteen achievements.',
+    'Every number on this site, and how it is worked out. The level table, the class tree, the rarity bands, all seventeen equipment slots and every achievement.',
   alternates: { canonical: '/rules' },
 }
 
@@ -222,6 +224,56 @@ export default async function Rules() {
             </ul>
           </>
         )}
+      </Section>
+
+      <Section title={`Equipment — ${SLOTS.length} slots`}>
+        {/*
+          The largest table in the engine and the last one to reach this page,
+          which made the sentence at the top of it false: every number on a sheet
+          comes from the tables below, except the seventeen that decide the item
+          level and the entire quest log.
+        */}
+        <p className="muted rules-note">
+          Every stat is a slot, and every slot is a ladder of five. A piece scores from where the
+          stat sits on its own ladder, not against other founders, so a legendary belt and a
+          legendary blade are both near 60 — and your item level is their mean. A slot nobody has
+          reported is left out of that mean rather than counted as a zero.
+        </p>
+        {/*
+          Provenance, stated per slot. Six of the seventeen are typed into a form
+          and three of those are tag pickers with a cap — five markets ticked is a
+          legendary trinket. Somebody reading a ladder is owed the difference
+          between a number an integration vouches for and a number somebody wrote.
+        */}
+        <p className="muted rules-note">
+          <b>Connected</b> means TrustMRR gets the number from a linked account or measures it
+          itself — a payment provider, an analytics integration, Search Console, the X handle — so
+          it cannot be typed. <b>Declared</b> means the founder filled it in. Both are shown here
+          because they are not worth the same, and only one of them can be audited.
+        </p>
+        <ul className="slots">
+          {SLOTS.map((slot) => (
+            <li className="slot-row" key={slot.key}>
+              <span className="slot-head">
+                <span className="serif slot-name">{slot.label}</span>
+                <span className="label slot-stat">{slot.stat}</span>
+                <span className={`label slot-src slot-src-${slot.sourced}`}>{slot.sourced}</span>
+              </span>
+              <span className="slot-rungs">
+                {slot.items.map((item) => (
+                  <span
+                    className="slot-rung"
+                    key={item.rarity}
+                    style={{ color: RARITY_BY_NAME.get(item.rarity)?.hex }}
+                    title={item.name}
+                  >
+                    {slot.format(item.min)}
+                  </span>
+                ))}
+              </span>
+            </li>
+          ))}
+        </ul>
       </Section>
 
       <Section title={`Achievements — ${ACHIEVEMENTS.length}`}>
