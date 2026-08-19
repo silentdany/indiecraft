@@ -3997,3 +3997,9 @@ a.share-copy {
   color: var(--ic-frame);
   font-variant-numeric: tabular-nums;
 }
+
+/* A sentence inside a legend row, where `.label` would shout it in capitals. */
+.band-note {
+  color: var(--ic-text-muted);
+  font-size: 12.5px;
+}

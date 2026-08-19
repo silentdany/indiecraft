@@ -1254,6 +1254,51 @@ export const QUESTS = {
   unknownProximity: 0.5,
 } as const
 
+/**
+ * What each kind of quest is, in the site's own voice.
+ *
+ * Beside the weights rather than in the page, the same way CLASS_RULES sits
+ * beside the class tree: /rules renders straight from here, so a new generator
+ * ships its explanation or it does not ship.
+ */
+export const QUEST_RULES: readonly { kind: string; when: string; why: string }[] = [
+  {
+    kind: 'equip',
+    when: 'A slot has nothing in it.',
+    why: 'Filling a blank is a different kind of work from growing a number — thirty seconds against months — so these lead until none are left, whatever the rest of the sheet looks like.',
+  },
+  {
+    kind: 'upgrade',
+    when: 'A worn slot has a rung above it.',
+    why: 'The stat has to move. Slots that only time or a life decision changes — years shipping, cofounders — are left out: a rung you cannot reach by working is a wait, not a quest.',
+  },
+  {
+    kind: 'product',
+    when: 'A product sits below a rung of the Monthly revenue ladder.',
+    why: 'The doll folds every product into one weapon. A founder with three businesses had three numbers hidden inside a single quest about their sum.',
+  },
+  {
+    kind: 'achievement',
+    when: 'A badge is unearned and can state a distance.',
+    why: 'The boolean ones are skipped rather than listed without a bar. An entry that can never show movement is furniture.',
+  },
+  {
+    kind: 'level',
+    when: 'There is a level above the current one.',
+    why: 'Lifetime revenue is the only thing that levels anybody, so this one can be exact rather than a nudge.',
+  },
+  {
+    kind: 'rank',
+    when: 'The founder above is a real distance ahead.',
+    why: 'The ladder is densely tied — the median gap is $0 and 971 founders sit at exactly zero revenue — so this appears only where the gap means something. It names a rank, never a person.',
+  },
+  {
+    kind: 'set',
+    when: 'Three slots or fewer are still empty.',
+    why: 'A full set is the oldest carrot there is, but "fill fifteen slots" is not a quest, it is a description of being new.',
+  },
+] as const
+
 export const STAT_ICONS: Record<string, string> = {
   characters: 'inv_misc_grouplooking',
   level: 'achievement_level_10',

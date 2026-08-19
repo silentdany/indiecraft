@@ -14,7 +14,7 @@ import {
   RARITY_BY_NAME,
   SLOTS,
 } from '@/engine'
-import { CLASS_RULES, XP_PER_PRODUCT } from '@/engine/tuning'
+import { CLASS_RULES, QUEST_RULES, QUESTS, XP_PER_PRODUCT } from '@/engine/tuning'
 import { getClassCounts, getFactionCounts, getRealmCounts } from '@/lib/queries'
 import { realmLabel } from '@/lib/realm'
 
@@ -23,7 +23,7 @@ export const revalidate = 86400
 export const metadata: Metadata = {
   title: 'The rules',
   description:
-    'Every number on this site, and how it is worked out. The level table, the class tree, the rarity bands, all seventeen equipment slots and every achievement.',
+    'Every number on this site, and how it is worked out. The level table, the class tree, the rarity bands, all seventeen equipment slots, the quest log and every achievement.',
   alternates: { canonical: '/rules' },
 }
 
@@ -274,6 +274,83 @@ export default async function Rules() {
             </li>
           ))}
         </ul>
+      </Section>
+
+      <Section title={`The quest log — ${QUEST_RULES.length} kinds`}>
+        <p className="muted rules-note">
+          Nothing in the log is new information. Every line of it was already on the sheet and
+          printed in a different panel — the next rung of a worn item, the first rung of an empty
+          one, a badge's distance, the XP left in a level — and a founder could read all of them and
+          still not know which single thing to go and do. The log is that data sorted.
+        </p>
+        <p className="muted rules-note">
+          Nothing is written per quest either. The generators walk the equipment table above and the
+          achievement table below, so a new slot brings its own quests and a rebalance carries them
+          with it. The sheet shows {QUESTS.shown}; the engine ranks them all.
+        </p>
+        <ol className="rules-classes">
+          {QUEST_RULES.map((rule, i) => (
+            <li className="rules-class" key={rule.kind}>
+              <span className="rules-class-n label">{i + 1}</span>
+              <span className="rules-class-body">
+                <span className="rules-class-head">
+                  <span className="serif gold">{rule.kind}</span>
+                </span>
+                <span className="rules-class-cond">{rule.when}</span>
+                <span className="muted rules-class-reason">{rule.why}</span>
+              </span>
+            </li>
+          ))}
+        </ol>
+
+        {/*
+          The key to a signal the sheet gives without words. The pip beside a
+          quest is coloured and nothing else — which is what the reference does —
+          so the one place the code can be explained is here.
+        */}
+        <p className="muted rules-note">
+          Every quest carries a coloured mark, on the scale the game has used for twenty years: grey
+          costs nothing, red is a long way off. Grey is not flattery — it is the six slots you fill
+          by typing into a form, which take about ten seconds each. What a job costs is decided by
+          where its number comes from, never by how many founders happen to have filled it in.
+        </p>
+        <ul className="bands">
+          {(
+            [
+              ['trivial', '#808080', 'A field you type in. Ten seconds.'],
+              ['easy', '#40c040', 'An account to connect, or a rung you are most of the way to.'],
+              ['standard', '#ffd100', 'Halfway.'],
+              ['hard', '#ff8040', 'A quarter of the way.'],
+              ['severe', '#ff4040', 'A long climb, or a whole product to ship.'],
+            ] as const
+          ).map(([name, hex, note]) => (
+            <li className="band" key={name}>
+              <span className="quest-pip" style={{ color: hex }}>
+                ◆
+              </span>
+              <span className="band-name" style={{ color: hex }}>
+                {name}
+              </span>
+              {/* Not `.label`: that is built for two-word chips and shouts a
+                  sentence in capitals. */}
+              <span className="band-note">{note}</span>
+            </li>
+          ))}
+        </ul>
+
+        <p className="muted rules-note">
+          Finished quests are read out of the crawl history rather than stored, so nothing can drift
+          from what actually happened. Two rules keep them honest: a fall is never announced, and
+          neither is a jump out of zero — zero and "never reported" are the same value here, so a
+          number appearing for the first time is the crawl catching up, not a first sale.
+        </p>
+        <p className="muted rules-note">
+          What the log deliberately does not have: daily quests, because the data is crawled nightly
+          and a daily objective on yesterday's numbers is a lie; random ones, because every number
+          on this site is supposed to be checkable and a rolled objective is not; and any way to
+          accept or dismiss one, because a quest here is finished by the number moving, not by
+          anybody pressing a button.
+        </p>
       </Section>
 
       <Section title={`Achievements — ${ACHIEVEMENTS.length}`}>

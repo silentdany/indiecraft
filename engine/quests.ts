@@ -418,8 +418,16 @@ function usd(value: number): string {
   }).format(Math.max(value, 0))
 }
 
-/** The kinds, in the order the tuning table lists them. Handy for tests and docs. */
-export const QUEST_KINDS: readonly QuestKind[] = ['equip', 'upgrade', 'achievement', 'level']
+/** Every kind, in the order the rules page lists them. */
+export const QUEST_KINDS: readonly QuestKind[] = [
+  'equip',
+  'upgrade',
+  'product',
+  'achievement',
+  'level',
+  'rank',
+  'set',
+]
 
 /**
  * What finished since the corpus started watching.
