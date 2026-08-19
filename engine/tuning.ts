@@ -1219,6 +1219,30 @@ export const QUESTS = {
    */
   proximityShare: 0.6,
   /**
+   * How cheap an empty slot is to fill, by where its number comes from.
+   *
+   * This replaced the share of the corpus that reports the stat, which was
+   * measuring the wrong thing and said so out loud: marketing channels showed
+   * as "steep" because only 22% of listings carry any, when ticking a tag takes
+   * ten seconds. Adoption is not difficulty — a field can be trivial and rare
+   * at the same time, and most of the optional ones are exactly that.
+   *
+   * What the listing form actually decides: typing in a box is the cheapest
+   * thing on the site, connecting Stripe or Google Analytics is a few minutes
+   * of somebody's afternoon, and shipping another product is not a chore at all.
+   * The bands fall out of these, so `declared` reads close and `counted` reads
+   * steep without either being asserted separately.
+   */
+  effort: { declared: 0.95, connected: 0.7, counted: 0.2 },
+  /**
+   * How much the corpus's own fill rate may nudge the order.
+   *
+   * Small on purpose: it breaks ties between slots of the same kind without
+   * ever letting a widely-reported integration outrank a box somebody can type
+   * in. Adoption is a tiebreak, never the verdict.
+   */
+  adoptionNudge: 0.15,
+  /**
    * What an unknowable distance counts as.
    *
    * Not 0. A slot whose stat has no usable value has no measurable distance,

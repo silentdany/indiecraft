@@ -165,7 +165,16 @@ function equipQuests(input: QuestInput): Candidate[] {
        * reading as the bad news.
        */
       progress: null,
-      attainability: def.reportedShare,
+      /*
+       * Cost, not popularity. This was `reportedShare` — the share of the
+       * corpus with the stat on record — which ordered the log by how many
+       * people had bothered and labelled a ten-second tag picker "steep". What
+       * it costs is decided by where the number comes from; adoption only
+       * breaks ties inside a class.
+       */
+      attainability:
+        QUESTS.effort[def.sourced] * (1 - QUESTS.adoptionNudge) +
+        def.reportedShare * QUESTS.adoptionNudge,
       chain: { step: 1, of: def.items.length },
     })
   }
