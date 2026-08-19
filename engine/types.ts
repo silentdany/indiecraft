@@ -240,14 +240,19 @@ export interface AchievementDef {
 export type QuestKind = 'equip' | 'upgrade' | 'achievement' | 'level' | 'product' | 'rank' | 'set'
 
 /**
- * How far the thing is, in four bands.
+ * The reference's own difficulty scale, five bands, grey through red.
  *
- * The reference colours a quest by how hard it is relative to you, which is the
- * single most useful thing you can tell somebody scanning a list of them. Ours
- * measures distance rather than level difference, but it does the same job: the
- * eye sorts the log before reading a word of it.
+ * These replaced close/fair/hard/steep, which was a vocabulary invented for a
+ * scale that already has one millions of people read fluently — the same
+ * argument the class colours are built on. A player knows a grey quest costs
+ * nothing and a red one is a long way off without being told.
+ *
+ * The axis is not identical to the game's. There, colour is your level against
+ * the quest's; here it is how far the number has to travel, with a slot you can
+ * fill by typing counting as trivial. Easy to hard survives the translation,
+ * which is the part anybody actually reads.
  */
-export type QuestDifficulty = 'close' | 'fair' | 'hard' | 'steep'
+export type QuestDifficulty = 'trivial' | 'easy' | 'standard' | 'hard' | 'severe'
 
 export interface Quest {
   /** Stable across recomputes: `equip:ranged`, `achievement:ding_sixty`. */

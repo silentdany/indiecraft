@@ -46,12 +46,23 @@ export function QuestCard({ quest }: { quest: Quest }) {
         <span className="quest-head">
           <span className="quest-title serif">{quest.title}</span>
           {/*
-            How far, as a word the eye reads before any number. The reference
-            colours a quest by difficulty and it is the fastest thing to scan in
-            a list of them; ours measures distance, which does the same job.
+            Colour, not a word — which is what the reference does. A quest log
+            there prints no difficulty anywhere; the title's colour is the whole
+            signal, and a player reads grey-through-red without being taught.
+            The word survives in `title` for anybody hovering or using a screen
+            reader, because a colour alone is not an accessible label.
+
+            A pip rather than the title itself, and that is the one place this
+            departs from the game. The reward beside it already wears an item
+            quality, and green and orange mean something specific in that
+            palette — a green TITLE next to a purple item would read as a green
+            item. A mark is not text, so it does not join that argument.
           */}
-          <span className={`quest-diff label quest-diff-${quest.difficulty}`}>
-            {quest.difficulty}
+          <span
+            className={`quest-pip quest-pip-${quest.difficulty}`}
+            title={`${quest.difficulty} quest`}
+          >
+            ◆
           </span>
         </span>
 

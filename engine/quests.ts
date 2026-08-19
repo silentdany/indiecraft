@@ -71,7 +71,7 @@ export function questsFor(input: QuestInput): Quest[] {
     .map(({ attainability: _internal, ...q }) => ({
       ...q,
       chain: q.chain ?? null,
-      difficulty: 'fair' as QuestDifficulty,
+      difficulty: 'standard' as QuestDifficulty,
       weight: 0,
     }))
     .map((q, i) => ({
@@ -104,7 +104,19 @@ function score(quest: Candidate, base: number): number {
 
 /** A quest before it is scored. `attainability` never leaves this file. */
 type Candidate = Omit<Quest, 'weight' | 'difficulty' | 'chain'> & {
+  /** Blended with adoption, for ORDER only. */
   attainability?: number
+  /**
+   * What the thing costs, unblended — the band a founder is shown.
+   *
+   * Kept apart from `attainability` because mixing adoption into it let a rare
+   * field cross a band boundary: marketing channels came out one point under
+   * the trivial floor purely because few listings carry any, which is the exact
+   * confusion between effort and popularity this was supposed to have settled.
+   * Adoption may break a tie in the ordering. It may not change what a founder
+   * is told a job costs.
+   */
+  cost?: number
   chain?: { step: number; of: number } | null
 }
 
@@ -117,11 +129,12 @@ type Candidate = Omit<Quest, 'weight' | 'difficulty' | 'chain'> & {
  * than at either extreme.
  */
 function hardness(quest: Candidate): QuestDifficulty {
-  const near = quest.progress?.ratio ?? quest.attainability ?? QUESTS.unknownProximity
-  if (near >= QUESTS.difficulty.close) return 'close'
-  if (near >= QUESTS.difficulty.fair) return 'fair'
+  const near = quest.progress?.ratio ?? quest.cost ?? QUESTS.unknownProximity
+  if (near >= QUESTS.difficulty.trivial) return 'trivial'
+  if (near >= QUESTS.difficulty.easy) return 'easy'
+  if (near >= QUESTS.difficulty.standard) return 'standard'
   if (near >= QUESTS.difficulty.hard) return 'hard'
-  return 'steep'
+  return 'severe'
 }
 
 function ratio(current: number, target: number): number {
@@ -175,6 +188,7 @@ function equipQuests(input: QuestInput): Candidate[] {
       attainability:
         QUESTS.effort[def.sourced] * (1 - QUESTS.adoptionNudge) +
         def.reportedShare * QUESTS.adoptionNudge,
+      cost: QUESTS.effort[def.sourced],
       chain: { step: 1, of: def.items.length },
     })
   }

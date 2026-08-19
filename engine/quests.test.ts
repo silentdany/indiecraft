@@ -201,11 +201,20 @@ describe('questsFor', () => {
     expect(mid?.chain).toEqual({ step: 4, of: 5 })
   })
 
-  it('bands a quest by how far it is', () => {
+  /*
+   * The reference's own scale, grey through red, rather than the close/fair/
+   * steep vocabulary this invented for a thing that already had one. The words
+   * only ever reach a `title` attribute; the colour is the label.
+   */
+  it('bands a quest on the difficulty scale the game uses', () => {
     const near = questsFor(input({}, { mrrUsd: 9_000 })).find((q) => q.code === 'upgrade:mainHand')
-    expect(near?.difficulty).toBe('close')
+    expect(near?.difficulty).toBe('trivial')
     const far = questsFor(input({}, { mrrUsd: 1_100 })).find((q) => q.code === 'upgrade:mainHand')
-    expect(far?.difficulty).toBe('steep')
+    expect(far?.difficulty).toBe('severe')
+    // A slot you fill by typing is grey: it costs ten seconds, which is what
+    // the game's grey has always meant.
+    const typed = questsFor(input()).find((q) => q.code === 'equip:trinket2')
+    expect(typed?.difficulty).toBe('trivial')
   })
 
   describe('the two phases', () => {

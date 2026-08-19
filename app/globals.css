@@ -3702,8 +3702,7 @@ a.share-copy {
 .quest-head {
   display: flex;
   align-items: baseline;
-  justify-content: space-between;
-  gap: 12px;
+  gap: 8px;
 }
 /* Heading of the left block, which is the half about doing something. */
 .quest-title {
@@ -3934,23 +3933,34 @@ a.share-copy {
 /* Difficulty, chain step and the finished strip on a quest ------------------
    The four difficulty colours are the reference's own: green is close, red is
    a long way off, and the eye sorts the log before reading a word. */
-.quest-diff {
+/*
+ * The reference's difficulty scale: grey, green, yellow, orange, red.
+ *
+ * Deliberately NOT the quality hexes. Those five colours already mean an item
+ * tier on this page and the reward sits ten pixels away, so the greens and
+ * oranges here are pulled off that palette on purpose — near enough to read as
+ * the same scale, far enough not to be mistaken for a rarity.
+ */
+.quest-pip {
   flex: none;
-  padding: 1px 6px;
   font-size: 9px;
-  border: 1px solid currentColor;
+  line-height: 1;
+  cursor: help;
 }
-.quest-diff-close {
-  color: #1eff00;
+.quest-pip-trivial {
+  color: #808080;
 }
-.quest-diff-fair {
-  color: var(--ic-butter);
+.quest-pip-easy {
+  color: #40c040;
 }
-.quest-diff-hard {
-  color: #ff8000;
+.quest-pip-standard {
+  color: #ffd100;
 }
-.quest-diff-steep {
-  color: #e01c1c;
+.quest-pip-hard {
+  color: #ff8040;
+}
+.quest-pip-severe {
+  color: #ff4040;
 }
 .quest-chain {
   margin-left: 8px;

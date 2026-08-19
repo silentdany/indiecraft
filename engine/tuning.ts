@@ -1204,12 +1204,14 @@ export const QUESTS = {
    */
   rankGapMin: 50,
   /**
-   * Where a distance stops being close and starts being steep.
+   * The floors of the reference's five difficulty bands, grey through red.
    *
-   * The reference colours a quest by difficulty and it is the fastest thing to
-   * read in a list. Ours measures how far, which does the same job.
+   * Trivial is deliberately high enough to catch the slots a founder fills by
+   * typing — those cost ten seconds and the game's grey means exactly that.
+   * Everything below is distance: a rung you are most of the way to is easy, a
+   * rung four times off is red.
    */
-  difficulty: { close: 0.8, fair: 0.5, hard: 0.25 },
+  difficulty: { trivial: 0.85, easy: 0.65, standard: 0.45, hard: 0.25 },
   /**
    * How much of the score proximity may swing, against the kind's weight.
    *
