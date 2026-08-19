@@ -1160,8 +1160,15 @@ const positive = (v: number): number | null => (v > 0 ? v : null)
  * and the ordering between kinds is this table.
  */
 export const QUESTS = {
-  /** How many the sheet shows. The engine always returns all of them. */
-  shown: 3,
+  /**
+   * How many the sheet shows. The engine always returns all of them.
+   *
+   * Four because the log is a two-column grid and three left a hole in it. The
+   * count follows the layout rather than the other way round: at three per row
+   * every line of every card wrapped, and at two per row an odd number leaves
+   * a gap where a fourth quest fits perfectly well.
+   */
+  shown: 4,
   weights: {
     /** Sheet is thin: equipping an empty slot beats everything. */
     reporting: { equip: 100, achievement: 45, upgrade: 30, level: 20 },

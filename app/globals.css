@@ -3618,9 +3618,16 @@ a.share-copy {
   margin-right: 10px;
   font-size: 18px;
 }
+/*
+ * Three across on a wide page, one on a narrow one.
+ *
+ * They were full-width rows, and a screenshot showed what that meant: six
+ * hundred pixels of nothing between an eight-word instruction and its reward
+ * column. A quest carries about a card's worth of text, so it gets a card.
+ */
 .quests {
-  display: flex;
-  flex-direction: column;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(360px, 1fr));
   gap: 8px;
   margin: 0;
   padding: 0;
@@ -3657,8 +3664,8 @@ a.share-copy {
 .quest-row {
   display: flex;
   align-items: flex-start;
-  gap: 14px;
-  padding: 13px 15px;
+  gap: 12px;
+  padding: 13px 14px;
   color: inherit;
   text-decoration: none;
 }
@@ -3676,8 +3683,8 @@ a.share-copy {
   flex-direction: column;
   align-items: center;
   gap: 6px;
-  width: 132px;
-  padding-left: 15px;
+  width: 108px;
+  padding-left: 12px;
   border-left: 1px solid var(--ic-line);
   text-align: center;
 }
