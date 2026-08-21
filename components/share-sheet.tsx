@@ -52,7 +52,19 @@ export function ShareSheet({
    * A founder who levels up and reshares the bare URL gets last month's card
    * back, image id or no image id.
    */
-  const origin = typeof window === 'undefined' ? '' : window.location.origin
+  /*
+   * The configured site URL, not `window.location.origin`.
+   *
+   * Reading the origin off the browser meant the server rendered "/c/handle"
+   * and the client rendered "indiecraft.quest/c/handle", which is a hydration
+   * mismatch on every character sheet — React threw, discarded the subtree and
+   * rebuilt it, and the share URL visibly changed after load. It was in the dev
+   * log on every visit.
+   *
+   * `NEXT_PUBLIC_SITE_URL` is inlined at build time, so both renders agree, and
+   * it is what robots.txt, the sitemap and the metadata base already use.
+   */
+  const origin = process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000'
   const url = `${origin}/c/${handle}?s=${ogImageId(level, ilvl)}`
   const card = ogImagePath(handle, level, ilvl)
   // Shown the way X shows it in a post: the host and path, no scheme.
