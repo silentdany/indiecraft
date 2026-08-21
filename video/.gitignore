@@ -1,0 +1,5 @@
+node_modules
+out
+# The source footage. Big, and not ours to commit.
+public/cinematic.mp4
+public/capture.mp4

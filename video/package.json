@@ -1,0 +1,32 @@
+{
+  "name": "indiecraft-video",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Launch video. Renders the real Indiecraft components, so a zoom stays sharp.",
+  "scripts": {
+    "studio": "remotion studio",
+    "render:vertical": "remotion render Launch-Vertical out/indiecraft-launch-9x16.mp4",
+    "render:landscape": "remotion render Launch-Landscape out/indiecraft-launch-16x9.mp4",
+    "render": "pnpm render:vertical && pnpm render:landscape",
+    "still": "remotion still Launch-Vertical out/frame.png",
+    "measure": "remotion ffmpeg -hide_banner -i public/cinematic.mp4 -vn -af silencedetect=noise=-45dB:d=0.15 -f wav -y /dev/null",
+    "snapshot": "node --env-file-if-exists=../.env --env-file-if-exists=../.env.local --import tsx scripts/snapshot-character.ts",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@remotion/cli": "^4.0.515",
+    "@remotion/google-fonts": "^4.0.515",
+    "@remotion/media-utils": "^4.0.515",
+    "mediabunny": "^1.55.2",
+    "react": "^19.2.8",
+    "react-dom": "^19.2.8",
+    "remotion": "^4.0.515"
+  },
+  "devDependencies": {
+    "@remotion/eslint-config-flat": "^4.0.515",
+    "@types/node": "^26.2.0",
+    "@types/react": "^19.2.18",
+    "tsx": "^4.23.12",
+    "typescript": "^7.0.2"
+  }
+}

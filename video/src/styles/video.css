@@ -1,0 +1,62 @@
+/*
+ * The gap between the app's stylesheet and a renderer that is not Next.
+ *
+ * globals.css is imported unmodified — it is the design system, and forking it
+ * for the video is how the video starts looking like a different product. This
+ * file only fills in what Next was providing:
+ *
+ *   --ic-font-sans   set by next/font in app/layout.tsx. Undefined here, and an
+ *                    undefined var() poisons --ic-sans for the whole document,
+ *                    so every word on the sheet would fall back to the browser
+ *                    default. The name matches what @remotion/google-fonts
+ *                    registers; see src/lib/fonts.ts.
+ *
+ * Nothing below is a visual opinion. If a rule here changes how the sheet
+ * looks rather than whether it renders at all, it belongs in globals.css.
+ */
+:root {
+  --ic-font-sans: "Alegreya Sans";
+}
+
+/* The studio paints its own chrome behind the composition; the site's body
+   background belongs to the page, not to the video, and a shot decides its own
+   ground. */
+body {
+  background: var(--ic-bg);
+}
+
+/* The page container, at the width the app lays it out at. A shot renders this
+   inside the camera and scales it up — CSS transforms rasterise after layout,
+   which is why a 3x close-up on 12px metadata is sharp here and would be a
+   block of mush in a screen capture. */
+.video-page {
+  width: 960px;
+  margin: 0 auto;
+  padding: 28px 20px;
+}
+
+/*
+ * Hover affordances, off.
+ *
+ * The sheet's item tooltips are `opacity: 0; visibility: hidden` until
+ * `:hover` or `:focus-within`, which on a page is exactly right and in a
+ * render is a trap: nothing in a video is ever hovered deliberately, so a
+ * tooltip that appears is always an accident. One did — a Crown of
+ * Distribution card, opened over half the frame, visible only in the landscape
+ * cut and only at high magnification, which is the kind of bug that ships.
+ *
+ * Rather than work out which of `:hover` and `:focus-within` headless Chrome
+ * was satisfying, the rule states the thing that is true either way: a video
+ * has no pointer, so it has no hover state to show.
+ *
+ * `display: none` rather than a stronger `visibility`, so the node cannot
+ * affect what the camera measures either. Every tooltip is absolutely
+ * positioned, so nothing reflows.
+ */
+.tooltip {
+  /* biome-ignore lint/complexity/noImportantStyles: overriding a state rule
+     from a stylesheet this project does not own. `.doll-slot:hover .tooltip`
+     outweighs anything reachable from here without inventing a selector that
+     hard-codes the sheet's DOM, which is the more fragile of the two. */
+  display: none !important;
+}
