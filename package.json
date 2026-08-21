@@ -14,7 +14,7 @@
     ]
   },
   "scripts": {
-    "dev": "next dev",
+    "dev": "next dev -p 4000",
     "build": "next build",
     "start": "next start",
     "crawl": "node --env-file-if-exists=.env --import tsx scripts/crawl.ts",

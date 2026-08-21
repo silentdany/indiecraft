@@ -39,7 +39,7 @@ import { mkdtempSync, rmSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 
-const BASE = process.argv[2] ?? process.env.SMOKE_URL ?? 'http://localhost:3000'
+const BASE = process.argv[2] ?? process.env.SMOKE_URL ?? 'http://localhost:4000'
 const CHROME = process.env.CHROME_PATH
 
 /**
