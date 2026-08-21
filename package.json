@@ -26,7 +26,8 @@
     "lint": "biome check .",
     "format": "biome check --write .",
     "typecheck": "tsc --noEmit",
-    "audit-icons": "node --import tsx scripts/audit-icons.ts"
+    "audit-icons": "node --import tsx scripts/audit-icons.ts",
+    "smoke": "node --import tsx scripts/smoke.ts"
   },
   "dependencies": {
     "@vercel/og": "^0.11.1",
