@@ -8,9 +8,10 @@
     "render:vertical": "remotion render Launch-Vertical out/indiecraft-launch-9x16.mp4",
     "render:landscape": "remotion render Launch-Landscape out/indiecraft-launch-16x9.mp4",
     "render": "pnpm render:vertical && pnpm render:landscape",
+    "films": "node --import tsx scripts/render-films.ts",
     "still": "remotion still Launch-Vertical out/frame.png",
     "measure": "remotion ffmpeg -hide_banner -i public/cinematic.mp4 -vn -af silencedetect=noise=-45dB:d=0.15 -f wav -y /dev/null",
-    "snapshot": "node --env-file-if-exists=../.env --env-file-if-exists=../.env.local --import tsx scripts/snapshot-character.ts",
+    "snapshot": "node --env-file-if-exists=../.env --env-file-if-exists=../.env.local --import tsx scripts/snapshot.ts",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {

@@ -1,0 +1,585 @@
+{
+  "sort": "level",
+  "total": 4231,
+  "page": 1,
+  "perPage": 100,
+  "pageCount": 43,
+  "rows": [
+    {
+      "rank": 1,
+      "handle": "rohangilkes",
+      "level": 60,
+      "ilvl": 43,
+      "characterClass": "Hunter",
+      "rarity": {
+        "name": "legendary",
+        "hex": "#ff8000"
+      },
+      "ilvlRarity": {
+        "name": "epic",
+        "hex": "#a335ee"
+      },
+      "nProducts": 8,
+      "realm": "US",
+      "faction": "B2C"
+    },
+    {
+      "rank": 2,
+      "handle": "martinlasmanis",
+      "level": 60,
+      "ilvl": 39,
+      "characterClass": "Hunter",
+      "rarity": {
+        "name": "legendary",
+        "hex": "#ff8000"
+      },
+      "ilvlRarity": {
+        "name": "rare",
+        "hex": "#0070dd"
+      },
+      "nProducts": 1,
+      "realm": "US",
+      "faction": "B2B"
+    },
+    {
+      "rank": 3,
+      "handle": "vitaliidodonov",
+      "level": 60,
+      "ilvl": 36,
+      "characterClass": "Hunter",
+      "rarity": {
+        "name": "legendary",
+        "hex": "#ff8000"
+      },
+      "ilvlRarity": {
+        "name": "rare",
+        "hex": "#0070dd"
+      },
+      "nProducts": 1,
+      "realm": "US",
+      "faction": null
+    },
+    {
+      "rank": 4,
+      "handle": "laurent_vinc",
+      "level": 60,
+      "ilvl": 32,
+      "characterClass": "Hunter",
+      "rarity": {
+        "name": "legendary",
+        "hex": "#ff8000"
+      },
+      "ilvlRarity": {
+        "name": "rare",
+        "hex": "#0070dd"
+      },
+      "nProducts": 1,
+      "realm": "US",
+      "faction": "B2B"
+    },
+    {
+      "rank": 5,
+      "handle": "greg_rog",
+      "level": 60,
+      "ilvl": 31,
+      "characterClass": "Hunter",
+      "rarity": {
+        "name": "legendary",
+        "hex": "#ff8000"
+      },
+      "ilvlRarity": {
+        "name": "rare",
+        "hex": "#0070dd"
+      },
+      "nProducts": 1,
+      "realm": "PL",
+      "faction": null
+    },
+    {
+      "rank": 6,
+      "handle": "basedgunnar",
+      "level": 60,
+      "ilvl": 26,
+      "characterClass": "Paladin",
+      "rarity": {
+        "name": "legendary",
+        "hex": "#ff8000"
+      },
+      "ilvlRarity": {
+        "name": "rare",
+        "hex": "#0070dd"
+      },
+      "nProducts": 2,
+      "realm": "US",
+      "faction": "B2B"
+    },
+    {
+      "rank": 7,
+      "handle": "gairesatish",
+      "level": 60,
+      "ilvl": 23,
+      "characterClass": "Monk",
+      "rarity": {
+        "name": "legendary",
+        "hex": "#ff8000"
+      },
+      "ilvlRarity": {
+        "name": "uncommon",
+        "hex": "#1eff00"
+      },
+      "nProducts": 2,
+      "realm": "NP",
+      "faction": null
+    },
+    {
+      "rank": 8,
+      "handle": "jacob_jacquet",
+      "level": 59,
+      "ilvl": 40,
+      "characterClass": "Hunter",
+      "rarity": {
+        "name": "legendary",
+        "hex": "#ff8000"
+      },
+      "ilvlRarity": {
+        "name": "epic",
+        "hex": "#a335ee"
+      },
+      "nProducts": 1,
+      "realm": "US",
+      "faction": "B2C"
+    },
+    {
+      "rank": 9,
+      "handle": "gregorian909",
+      "level": 59,
+      "ilvl": 39,
+      "characterClass": "Paladin",
+      "rarity": {
+        "name": "legendary",
+        "hex": "#ff8000"
+      },
+      "ilvlRarity": {
+        "name": "rare",
+        "hex": "#0070dd"
+      },
+      "nProducts": 1,
+      "realm": "DE",
+      "faction": null
+    },
+    {
+      "rank": 10,
+      "handle": "heygrantcooper",
+      "level": 59,
+      "ilvl": 38,
+      "characterClass": "Hunter",
+      "rarity": {
+        "name": "legendary",
+        "hex": "#ff8000"
+      },
+      "ilvlRarity": {
+        "name": "rare",
+        "hex": "#0070dd"
+      },
+      "nProducts": 4,
+      "realm": "US",
+      "faction": "B2B"
+    },
+    {
+      "rank": 11,
+      "handle": "timepercept",
+      "level": 57,
+      "ilvl": 34,
+      "characterClass": "Paladin",
+      "rarity": {
+        "name": "legendary",
+        "hex": "#ff8000"
+      },
+      "ilvlRarity": {
+        "name": "rare",
+        "hex": "#0070dd"
+      },
+      "nProducts": 1,
+      "realm": "GB",
+      "faction": null
+    },
+    {
+      "rank": 12,
+      "handle": "nomistair",
+      "level": 56,
+      "ilvl": 40,
+      "characterClass": "Warrior",
+      "rarity": {
+        "name": "legendary",
+        "hex": "#ff8000"
+      },
+      "ilvlRarity": {
+        "name": "epic",
+        "hex": "#a335ee"
+      },
+      "nProducts": 2,
+      "realm": "FR",
+      "faction": null
+    },
+    {
+      "rank": 13,
+      "handle": "saad__",
+      "level": 56,
+      "ilvl": 39,
+      "characterClass": "Rogue",
+      "rarity": {
+        "name": "legendary",
+        "hex": "#ff8000"
+      },
+      "ilvlRarity": {
+        "name": "rare",
+        "hex": "#0070dd"
+      },
+      "nProducts": 1,
+      "realm": "US",
+      "faction": null
+    },
+    {
+      "rank": 14,
+      "handle": "eczachly",
+      "level": 56,
+      "ilvl": 36,
+      "characterClass": "Warrior",
+      "rarity": {
+        "name": "legendary",
+        "hex": "#ff8000"
+      },
+      "ilvlRarity": {
+        "name": "rare",
+        "hex": "#0070dd"
+      },
+      "nProducts": 1,
+      "realm": "US",
+      "faction": "B2C"
+    },
+    {
+      "rank": 15,
+      "handle": "indexsy",
+      "level": 56,
+      "ilvl": 36,
+      "characterClass": "Hunter",
+      "rarity": {
+        "name": "legendary",
+        "hex": "#ff8000"
+      },
+      "ilvlRarity": {
+        "name": "rare",
+        "hex": "#0070dd"
+      },
+      "nProducts": 4,
+      "realm": "CA",
+      "faction": "B2B"
+    },
+    {
+      "rank": 16,
+      "handle": "robbyfrank",
+      "level": 56,
+      "ilvl": 33,
+      "characterClass": "Paladin",
+      "rarity": {
+        "name": "legendary",
+        "hex": "#ff8000"
+      },
+      "ilvlRarity": {
+        "name": "rare",
+        "hex": "#0070dd"
+      },
+      "nProducts": 1,
+      "realm": "US",
+      "faction": "B2B"
+    },
+    {
+      "rank": 17,
+      "handle": "lewiscarhart",
+      "level": 56,
+      "ilvl": 32,
+      "characterClass": "Hunter",
+      "rarity": {
+        "name": "legendary",
+        "hex": "#ff8000"
+      },
+      "ilvlRarity": {
+        "name": "rare",
+        "hex": "#0070dd"
+      },
+      "nProducts": 2,
+      "realm": "US",
+      "faction": "B2B"
+    },
+    {
+      "rank": 18,
+      "handle": "ronaldships",
+      "level": 56,
+      "ilvl": 29,
+      "characterClass": "Mage",
+      "rarity": {
+        "name": "legendary",
+        "hex": "#ff8000"
+      },
+      "ilvlRarity": {
+        "name": "rare",
+        "hex": "#0070dd"
+      },
+      "nProducts": 5,
+      "realm": "DO",
+      "faction": "B2C"
+    },
+    {
+      "rank": 19,
+      "handle": "shugert",
+      "level": 56,
+      "ilvl": 28,
+      "characterClass": "Hunter",
+      "rarity": {
+        "name": "legendary",
+        "hex": "#ff8000"
+      },
+      "ilvlRarity": {
+        "name": "rare",
+        "hex": "#0070dd"
+      },
+      "nProducts": 1,
+      "realm": "US",
+      "faction": "B2B"
+    },
+    {
+      "rank": 20,
+      "handle": "sanjaynediyara",
+      "level": 56,
+      "ilvl": 27,
+      "characterClass": "Warrior",
+      "rarity": {
+        "name": "legendary",
+        "hex": "#ff8000"
+      },
+      "ilvlRarity": {
+        "name": "rare",
+        "hex": "#0070dd"
+      },
+      "nProducts": 1,
+      "realm": null,
+      "faction": null
+    },
+    {
+      "rank": 21,
+      "handle": "majoragv",
+      "level": 55,
+      "ilvl": 42,
+      "characterClass": "Paladin",
+      "rarity": {
+        "name": "legendary",
+        "hex": "#ff8000"
+      },
+      "ilvlRarity": {
+        "name": "epic",
+        "hex": "#a335ee"
+      },
+      "nProducts": 3,
+      "realm": "CH",
+      "faction": null
+    },
+    {
+      "rank": 22,
+      "handle": "romanbuildsaas",
+      "level": 55,
+      "ilvl": 41,
+      "characterClass": "Priest",
+      "rarity": {
+        "name": "legendary",
+        "hex": "#ff8000"
+      },
+      "ilvlRarity": {
+        "name": "epic",
+        "hex": "#a335ee"
+      },
+      "nProducts": 3,
+      "realm": "FR",
+      "faction": "B2B"
+    },
+    {
+      "rank": 23,
+      "handle": "jaaims",
+      "level": 55,
+      "ilvl": 34,
+      "characterClass": "Rogue",
+      "rarity": {
+        "name": "legendary",
+        "hex": "#ff8000"
+      },
+      "ilvlRarity": {
+        "name": "rare",
+        "hex": "#0070dd"
+      },
+      "nProducts": 1,
+      "realm": "SG",
+      "faction": "B2B"
+    },
+    {
+      "rank": 24,
+      "handle": "oliverbrocato",
+      "level": 55,
+      "ilvl": 34,
+      "characterClass": "Rogue",
+      "rarity": {
+        "name": "legendary",
+        "hex": "#ff8000"
+      },
+      "ilvlRarity": {
+        "name": "rare",
+        "hex": "#0070dd"
+      },
+      "nProducts": 1,
+      "realm": "US",
+      "faction": "B2B"
+    },
+    {
+      "rank": 25,
+      "handle": "itsclarkholden",
+      "level": 55,
+      "ilvl": 25,
+      "characterClass": "Monk",
+      "rarity": {
+        "name": "legendary",
+        "hex": "#ff8000"
+      },
+      "ilvlRarity": {
+        "name": "rare",
+        "hex": "#0070dd"
+      },
+      "nProducts": 1,
+      "realm": "US",
+      "faction": "B2C"
+    },
+    {
+      "rank": 26,
+      "handle": "breadedgar",
+      "level": 55,
+      "ilvl": 23,
+      "characterClass": "Rogue",
+      "rarity": {
+        "name": "legendary",
+        "hex": "#ff8000"
+      },
+      "ilvlRarity": {
+        "name": "uncommon",
+        "hex": "#1eff00"
+      },
+      "nProducts": 1,
+      "realm": "US",
+      "faction": "B2B"
+    },
+    {
+      "rank": 27,
+      "handle": "ddcaridi",
+      "level": 54,
+      "ilvl": 34,
+      "characterClass": "Priest",
+      "rarity": {
+        "name": "epic",
+        "hex": "#a335ee"
+      },
+      "ilvlRarity": {
+        "name": "rare",
+        "hex": "#0070dd"
+      },
+      "nProducts": 1,
+      "realm": "US",
+      "faction": "B2B"
+    },
+    {
+      "rank": 28,
+      "handle": "mathorde",
+      "level": 54,
+      "ilvl": 28,
+      "characterClass": "Hunter",
+      "rarity": {
+        "name": "epic",
+        "hex": "#a335ee"
+      },
+      "ilvlRarity": {
+        "name": "rare",
+        "hex": "#0070dd"
+      },
+      "nProducts": 2,
+      "realm": "FR",
+      "faction": "B2B"
+    },
+    {
+      "rank": 29,
+      "handle": "duccioarmenise",
+      "level": 54,
+      "ilvl": 24,
+      "characterClass": "Monk",
+      "rarity": {
+        "name": "epic",
+        "hex": "#a335ee"
+      },
+      "ilvlRarity": {
+        "name": "uncommon",
+        "hex": "#1eff00"
+      },
+      "nProducts": 1,
+      "realm": "IT",
+      "faction": "Both"
+    },
+    {
+      "rank": 30,
+      "handle": "sowakillian",
+      "level": 53,
+      "ilvl": 34,
+      "characterClass": "Warrior",
+      "rarity": {
+        "name": "epic",
+        "hex": "#a335ee"
+      },
+      "ilvlRarity": {
+        "name": "rare",
+        "hex": "#0070dd"
+      },
+      "nProducts": 3,
+      "realm": "FR",
+      "faction": "B2C"
+    },
+    {
+      "rank": 31,
+      "handle": "vc_jacob",
+      "level": 53,
+      "ilvl": 34,
+      "characterClass": "Hunter",
+      "rarity": {
+        "name": "epic",
+        "hex": "#a335ee"
+      },
+      "ilvlRarity": {
+        "name": "rare",
+        "hex": "#0070dd"
+      },
+      "nProducts": 1,
+      "realm": "US",
+      "faction": null
+    },
+    {
+      "rank": 32,
+      "handle": "piprocket",
+      "level": 53,
+      "ilvl": 33,
+      "characterClass": "Warrior",
+      "rarity": {
+        "name": "epic",
+        "hex": "#a335ee"
+      },
+      "ilvlRarity": {
+        "name": "rare",
+        "hex": "#0070dd"
+      },
+      "nProducts": 6,
+      "realm": "US",
+      "faction": "B2B"
+    }
+  ]
+}

@@ -1,5 +1,5 @@
 /**
- * Freeze one real character into JSON, so the video renders offline.
+ * Freeze the real data into JSON, so the videos render offline.
  *
  * The alternative — having the composition await getCharacter() — makes every
  * render depend on a database being up and on whatever the ladder happens to
@@ -17,7 +17,23 @@ import { fileURLToPath } from 'node:url'
 
 const here = path.dirname(fileURLToPath(import.meta.url))
 const repoRoot = path.resolve(here, '..', '..')
-const out = path.join(here, '..', 'src', 'data', 'character.json')
+const data = path.join(here, '..', 'src', 'data')
+const out = path.join(data, 'character.json')
+const ladderOut = path.join(data, 'ladder.json')
+
+/**
+ * How many rows the ladder fixture keeps.
+ *
+ * Enough to overflow the frame, which is the whole visual argument. At twenty
+ * the page came out 1237px tall inside a 1920px frame and sat floating in the
+ * middle of it with three hundred pixels of nothing above and below — a short
+ * table, not a leaderboard. Thirty-two runs past the bottom edge, so the list
+ * reads as continuing rather than as ending.
+ *
+ * The query returns a hundred. The rest is weight in a file somebody has to
+ * read a diff of one day.
+ */
+const LADDER_ROWS = 32
 
 /**
  * Neutralise Next's cache layer before lib/queries is loaded.
@@ -109,6 +125,26 @@ async function main() {
     `Wrote ${path.relative(process.cwd(), out)} — ${character.displayName}, ` +
       `level ${character.level} ${character.characterClass}, rank #${character.rank}.`,
   )
+
+  /*
+   * The top of the ladder, for the film that is about the ladder.
+   *
+   * The site's own default sort, not the more colourful one. Sorting by item
+   * level was tried on the grounds that level rarity paints the whole top
+   * twenty a single colour — which is true, and beside the point: the iLvl
+   * column spreads across three rarities either way, which is where the
+   * component says the variety belongs, and a film about the leaderboard
+   * should show the leaderboard rather than a view of it nobody lands on.
+   */
+  const { getLadder } = await import('../../lib/queries')
+  const ladder = await getLadder({ sort: 'level', page: 1 })
+  const rows = ladder.rows.slice(0, LADDER_ROWS)
+  writeFileSync(ladderOut, `${JSON.stringify({ ...ladder, rows }, null, 2)}\n`)
+  console.log(
+    `Wrote ${path.relative(process.cwd(), ladderOut)} — top ${rows.length} of ` +
+      `${ladder.total} founders, by ${ladder.sort}.`,
+  )
+
   await db().end()
 }
 

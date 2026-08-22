@@ -8,7 +8,7 @@ import {
   useVideoConfig,
 } from 'remotion'
 import { CINEMATIC } from '../edit'
-import { frames } from '../lib/zoom'
+import { frames, type Time } from '../lib/zoom'
 
 /**
  * The borrowed excerpt. Picture only.
@@ -23,13 +23,39 @@ import { frames } from '../lib/zoom'
  * cinematic looks like a screenshot, and a slow drift is what makes it read as
  * footage.
  */
-export function Cinematic() {
+export function Cinematic({
+  src = CINEMATIC.src,
+  trimBefore = CINEMATIC.trimBefore,
+  fit = CINEMATIC.fit,
+  focus = CINEMATIC.focus,
+  backdrop = false,
+}: {
+  src?: string | null
+  trimBefore?: Time
+  fit?: 'cover' | 'contain'
+  focus?: [number, number]
+  /**
+   * Fill the letterbox with a blurred, enlarged copy of the same frame.
+   *
+   * For a shape that does not fit the frame and must not be cropped. The
+   * gameplay clips are nearly square and their whole job is recognition —
+   * which lives in the interface round the edges, so cropping to fill costs
+   * exactly the thing the shot is for. This fills the bars instead.
+   *
+   * Off for the cinematic: a scope frame in black bars is a deliberate look,
+   * and a blurred wash behind it would cheapen it into a phone video.
+   */
+  backdrop?: boolean
+} = {}) {
   const frame = useCurrentFrame()
   const { fps, durationInFrames } = useVideoConfig()
 
-  if (!CINEMATIC.src) return <Slate />
+  if (!src) return <Slate />
 
-  const start = frames(CINEMATIC.trimBefore, fps)
+  /* The length is the enclosing Sequence's, not a prop: whoever places this
+     scene has already decided how long it runs, and asking twice is how the
+     two answers start disagreeing. */
+  const start = frames(trimBefore, fps)
   const fade = frames(CINEMATIC.fadeOut, fps)
 
   const push = interpolate(frame, [0, durationInFrames], [1, CINEMATIC.push], {
@@ -48,19 +74,40 @@ export function Cinematic() {
 
   return (
     <AbsoluteFill style={{ background: '#000', overflow: 'hidden' }}>
+      {backdrop && (
+        <AbsoluteFill>
+          <Clip
+            src={staticFile(src)}
+            trimBefore={start}
+            trimAfter={start + durationInFrames}
+            muted
+            style={{
+              width: '100%',
+              height: '100%',
+              objectFit: 'cover',
+              /* Scaled past the edges so the blur has material to smear and
+                 does not fade into the frame border. Darkened so it stays
+                 backdrop rather than competing with the picture on top. */
+              transform: 'scale(1.18)',
+              filter: 'blur(52px) brightness(0.45) saturate(0.8)',
+            }}
+          />
+        </AbsoluteFill>
+      )}
+
       <AbsoluteFill style={{ transform: `scale(${push})` }}>
         <Clip
-          src={staticFile(CINEMATIC.src)}
+          src={staticFile(src)}
           trimBefore={start}
           trimAfter={start + durationInFrames}
           muted
           style={{
             width: '100%',
             height: '100%',
-            objectFit: CINEMATIC.fit,
+            objectFit: fit,
             /* Meaningless under `contain`, where nothing is cropped away, and
                harmless to leave — the browser ignores it. */
-            objectPosition: `${CINEMATIC.focus[0] * 100}% ${CINEMATIC.focus[1] * 100}%`,
+            objectPosition: `${focus[0] * 100}% ${focus[1] * 100}%`,
           }}
         />
       </AbsoluteFill>

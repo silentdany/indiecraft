@@ -4,7 +4,7 @@
   "avatarUrl": "data:image/jpeg;base64,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OFwxw9wQhCHIOBg4OYGPoO58k7JXESAdxyXQEBjZCNqlJQhUnIQKfsAbXPRtgF1Ni8CMrctwU1KhN1v8x9JO1Qjum0XK4XDFwuGMYuCHcEIchBwMMDg4iFIxcoa9GhhUfUNAVyDV+QDWp5Wec3OwE8x4deCBUNzb03HSO2JKggegxWLdrjZCtNRDFC1UvFxcLlcMY8jFw9jBwdwMIcgwcDBwOCuKlq4xtyNvSUNuzZPksG50GojQdwgHUR6hbDTFqX9hXuDPU1gAbJahdQItvRCZIAs5i4ubwsXCxY8jHC4eYHBghgYOBg4uXPfTWG0iV6JSMsHPEs0PYLW7ZvCEttud8X1jfataiRUgKTdRdvxEI0cloJxK1ADAKCLlYuFi4WLhYsYuHmSEOwhCGBg5GXgnCxIra7YENOaq/URWWN1VQQEfzLl5Q2hqyoiuvZOZm6qLbO2UZYlOhGodCsV6ysvFxZeFix5GMY4Yxg4HA4IQYOBl4uDLgshUjEOu0DktZwIzSPJGKii+RJ6GOgUmjpIJglS37C0AJ4iELfDRKHbtUupo0S83Fl4WLh5GLGLlwsIOByYGEHFwc3BjAaaRgU+z4MvNJqpSeY18iN6zeV/sO/tvJazdALmxdXT1lZTNtbc3Lly83FwsWLFjHuFwscEHAwwOBlwYOLly83ErJ0SMJe8uo0oPq7i7gnqKqb1ARw+sLlDgEuX9ly83Fl4vCxcLhi4WMYOCDgYYHFy5cuXi5cuX/wAdy5cvFy4sWXhcLFwsXC4HBBwMHB2Di5cvF5uXLly5cuXLly5ebly5cvFxcLFwscLgcDkcjLxebly5cuXLl/8ABcuXLlxZeVxcXK5XCz//2SAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIA==",
   "claimed": false,
   "level": 51,
-  "ilvl": 47,
+  "ilvl": 48,
   "equipped": {
     "worn": 17,
     "total": 17
@@ -18,17 +18,17 @@
     "name": "epic",
     "hex": "#a335ee"
   },
-  "xp": 1587855,
+  "xp": 1591515,
   "nProducts": 11,
-  "mrrUsd": 47607.89,
-  "revenueTotalUsd": 1582355.64,
-  "rank": 42,
+  "mrrUsd": 49408.89,
+  "revenueTotalUsd": 1586015.82,
+  "rank": 41,
   "rankContext": {
-    "rank": 42,
-    "total": 4237,
+    "rank": 41,
+    "total": 4231,
     "percentile": 1,
     "classRank": 17,
-    "classTotal": 164,
+    "classTotal": 163,
     "realmRank": {
       "realm": "SG",
       "rank": 2,
@@ -46,7 +46,7 @@
     "below": {
       "handle": "appm8ker",
       "level": 51,
-      "mrrUsd": 81696.29
+      "mrrUsd": 81655.98
     }
   },
   "profile": {
@@ -57,12 +57,12 @@
   "leveledAt": "2026-08-11T06:12:41.432Z",
   "previousLevel": 48,
   "stats": {
-    "last30dUsd": 81932.86,
-    "arpu": 15869.296666666667,
-    "growthMrr30d": 1.9596569221814903,
+    "last30dUsd": 80868.17,
+    "arpu": 16469.63,
+    "growthMrr30d": 5.038086217288854,
     "domainRating": 70,
-    "followers": 372441,
-    "age": 3.4051187903072475,
+    "followers": 372616,
+    "age": 3.407498660861409,
     "customers": 3,
     "retention": 1
   },
@@ -136,31 +136,36 @@
       "day": "2026-08-21",
       "mrrUsd": 49373.42,
       "revenueTotalUsd": 1487435.47
+    },
+    {
+      "day": "2026-08-22",
+      "mrrUsd": 49795.58,
+      "revenueTotalUsd": 1489710.27
     }
   ],
   "progressInput": {
-    "revenueTotalUsd": 1582355.64,
-    "mrrUsd": 47607.89,
+    "revenueTotalUsd": 1586015.82,
+    "mrrUsd": 49408.89,
     "customers": 3,
-    "activeSubscriptions": 1300,
+    "activeSubscriptions": 1311,
     "nProducts": 11,
     "retention": 1,
     "hasRetentionSignal": true,
-    "growthMrr30d": 1.9596569221814903,
+    "growthMrr30d": 5.038086217288854,
     "domainRating": 70,
     "level": 51,
     "cofounders": 1,
-    "visitors30d": 79793,
+    "visitors30d": 79135,
     "categories": 9,
     "stackSize": 13,
     "profitMargin30d": 95,
-    "googleImpressions30d": 680107,
+    "googleImpressions30d": 689516,
     "productsEarning": 3
   },
   "progress": {
     "current": 1250000,
     "next": 1600000,
-    "ratio": 0.9653
+    "ratio": 0.9757571428571429
   },
   "achievements": [
     {
@@ -282,12 +287,12 @@
           "name": "legendary",
           "hex": "#ff8000"
         },
-        "value": 372441,
-        "valueLabel": "372.4K",
+        "value": 372616,
+        "valueLabel": "372.6K",
         "next": null
       },
       "empty": null,
-      "value": 372441
+      "value": 372616
     },
     {
       "slot": "shoulders",
@@ -322,8 +327,8 @@
           "name": "epic",
           "hex": "#a335ee"
         },
-        "value": 1311,
-        "valueLabel": "1,311",
+        "value": 1334,
+        "valueLabel": "1,334",
         "next": {
           "name": "Cloak of the Unchurned",
           "icon": "inv_misc_cape_naxxramas_01",
@@ -336,7 +341,7 @@
         }
       },
       "empty": null,
-      "value": 1311
+      "value": 1334
     },
     {
       "slot": "chest",
@@ -380,12 +385,12 @@
           "name": "legendary",
           "hex": "#ff8000"
         },
-        "value": 16469.63,
-        "valueLabel": "$16.5K",
+        "value": 16610.350000000002,
+        "valueLabel": "$16.6K",
         "next": null
       },
       "empty": null,
-      "value": 16469.63
+      "value": 16610.350000000002
     },
     {
       "slot": "hands",
@@ -429,12 +434,12 @@
           "name": "legendary",
           "hex": "#ff8000"
         },
-        "value": 77836.21699999999,
-        "valueLabel": "$77.8K",
+        "value": 76824.7615,
+        "valueLabel": "$76.8K",
         "next": null
       },
       "empty": null,
-      "value": 77836.21699999999
+      "value": 76824.7615
     },
     {
       "slot": "legs",
@@ -449,8 +454,8 @@
           "name": "epic",
           "hex": "#a335ee"
         },
-        "value": 81932.86,
-        "valueLabel": "$81.9K",
+        "value": 80868.17,
+        "valueLabel": "$80.9K",
         "next": {
           "name": "Legstrides of the Six-Figure Month",
           "icon": "inv_pants_mail_14",
@@ -463,7 +468,7 @@
         }
       },
       "empty": null,
-      "value": 81932.86
+      "value": 80868.17
     },
     {
       "slot": "feet",
@@ -473,13 +478,13 @@
       "item": {
         "name": "Windshear Striders",
         "icon": "inv_boots_chain_03",
-        "itemLevel": 15,
+        "itemLevel": 17,
         "rarity": {
           "name": "uncommon",
           "hex": "#1eff00"
         },
-        "value": 5.038086217288854,
-        "valueLabel": "+5.0%",
+        "value": 5.874205351244028,
+        "valueLabel": "+5.9%",
         "next": {
           "name": "Striders of Compounding",
           "icon": "inv_boots_chain_13",
@@ -492,7 +497,7 @@
         }
       },
       "empty": null,
-      "value": 5.038086217288854
+      "value": 5.874205351244028
     },
     {
       "slot": "ring1",
@@ -507,7 +512,7 @@
           "name": "rare",
           "hex": "#0070dd"
         },
-        "value": 3.405118790148807,
+        "value": 3.4074986606712803,
         "valueLabel": "3.4y",
         "next": {
           "name": "Master Bootstrapper's Ring",
@@ -521,7 +526,7 @@
         }
       },
       "empty": null,
-      "value": 3.405118790148807
+      "value": 3.4074986606712803
     },
     {
       "slot": "ring2",
@@ -614,8 +619,8 @@
           "name": "epic",
           "hex": "#a335ee"
         },
-        "value": 49408.89,
-        "valueLabel": "$49.4K",
+        "value": 49831.05,
+        "valueLabel": "$49.8K",
         "next": {
           "name": "Cashbringer",
           "icon": "inv_sword_2h_ashbringercorrupt",
@@ -628,7 +633,7 @@
         }
       },
       "empty": null,
-      "value": 49408.89
+      "value": 49831.05
     },
     {
       "slot": "offHand",
@@ -643,12 +648,12 @@
           "name": "legendary",
           "hex": "#ff8000"
         },
-        "value": 1586015.8199999998,
+        "value": 1588290.62,
         "valueLabel": "$1.6M",
         "next": null
       },
       "empty": null,
-      "value": 1586015.8199999998
+      "value": 1588290.62
     },
     {
       "slot": "ranged",
@@ -663,12 +668,12 @@
           "name": "legendary",
           "hex": "#ff8000"
         },
-        "value": 79135,
-        "valueLabel": "79.1K",
+        "value": 76319,
+        "valueLabel": "76.3K",
         "next": null
       },
       "empty": null,
-      "value": 79135
+      "value": 76319
     }
   ],
   "quests": [
@@ -676,39 +681,39 @@
       "code": "level:next",
       "kind": "level",
       "title": "Reach level 52",
-      "requirement": "$12.1K more lifetime revenue",
+      "requirement": "$8,485 more lifetime revenue",
       "reward": "Level 52",
       "rewardIcon": "achievement_level_10",
       "rewardRarity": "epic",
       "action": "Lifetime revenue is the only thing that levels you",
       "href": "https://trustmrr.com/founder/marclou",
       "progress": {
-        "current": 337855,
+        "current": 341515,
         "target": 350000,
-        "ratio": 0.9653
+        "ratio": 0.9757571428571429
       },
       "chain": null,
       "difficulty": "trivial",
-      "weight": 83.2303
+      "weight": 83.76361428571428
     },
     {
       "code": "rank:next",
       "kind": "rank",
-      "title": "Climb to rank #41",
-      "requirement": "$273.8K more lifetime revenue",
-      "reward": "Rank #41",
+      "title": "Climb to rank #40",
+      "requirement": "$270.1K more lifetime revenue",
+      "reward": "Rank #40",
       "rewardIcon": "achievement_level_10",
       "rewardRarity": null,
       "action": "Lifetime revenue is what the ladder sorts on",
       "href": "https://trustmrr.com/founder/marclou",
       "progress": {
-        "current": 1582355.64,
+        "current": 1586015.82,
         "target": 1856163.02,
-        "ratio": 0.852487428609584
+        "ratio": 0.8544593351504223
       },
       "chain": null,
       "difficulty": "trivial",
-      "weight": 72.91939657326003
+      "weight": 73.01404808722027
     },
     {
       "code": "upgrade:trinket2",
@@ -765,16 +770,16 @@
       "action": "Grow it past $100K, then update TrustMRR",
       "href": "https://trustmrr.com/founder/marclou",
       "progress": {
-        "current": 81932.86,
+        "current": 80868.17,
         "target": 100000,
-        "ratio": 0.8193286
+        "ratio": 0.8086817
       },
       "chain": {
         "step": 5,
         "of": 5
       },
       "difficulty": "easy",
-      "weight": 66.869787
+      "weight": 66.3906765
     },
     {
       "code": "upgrade:back",
@@ -787,16 +792,16 @@
       "action": "Grow it past 2,000, then update TrustMRR",
       "href": "https://trustmrr.com/founder/marclou",
       "progress": {
-        "current": 1311,
+        "current": 1334,
         "target": 2000,
-        "ratio": 0.6555
+        "ratio": 0.667
       },
       "chain": {
         "step": 5,
         "of": 5
       },
       "difficulty": "easy",
-      "weight": 59.4975
+      "weight": 60.015
     },
     {
       "code": "achievement:ding_sixty",
@@ -828,16 +833,16 @@
       "action": "Grow it past $100K, then update TrustMRR",
       "href": "https://trustmrr.com/founder/marclou",
       "progress": {
-        "current": 49408.89,
+        "current": 49831.05,
         "target": 100000,
-        "ratio": 0.4940889
+        "ratio": 0.49831050000000005
       },
       "chain": {
         "step": 5,
         "of": 5
       },
       "difficulty": "standard",
-      "weight": 52.2340005
+      "weight": 52.423972500000005
     },
     {
       "code": "achievement:mythic",
@@ -850,13 +855,35 @@
       "action": "Tracked from your TrustMRR listing — keep it current",
       "href": "https://trustmrr.com/founder/marclou",
       "progress": {
-        "current": 47607.89,
+        "current": 49408.89,
         "target": 100000,
-        "ratio": 0.47607889999999997
+        "ratio": 0.4940889
       },
       "chain": null,
       "difficulty": "standard",
-      "weight": 44.567077100000006
+      "weight": 45.2694671
+    },
+    {
+      "code": "upgrade:feet",
+      "kind": "upgrade",
+      "title": "Upgrade your Feet slot",
+      "requirement": "Growth 30d of +20.0%",
+      "reward": "Striders of Compounding",
+      "rewardIcon": "inv_boots_chain_13",
+      "rewardRarity": "rare",
+      "action": "Grow it past +20.0%, then update TrustMRR",
+      "href": "https://trustmrr.com/founder/marclou",
+      "progress": {
+        "current": 5.874205351244028,
+        "target": 20,
+        "ratio": 0.2937102675622014
+      },
+      "chain": {
+        "step": 3,
+        "of": 5
+      },
+      "difficulty": "hard",
+      "weight": 43.216962040299066
     },
     {
       "code": "product:habits-garden",
@@ -881,28 +908,6 @@
       "weight": 42.897400000000005
     },
     {
-      "code": "upgrade:feet",
-      "kind": "upgrade",
-      "title": "Upgrade your Feet slot",
-      "requirement": "Growth 30d of +20.0%",
-      "reward": "Striders of Compounding",
-      "rewardIcon": "inv_boots_chain_13",
-      "rewardRarity": "rare",
-      "action": "Grow it past +20.0%, then update TrustMRR",
-      "href": "https://trustmrr.com/founder/marclou",
-      "progress": {
-        "current": 5.038086217288854,
-        "target": 20,
-        "ratio": 0.2519043108644427
-      },
-      "chain": {
-        "step": 3,
-        "of": 5
-      },
-      "difficulty": "hard",
-      "weight": 41.335693988899926
-    },
-    {
       "code": "product:datafast",
       "kind": "product",
       "title": "Level up DataFast",
@@ -913,16 +918,16 @@
       "action": "Connect your payment provider on TrustMRR",
       "href": "https://trustmrr.com/founder/marclou",
       "progress": {
-        "current": 27339.42,
+        "current": 27761.58,
         "target": 100000,
-        "ratio": 0.2733942
+        "ratio": 0.2776158
       },
       "chain": {
         "step": 5,
         "of": 5
       },
       "difficulty": "hard",
-      "weight": 39.4825564
+      "weight": 39.65986360000001
     },
     {
       "code": "upgrade:chest",
@@ -998,13 +1003,13 @@
       "action": "Tracked from your TrustMRR listing — keep it current",
       "href": "https://trustmrr.com/founder/marclou",
       "progress": {
-        "current": 1.9596569221814903,
+        "current": 5.038086217288854,
         "target": 20,
-        "ratio": 0.09798284610907451
+        "ratio": 0.2519043108644427
       },
       "chain": null,
-      "difficulty": "severe",
-      "weight": 29.82133099825391
+      "difficulty": "hard",
+      "weight": 35.82426812371327
     },
     {
       "code": "achievement:unkillable",
@@ -1202,6 +1207,25 @@
       "weight": 28
     },
     {
+      "code": "achievement:bloodlust",
+      "kind": "achievement",
+      "title": "Earn Bloodlust",
+      "requirement": "MRR doubled over thirty days.",
+      "reward": "Bloodlust",
+      "rewardIcon": "spell_nature_bloodlust",
+      "rewardRarity": "epic",
+      "action": "Tracked from your TrustMRR listing — keep it current",
+      "href": "https://trustmrr.com/founder/marclou",
+      "progress": {
+        "current": 5.038086217288854,
+        "target": 100,
+        "ratio": 0.05038086217288854
+      },
+      "chain": null,
+      "difficulty": "severe",
+      "weight": 27.964853624742652
+    },
+    {
       "code": "achievement:legendary",
       "kind": "achievement",
       "title": "Earn Legendary",
@@ -1212,13 +1236,13 @@
       "action": "Tracked from your TrustMRR listing — keep it current",
       "href": "https://trustmrr.com/founder/marclou",
       "progress": {
-        "current": 47607.89,
+        "current": 49408.89,
         "target": 1000000,
-        "ratio": 0.04760789
+        "ratio": 0.04940889
       },
       "chain": null,
       "difficulty": "severe",
-      "weight": 27.85670771
+      "weight": 27.926946710000003
     },
     {
       "code": "achievement:hundred_customers",
@@ -1238,25 +1262,6 @@
       "chain": null,
       "difficulty": "severe",
       "weight": 27.17
-    },
-    {
-      "code": "achievement:bloodlust",
-      "kind": "achievement",
-      "title": "Earn Bloodlust",
-      "requirement": "MRR doubled over thirty days.",
-      "reward": "Bloodlust",
-      "rewardIcon": "spell_nature_bloodlust",
-      "rewardRarity": "epic",
-      "action": "Tracked from your TrustMRR listing — keep it current",
-      "href": "https://trustmrr.com/founder/marclou",
-      "progress": {
-        "current": 1.9596569221814903,
-        "target": 100,
-        "ratio": 0.019596569221814904
-      },
-      "chain": null,
-      "difficulty": "severe",
-      "weight": 26.764266199650784
     },
     {
       "code": "achievement:thousand_customers",
@@ -1301,7 +1306,7 @@
       "name": "DataFast",
       "website": "https://datafa.st",
       "iconUrl": "https://d21oz30g4w22sz.cloudfront.net/logos/datafast-fa461188-bc0c-4ab5-8e62-e48e4bac891d.png",
-      "mrrUsd": 27339.42,
+      "mrrUsd": 27761.58,
       "itemLevel": 50,
       "rarity": {
         "name": "epic",
@@ -1313,9 +1318,9 @@
       "country": "SG",
       "pricingModel": "14-day free trial. No card required. Then starts at $9/month",
       "foundedDate": "2024-07-01",
-      "last30dUsd": 26446.34,
+      "last30dUsd": 26932.65,
       "customers": 0,
-      "domainRating": 61,
+      "domainRating": 62,
       "stack": [
         "vercel",
         "nextjs",
@@ -1345,7 +1350,7 @@
       "country": "SG",
       "pricingModel": null,
       "foundedDate": "2025-10-31",
-      "last30dUsd": 41475,
+      "last30dUsd": 39625,
       "customers": 0,
       "domainRating": 70,
       "stack": [
@@ -1576,7 +1581,7 @@
       "country": "SG",
       "pricingModel": "$299 USD for CodeFast Course, $299 USD for CodeFast Course + ShipFast bundle",
       "foundedDate": "2024-08-14",
-      "last30dUsd": 5278,
+      "last30dUsd": 5577,
       "customers": 0,
       "domainRating": 52,
       "stack": ["nextjs", "react", "html5", "css", "stripe", "mongodb", "tailwindcss"]

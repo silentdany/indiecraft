@@ -1,5 +1,12 @@
 node_modules
 out
 # The source footage. Big, and not ours to commit.
-public/cinematic.mp4
-public/capture.mp4
+#
+# Every video file in public/ rather than a list of names: the list was a list,
+# and two gameplay clips landed next to the cinematic without matching any of
+# it. `git status` showed 13.5MB of borrowed Blizzard footage sitting ready to
+# be committed, which is the sort of thing that only gets noticed once.
+public/*.mp4
+public/*.mov
+public/*.webm
+public/*.mkv

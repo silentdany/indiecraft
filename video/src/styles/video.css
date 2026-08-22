@@ -38,22 +38,25 @@ body {
 /*
  * Hover affordances, off.
  *
- * The sheet's item tooltips are `opacity: 0; visibility: hidden` until
- * `:hover` or `:focus-within`, which on a page is exactly right and in a
- * render is a trap: nothing in a video is ever hovered deliberately, so a
- * tooltip that appears is always an accident. One did — a Crown of
- * Distribution card, opened over half the frame, visible only in the landscape
- * cut and only at high magnification, which is the kind of bug that ships.
+ * A page reveals things on `:hover`, and a render has no pointer to hover
+ * with — so anything that appears anyway is an accident, and two did.
  *
- * Rather than work out which of `:hover` and `:focus-within` headless Chrome
- * was satisfying, the rule states the thing that is true either way: a video
- * has no pointer, so it has no hover state to show.
+ * The sheet's item tooltips opened over half the frame in the landscape cut at
+ * high magnification. Which of `:hover` and `:focus-within` headless Chrome
+ * was satisfying is still not established; the rule below is true either way.
  *
- * `display: none` rather than a stronger `visibility`, so the node cannot
- * affect what the camera measures either. Every tooltip is absolutely
- * positioned, so nothing reflows.
+ * The ladder's per-row COMPARE link is explained: globals.css carries
+ * `@media (hover: none) { .ladder-compare { opacity: 1 } }` so that a phone,
+ * which cannot hover, sees it at all times. Headless Chrome matches that
+ * query, which is correct of it and gave every one of twenty rows a call to
+ * action nobody can click.
+ *
+ * `display: none` rather than a weaker `visibility`, so neither node can
+ * affect what the camera measures. Both are laid out over their row rather
+ * than in it, so nothing reflows.
  */
-.tooltip {
+.tooltip,
+.ladder-compare {
   /* biome-ignore lint/complexity/noImportantStyles: overriding a state rule
      from a stylesheet this project does not own. `.doll-slot:hover .tooltip`
      outweighs anything reachable from here without inventing a selector that

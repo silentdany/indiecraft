@@ -7,6 +7,7 @@ import {
   useVideoConfig,
 } from 'remotion'
 import { HOOK } from '../edit'
+import type { Beat } from '../lib/beats'
 import { frames } from '../lib/zoom'
 
 /**
@@ -16,20 +17,24 @@ import { frames } from '../lib/zoom'
  * just come off Blizzard's colour grade, and the copy is the first frame that
  * belongs to us. Nothing moves except the type, because a wipe or a slide here
  * would be the third visual idea in six seconds.
+ *
+ * The beats are a prop so the teaser can run one of them. Defaulted rather
+ * than required, because the full cut is the reason this exists and should not
+ * have to say so.
  */
-export function Hook() {
+export function Hook({ beats = HOOK.beats }: { beats?: readonly Beat[] }) {
   const { fps } = useVideoConfig()
 
   let offset = 0
   return (
     <AbsoluteFill style={{ background: 'var(--ic-bg)' }}>
-      {HOOK.beats.map((beat) => {
+      {beats.map((beat) => {
         const from = offset
         const length = frames(beat.hold, fps)
         offset += length
         return (
           <Sequence key={beat.line} from={from} durationInFrames={length}>
-            <Beat line={beat.line} tone={beat.tone} />
+            <BeatLine line={beat.line} tone={beat.tone} />
           </Sequence>
         )
       })}
@@ -37,11 +42,13 @@ export function Hook() {
   )
 }
 
-export function hookDuration(fps: number): number {
-  return HOOK.beats.reduce((total, beat) => total + frames(beat.hold, fps), 0)
+export function hookDuration(fps: number, beats: readonly Beat[] = HOOK.beats): number {
+  return beats.reduce((total, beat) => total + frames(beat.hold, fps), 0)
 }
 
-function Beat({ line, tone }: { line: string; tone: 'ask' | 'answer' }) {
+/* Named for what it draws, not for what it is given: `Beat` is the shape in
+   lib/beats, and one file cannot sensibly call both of them that. */
+function BeatLine({ line, tone }: { line: string; tone: 'ask' | 'answer' }) {
   const frame = useCurrentFrame()
   const { fps, durationInFrames, width } = useVideoConfig()
 

@@ -16,10 +16,21 @@ import { END } from '../edit'
  * 211px in the other, on a frame that was half as tall. The short side is 1080
  * in both, so one number now means one size.
  */
-export function EndCard() {
+export function EndCard({ lockupOnly = false }: { lockupOnly?: boolean } = {}) {
   const frame = useCurrentFrame()
   const { fps, width, height } = useVideoConfig()
-  const unit = Math.min(width, height)
+  /*
+   * Bigger when it is alone.
+   *
+   * The teaser's card carries the lockup and nothing else, and a mark sized to
+   * sit above three lines of text looks lost with nothing under it. This is
+   * the same card, not a second design — one number changes.
+   *
+   * 1.24 and not more: at 1.32 the wordmark reached 84% of the vertical
+   * frame's width, and a brand card that nearly touches both edges reads as a
+   * mistake rather than as confidence.
+   */
+  const unit = Math.min(width, height) * (lockupOnly ? 1.24 : 1)
 
   const enter = spring({ frame, fps, config: { damping: 22, stiffness: 120, mass: 1 } })
   const urlIn = interpolate(frame, [8, 22], [0, 1], {
@@ -78,49 +89,55 @@ export function EndCard() {
         </div>
       </div>
 
-      <p
-        style={{
-          margin: 0,
-          opacity: urlIn,
-          fontFamily: 'var(--ic-sans)',
-          fontSize: unit * 0.03,
-          color: 'var(--ic-text-muted)',
-        }}
-      >
-        {END.line}
-      </p>
+      {/* The teaser drops all three: two questions and a name, and nothing
+          that reads as a caption under a logo. */}
+      {!lockupOnly && (
+        <>
+          <p
+            style={{
+              margin: 0,
+              opacity: urlIn,
+              fontFamily: 'var(--ic-sans)',
+              fontSize: unit * 0.03,
+              color: 'var(--ic-text-muted)',
+            }}
+          >
+            {END.line}
+          </p>
 
-      <p
-        style={{
-          margin: 0,
-          opacity: urlIn,
-          transform: `translateY(${(1 - urlIn) * 12}px)`,
-          fontFamily: 'var(--ic-serif)',
-          fontSize: unit * 0.058,
-          letterSpacing: '0.03em',
-          color: 'var(--ic-butter)',
-        }}
-      >
-        {END.url}
-      </p>
+          <p
+            style={{
+              margin: 0,
+              opacity: urlIn,
+              transform: `translateY(${(1 - urlIn) * 12}px)`,
+              fontFamily: 'var(--ic-serif)',
+              fontSize: unit * 0.058,
+              letterSpacing: '0.03em',
+              color: 'var(--ic-butter)',
+            }}
+          >
+            {END.url}
+          </p>
 
-      {/* The citation, at the size a citation goes. Small, late, and under the
-          instruction rather than competing with it — but present, because the
-          whole armory rests on somebody else's numbers being real. */}
-      <p
-        style={{
-          margin: 0,
-          marginTop: unit * 0.01,
-          opacity: sourceIn,
-          fontFamily: 'var(--ic-sans)',
-          fontSize: unit * 0.022,
-          letterSpacing: '0.1em',
-          textTransform: 'uppercase',
-          color: 'var(--ic-text-muted)',
-        }}
-      >
-        {END.source}
-      </p>
+          {/* The citation, at the size a citation goes. Small, late, and under the
+            instruction rather than competing with it — but present, because the
+            whole armory rests on somebody else's numbers being real. */}
+          <p
+            style={{
+              margin: 0,
+              marginTop: unit * 0.01,
+              opacity: sourceIn,
+              fontFamily: 'var(--ic-sans)',
+              fontSize: unit * 0.022,
+              letterSpacing: '0.1em',
+              textTransform: 'uppercase',
+              color: 'var(--ic-text-muted)',
+            }}
+          >
+            {END.source}
+          </p>
+        </>
+      )}
     </AbsoluteFill>
   )
 }

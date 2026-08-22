@@ -1,3 +1,4 @@
+import type { Beat } from './lib/beats'
 import type { Caption } from './lib/captions'
 import type { ZoomStop } from './lib/zoom'
 
@@ -175,7 +176,7 @@ export const HOOK = {
     { line: 'Feeling nostalgic?', hold: '2.0', tone: 'ask' },
     { line: 'No more play time.\nYou have to ship.', hold: '2.6', tone: 'ask' },
     { line: 'But now you can do both!', hold: '2.6', tone: 'answer' },
-  ] as const,
+  ] satisfies Beat[],
 }
 
 /**
@@ -290,6 +291,61 @@ export const ARMORY = {
     { at: '14.9', until: '17.2', line: 'Better numbers, better loot.' },
     { at: '17.5', until: '20.4', line: 'And the quest log says what to do next.' },
   ] satisfies Caption[],
+}
+
+/**
+ * The teaser: ten seconds, and a different job.
+ *
+ * Not a shortened launch video. That one explains a product; this one has to
+ * survive an autoplay feed, where it is muted, three quarters watched, and
+ * competing with a thumb.
+ *
+ * So it shows no product at all. Two questions and a name — the questions are
+ * addressed to one person in particular, somebody who has both of these things
+ * true at once and has never seen them in the same sentence, and the name is
+ * the answer without being spelled out. Anything more explanatory would be the
+ * long cut, badly.
+ *
+ * It runs on the LAST ten seconds of the music, so it resolves on the same
+ * final note the long version does. A teaser that fades out mid-phrase reads as
+ * a clip; one that lands reads as a thing somebody made.
+ */
+export const TEASER = {
+  duration: '10',
+
+  /**
+   * The two questions, in the same register on purpose.
+   *
+   * Neither is set as an `answer` — the butter yellow goes unspent here, and
+   * the gold on the end card picks it up instead. Two questions and no reply
+   * is what leaves somebody holding something.
+   */
+  beats: [
+    { line: 'Feeling nostalgic?', hold: '2.0', tone: 'ask' },
+    { line: 'Busy building startups?', hold: '2.2', tone: 'ask' },
+  ] satisfies Beat[],
+
+  /** The card, and nothing on it but the lockup. */
+  end: '2.8',
+
+  /**
+   * Where the sting's picture comes from.
+   *
+   * Null means "wherever the music starts", which keeps picture and score in
+   * the sync somebody composed. It is the more elegant answer and it is not
+   * the one in use, because on this file the music's last seconds sit over a
+   * near-white blowout: the opening frame came out as a flash between two
+   * letterbox bars, which is the worst possible thing to hand an autoplay
+   * feed.
+   *
+   * 1:10 was picked by sampling the file rather than guessing at it — dark,
+   * high contrast, a clear silhouette. It reads at thumbnail size and with the
+   * sound off, which is the only test that matters for a first frame.
+   * Re-sample after swapping the file:
+   *
+   *   remotion ffmpeg -ss 70 -i public/cinematic.mp4 -frames:v 1 out/probe.jpg
+   */
+  stingFrom: '1:10' as string | null,
 }
 
 export const END = {

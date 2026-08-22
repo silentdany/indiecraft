@@ -23,10 +23,88 @@ cd video
 pnpm install
 
 pnpm studio              # the editor: preview, scrub, aim the camera
-pnpm render              # both cuts into out/
+pnpm render              # both launch cuts into out/
 pnpm render:vertical     # 1080x1920, for TikTok / Reels / Shorts
 pnpm render:landscape    # 1920x1080, for X / YouTube / Product Hunt
+pnpm teaser              # both teaser cuts, 12s each
+pnpm measure             # where the audio in public/cinematic.mp4 goes quiet
 ```
+
+## The run-up
+
+Four films before the launch, then the launch. `src/films.ts`.
+
+| posts | id | says |
+| --- | --- | --- |
+| Tue 25 Aug | `Film-1-Nostalgia` | 6s. A phrase and the name. No product, no footage. |
+| Fri 28 Aug | `Film-2-Concept` | 11.6s. The concept lands. Still no product. |
+| Tue 01 Sep | `Film-3-Sheet` | 14.5s. The character sheet. The one that has to land. |
+| Thu 03 Sep | `Film-4-Ladder` | 13.5s. The ladder. |
+| Tue 08 Sep | `Launch-*` | 62s. The whole argument. |
+
+The order is an argument, not a schedule. Each film can only say what the one
+before it has earned: the first buys attention with a sentence, the second
+spends it explaining, and only then is there a reason to look at a screenshot.
+The sheet on day one would be a screenshot nobody had a reason to read.
+
+```bash
+pnpm films               # all eight files, named by post date
+pnpm films Film-3        # just one
+```
+
+Output is `out/indiecraft-09-01-sheet-9x16.mp4` and so on — named by the day it
+posts, because "which file is Tuesday's" is a question somebody asks at 8am.
+
+All four end on the same last bar of music and the same lockup. Days apart,
+that reads as a signature rather than as repetition.
+
+### One component, four films
+
+They share a grammar — footage, copy, a shot of the product, the name — and
+each drops the parts it does not need. `src/FilmVideo.tsx` renders whichever
+parts a `Film` declares; there is no second lockup, no second camera and no
+second design anywhere in the run-up.
+
+The elastic part is the shot, for the same reason the armory is elastic in the
+launch cut: copy is timed to be read and footage to be felt, but a camera move
+over a page can honestly be a second longer. With no shot — film 1 is a line
+and a card — the slack holds the lockup a beat longer instead, which is the
+invisible failure rather than the audible one.
+
+## Two cuts, and they are not the same video
+
+`Launch-Vertical` / `Launch-Landscape` — 62s. Explains the product: the
+cinematic, the turn, a captioned tour of the sheet, the address.
+
+`Teaser-Vertical` / `Teaser-Landscape` — 12s. A different job. It has to
+survive an autoplay feed, where it is muted, three-quarters watched, and
+competing with a thumb. So: one idea, no explanation, and **the punchline
+withheld** — "feeling nostalgic?" is the setup, and the reply is the reason to
+go and watch the long one. Giving it away here spends the only thing the teaser
+is holding.
+
+It runs on the *last* twelve seconds of the music, so it resolves on the same
+final note the long cut does. A teaser that fades out mid-phrase reads as a
+clip; one that lands reads as a thing somebody made.
+
+Both are the same four scenes with different lists — see `TEASER` in
+`src/edit.ts` and `src/TeaserVideo.tsx`. There is no second sheet, no second
+camera and no second design, so changing the app changes both.
+
+### The opening frame is a decision
+
+The teaser's sting defaults to "wherever the music starts", which keeps picture
+and score in their original sync. On this file that put a near-white blowout in
+frame one — a flash between two letterbox bars, which is the worst thing to
+hand an autoplay feed. `TEASER.stingFrom` overrides it, and 1:10 was chosen by
+sampling the file:
+
+```bash
+remotion ffmpeg -ss 70 -i public/cinematic.mp4 -frames:v 1 out/probe.jpg
+```
+
+Dark, high contrast, a clear silhouette. It reads at thumbnail size with the
+sound off, which is the only test that matters for a first frame.
 
 ## The one file to edit
 
