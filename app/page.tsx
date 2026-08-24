@@ -101,6 +101,29 @@ export default async function Home() {
         }}
       />
 
+      {/*
+        The brand as an entity, which the WebSite node above is not.
+        "World of Indiecraft" is two common words and a preposition, so a search
+        for it returns the game it is named after and not this site. A WebSite
+        node describes a document; an Organization node with an alternateName
+        and a sameAs is what a search engine reconciles a brand query against.
+        It is not a fix on its own — the rest of that job is off this codebase —
+        but it is the half that lives in the repo.
+      */}
+      <JsonLd
+        data={{
+          '@context': 'https://schema.org',
+          '@type': 'Organization',
+          name: 'World of Indiecraft',
+          alternateName: 'Indiecraft',
+          url: site,
+          logo: `${site}/icon`,
+          description:
+            'A public armory for indie founders, built on TrustMRR data. Lifetime revenue is XP, every stat is an equipment slot, and item level is the average of your gear.',
+          sameAs: ['https://github.com/silentdany/indiecraft'],
+        }}
+      />
+
       <Frame className="hero">
         <BrandMark size={64} className="wordmark-crest" />
         <p className="wordmark-over label">World of</p>
@@ -182,7 +205,7 @@ export default async function Home() {
                 >
                   <WowIcon slug={def.icon} glyph={def.key} size={34} className="faction-icon" />
                   <span className="faction-body">
-                    <span className="serif faction-name">{def.key}</span>
+                    <h3 className="serif faction-name">{def.key}</h3>
                     <span className="label">{def.tagline}</span>
                   </span>
                   <span className="serif faction-count">{f.count}</span>

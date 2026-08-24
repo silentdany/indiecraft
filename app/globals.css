@@ -1025,6 +1025,10 @@ a:hover {
   min-width: 0;
 }
 .faction-name {
+  /* An h3 now, for the heading level rather than the look: the browser's own
+     margin is what a span never had, and removing it keeps the card identical
+     to the day it was a span. */
+  margin: 0;
   font-size: 16px;
   line-height: 1.1;
   color: var(--faction-color);
