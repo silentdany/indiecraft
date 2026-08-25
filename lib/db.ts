@@ -87,18 +87,56 @@ const globalForDb = globalThis as { __indiecraftDb?: postgres.Sql }
  * another notch off this number — below six it deadlocks, and that is measured.
  * ---------------------------------------------------------------------------
  */
+/**
+ * The pooled client's options, exported so the check can hold the real thing.
+ *
+ * `pnpm verify-db-types` asserts two properties of these settings against a
+ * live server. Recreating them in the script would let this file change while
+ * the check kept passing against a copy of what it used to say, which is the
+ * failure a verification script exists to prevent.
+ */
+export const POOLED_OPTIONS = {
+  prepare: false,
+  max: 10,
+  // 5s, not 20: a socket returned four times faster is four times less of
+  // the pooler's client budget held by an instance between renders.
+  idle_timeout: 5,
+  connect_timeout: 10,
+  /*
+   * 85% of this project's egress was one query nobody here wrote.
+   *
+   * postgres.js asks the server for the OID of every array type when a
+   * connection opens — 354 rows out of pg_type, in `fetchArrayTypes`. It
+   * caches the answer on `options.shared`, and then `connected()` sets
+   * `needsTypes = options.fetch_types` again on the NEXT socket, so a
+   * reconnect re-fetches a map the process already holds.
+   *
+   * On a long-lived server that is one query at boot. Here it is one per
+   * socket, and `idle_timeout: 5` above exists precisely to close sockets
+   * fast: measured on the live database, 498,637 executions returning
+   * 177,014,595 rows — forty times more rows than every application query
+   * put together, and roughly one new connection for every two renders.
+   *
+   * The two settings are not in conflict once the toll is gone. Turning
+   * this off keeps `idle_timeout: 5` and the EMAXCONN fix it belongs to,
+   * and simply stops paying for them.
+   *
+   * The cost, and it is a real constraint rather than a footnote: NOTHING
+   * reached through db() may pass a JavaScript array as a parameter.
+   * Without the fetched OIDs, postgres.js still tags the parameter as
+   * text[] and then serialises it as `a,b` instead of `{a,b}`, so
+   * `= any(${list})` fails at the server with 22P02. Use `in ${sql(list)}`,
+   * which expands to `in ($1, $2)` and involves no array type at all.
+   * `pnpm verify-db-types` asserts both halves.
+   */
+  fetch_types: false,
+} as const
+
 export function db(): postgres.Sql {
   if (!globalForDb.__indiecraftDb) {
     const url = process.env.DATABASE_URL
     if (!url) throw new Error('DATABASE_URL is not set')
-    globalForDb.__indiecraftDb = postgres(url, {
-      prepare: false,
-      max: 10,
-      // 5s, not 20: a socket returned four times faster is four times less of
-      // the pooler's client budget held by an instance between renders.
-      idle_timeout: 5,
-      connect_timeout: 10,
-    })
+    globalForDb.__indiecraftDb = postgres(url, POOLED_OPTIONS)
   }
   return globalForDb.__indiecraftDb
 }
@@ -116,5 +154,18 @@ export function db(): postgres.Sql {
 export function directDb(): postgres.Sql {
   const url = process.env.DIRECT_URL ?? process.env.DATABASE_URL
   if (!url) throw new Error('DIRECT_URL is not set')
+  /*
+   * `fetch_types` stays ON here, and the asymmetry with db() is the point.
+   *
+   * The array-type toll is per connection, so it only matters where
+   * connections are many. This side is a handful of long-lived processes —
+   * four sockets, and compute has run 36 times in the window that produced
+   * 498,637 of them on the other side. The toll is unmeasurable here.
+   *
+   * What it buys is `= any(${array})`, which the crawler's reconciliation and
+   * compute's prune both need against lists of thousands. Rewriting those as
+   * `in ${sql(list)}` would mean thousands of bind parameters to dodge a cost
+   * that does not exist on this path.
+   */
   return postgres(url, { max: 4 })
 }

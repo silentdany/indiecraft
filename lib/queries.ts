@@ -1018,13 +1018,25 @@ export async function getPickerFounder(handle: string): Promise<PickerFounder | 
 async function getComparableFoundersByHandles(handles: string[]): Promise<PickerFounder[]> {
   if (handles.length === 0) return []
   const sql = db()
+  /*
+   * An IN list, not an array parameter, and the difference is load-bearing.
+   *
+   * db() runs with fetch_types off — see lib/db.ts, where that setting is 85%
+   * of this project's egress. Without the fetched OIDs postgres.js has no array
+   * serialiser, so passing `handles` straight into `= any(...)` sends `a,b`
+   * where the server expects `{a,b}` and the query dies with 22P02. The helper
+   * below expands to `in ($1, $2)` instead, which needs no array type at all.
+   *
+   * The early return above is what makes it safe: `in ()` is a syntax error, so
+   * this must never be reached with an empty list.
+   */
   const rows = await sql<
     { handle: string; display_name: string | null; level: number; class: string }[]
   >`
     select c.handle, f.display_name, c.level, c.class
     from characters c
     join founders f on f.handle = c.handle
-    where f.opted_out_at is null and c.handle = any(${handles})
+    where f.opted_out_at is null and c.handle in ${sql(handles)}
   `
   return rows.map((row) => ({
     handle: row.handle,
