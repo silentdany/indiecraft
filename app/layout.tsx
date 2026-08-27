@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 import { Alegreya_Sans } from 'next/font/google'
 import Link from 'next/link'
+import Script from 'next/script'
 import type { ReactNode } from 'react'
 import { BrandMark } from '@/components/brand-mark'
 import { PostHogProvider } from '@/components/posthog-provider'
@@ -84,6 +85,27 @@ export default function RootLayout({ children }: { children: ReactNode }) {
           {children}
           <SiteFooter />
         </PostHogProvider>
+        {/*
+          DataFast, beside PostHog rather than instead of it: PostHog answers
+          what somebody did on a sheet, this answers where they came from. The
+          question the site keeps asking is how many views arrive from a
+          referrer that is not us, and one of the two is built for it.
+
+          `afterInteractive` is the component's default and the right one here —
+          the script is not needed before hydration, and nothing on the page
+          waits for it. In the layout rather than per page, because it has to
+          count every route.
+
+          The two data attributes are the account and the property; they are
+          not secrets, and they are hardcoded rather than read from env for
+          that reason — a missing variable would silently stop the counting.
+        */}
+        <Script
+          src="https://datafa.st/js/script.js"
+          data-website-id="dfid_vQWa4WNjZXWI5axQm3JIG"
+          data-domain="indiecraft.quest"
+          strategy="afterInteractive"
+        />
       </body>
     </html>
   )
