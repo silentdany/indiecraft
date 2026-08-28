@@ -121,14 +121,16 @@ being in it.
 ### Architecture
 
 ```
-GitHub Actions (nightly cron)
-  └─> scripts/crawl.ts
-        ├─> TrustMRR API v1
-        └─> Postgres: snapshots (raw jsonb payload + extracted columns)
+GitHub Actions (nightly, 02:00 UTC)
+  ├─> scripts/crawl.ts                cut off at 150 min, under the job's 180
+  │     ├─> TrustMRR API v1
+  │     └─> Postgres: snapshots (raw jsonb payload + extracted columns)
+  └─> POST /api/cron/compute          `if: always()` — finished, failed or cut
 
-Vercel Cron (safety net, after the crawl)
+Vercel Cron (07:00 UTC, for the night the workflow never ran)
   └─> /api/cron/compute
         └─> pure engine → founders, characters, achievements
+        └─> revalidate: the only thing that makes any of it visible
 
 Next.js App Router (public, read-only)
   ├─> /c/{handle}                   character sheet

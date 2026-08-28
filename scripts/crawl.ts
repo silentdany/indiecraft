@@ -393,6 +393,12 @@ async function triggerCompute(): Promise<void> {
     method: 'POST',
     headers: { Authorization: `Bearer ${secret}` },
   })
+  // Throw rather than log the status: an unauthorized or failing trigger left
+  // the crawl reporting "compute triggered: 500" and exiting 0, which is a
+  // green run that published nothing. CI does not come through here — the
+  // workflow triggers compute in its own step — so this is the local path
+  // saying the same thing that step's `--fail-with-body` says.
+  if (!res.ok) throw new Error(`compute trigger failed: ${res.status} ${await res.text()}`)
   console.log(`→ compute triggered: ${res.status}`)
 }
 

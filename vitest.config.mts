@@ -19,6 +19,10 @@ export default defineConfig({
     // tonight collects, out of lists and dates, and a wrong answer is a list of
     // the wrong length in the wrong order rather than an exception. The rest of
     // the crawler is network and Postgres and is not here.
+    //
+    // crawl-workflow.test.ts is the one filesystem exception here: the subject
+    // IS the file. Where compute gets triggered from is not checkable any other
+    // way short of losing another week of nights to find out.
     include: [
       'engine/**/*.test.ts',
       'lib/share-text.test.ts',
@@ -26,6 +30,7 @@ export default defineConfig({
       'lib/negotiable.test.ts',
       'lib/markdown/*.test.ts',
       'lib/crawl-plan.test.ts',
+      'scripts/crawl-workflow.test.ts',
     ],
   },
 })

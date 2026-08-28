@@ -5,13 +5,28 @@ import { CORPUS_TAG } from '@/lib/queries'
 
 /**
  * Vercel Cron only keeps the compute step: it's fast, and everything is already
- * in the database. The crawl itself takes ~15 minutes and lives on GitHub
+ * in the database. The crawl itself takes ~2.5 hours and lives on GitHub
  * Actions.
  *
- * The daily 03:30 UTC entry in vercel.json is a safety net, not the trigger —
- * the crawler calls this route itself at the end of its run, and the cron only
- * matters when that run died before getting here. (vercel.json carries no note
- * of its own because the schema rejects unknown keys, comments included.)
+ * Two callers, and they cover different failures.
+ *
+ * The crawl workflow calls this in a step marked `if: always()`, so it happens
+ * whether the night finished, failed, or ran out of time. That is the real
+ * trigger and it is the one that knows when a collection actually ended.
+ *
+ * The daily 07:00 UTC entry in vercel.json covers the case that step cannot:
+ * the GitHub run never happening at all. It used to be 03:30, which sounds like
+ * "after the 02:00 crawl" and is not — GitHub starts scheduled runs late, by an
+ * hour most nights and by ten on 2026-08-27, so 03:30 landed before or during
+ * every crawl it was supposed to follow and never once caught a failed one.
+ *
+ * It runs unconditionally, and "there is no new data" is not a reason to skip:
+ * computeAll writes today's character_days row from `current_date` and settles
+ * whatever fell due by `due_on`. A day nobody computes is a permanent hole in
+ * every founder's history and a promise left hanging, new snapshots or not.
+ *
+ * (vercel.json carries no note of its own because the schema rejects unknown
+ * keys, comments included.)
  */
 export const runtime = 'nodejs'
 export const maxDuration = 300

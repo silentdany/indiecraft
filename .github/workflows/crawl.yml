@@ -1,10 +1,18 @@
 name: crawl
 
-# A full crawl takes ~50 minutes (840 sheets at 3.5s). A Vercel serverless
-# function's ceiling is measured in minutes, not tens of minutes: the crawler
-# cannot be a Vercel Cron. GitHub Actions gives six hours.
+# A full crawl takes ~2.5 hours. A Vercel serverless function's ceiling is
+# measured in minutes, not tens of minutes: the crawler cannot be a Vercel Cron.
+# GitHub Actions gives six hours.
 #
 # Every day without a collection is a day of history permanently lost.
+#
+# Two ceilings, and the gap between them is load-bearing. The job may run for
+# 180 minutes; the crawl step is cut off at 150. That is what guarantees the
+# compute step below is reached — a night's snapshots that nothing computes are
+# a night nobody can see, and between 2026-08-20 and 2026-08-27 that is exactly
+# what happened eight times running: the job hit its ceiling mid-crawl, the
+# trigger was the line after the one that died, and every character sheet on the
+# site quietly stopped moving.
 
 on:
   schedule:
@@ -51,6 +59,10 @@ jobs:
           DIRECT_URL: ${{ secrets.DIRECT_URL }}
 
       - name: Crawl
+        # 150, against the job's 180. Being cut off here is a step failure, and
+        # a step failure still runs `if: always()` steps — being cut off at the
+        # job ceiling does not reliably run anything at all.
+        timeout-minutes: 150
         # Inputs go through the environment, never through interpolation into
         # `run:` — otherwise an input value is a command injection.
         run: |
@@ -59,7 +71,9 @@ jobs:
           if [ -n "${BUDGET:-}" ]; then args+=(--budget "$BUDGET"); fi
           if [ -n "${SLUG:-}" ]; then args+=(--slug "$SLUG"); fi
           if [ "${DUMP_SLUGS:-}" = "true" ]; then args+=(--dump-slugs); fi
-          pnpm exec tsx scripts/crawl.ts "${args[@]}"
+          # --no-compute: triggering is the next step's job, so that it happens
+          # whether this one finished, failed or ran out of time.
+          pnpm exec tsx scripts/crawl.ts --no-compute "${args[@]}"
         env:
           LIMIT: ${{ inputs.limit }}
           BUDGET: ${{ inputs.budget }}
@@ -68,5 +82,29 @@ jobs:
           TRUSTMRR_API_KEY: ${{ secrets.TRUSTMRR_API_KEY }}
           # Session pooler: long-lived process, IPv4-reachable from the runner.
           DIRECT_URL: ${{ secrets.DIRECT_URL }}
+          # No CRON_SECRET or NEXT_PUBLIC_SITE_URL here: with --no-compute this
+          # step cannot trigger anything, and the step that can has its own.
+
+      - name: Trigger compute
+        # The point of the whole arrangement: a crawl that collected 800
+        # snapshots and one that was killed at 600 both leave work for compute,
+        # and only compute makes any of it visible — it is what writes today's
+        # character_days row, settles the quests that fell due, and revalidates
+        # 2,600 cached pages.
+        #
+        # `always()` and not `success()`, for the case this exists for.
+        if: always()
+        # curl rather than another tsx run: this must work after a step that
+        # was killed, so it depends on as little of the job's state as it can.
+        # --fail-with-body turns a 401 or a 500 into a red run instead of a
+        # cheerful log line, which is how the old in-script trigger managed to
+        # report success while doing nothing.
+        run: |
+          curl --fail-with-body --silent --show-error \
+            --retry 3 --retry-delay 30 --retry-all-errors \
+            --max-time 600 \
+            -X POST "$SITE_URL/api/cron/compute" \
+            -H "Authorization: Bearer $CRON_SECRET"
+        env:
+          SITE_URL: ${{ vars.SITE_URL }}
           CRON_SECRET: ${{ secrets.CRON_SECRET }}
-          NEXT_PUBLIC_SITE_URL: ${{ vars.SITE_URL }}
