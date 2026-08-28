@@ -34,6 +34,7 @@
  *   pnpm crawl --no-compute      skip the follow-up compute step
  */
 
+import { planQueue } from '../lib/crawl-plan'
 import { directDb } from '../lib/db'
 import {
   asDate,
@@ -69,6 +70,26 @@ const SECONDS_PER_SLUG = 11
  * at three, and never reach the compute step.
  */
 const DEFAULT_BUDGET = 800
+
+/**
+ * How much of the ranked list is "the ladder", refreshed every night.
+ *
+ * For most of this crawler's life the number was not ours: the API's list
+ * endpoint was hard-capped at 200, so `listSlugs` returned 200 and the budget
+ * only ever had to size the rotation behind it.
+ *
+ * On 2026-08-20 that cap was lifted and the endpoint started returning ~5,000.
+ * Nothing here changed, and the night broke twice over — paging 5,000 slugs at
+ * the published rate limit cost 83 of the 180 minutes before a single snapshot
+ * was written, and the queue that came out the far side was 4,999 long against
+ * a ceiling that fits 800.
+ *
+ * So the ladder gets an explicit size, and it is also the `limitTo` handed to
+ * `listSlugs` — a run must not pay to fetch ranks it has already decided not to
+ * crawl. 200 is what shipped and worked; raising it takes nights away from the
+ * rotation, which is the only pass that finds founders we have never seen.
+ */
+const LADDER_SIZE = 200
 
 interface Options {
   limit?: number
@@ -159,12 +180,12 @@ async function reconcileListings(
 }
 
 /**
- * What to collect tonight: the ranked list first, then the stalest of the rest.
+ * What to collect tonight: the reads, then the ordering.
  *
- * The ranked 200 are the ladder and are refreshed every night without fail.
- * Everything else rotates by staleness — never-collected slugs before
- * least-recently-collected — so coverage grows monotonically and no startup can
- * be starved by the ordering.
+ * Everything with a database or a socket in it happens here; the decision
+ * itself is `planQueue`, which is pure and tested. The split is deliberate —
+ * the bug that killed eight consecutive nights was in the ordering, and the
+ * ordering was the one part of this file nothing could exercise.
  */
 async function planRun(
   sql: ReturnType<typeof directDb>,
@@ -173,8 +194,8 @@ async function planRun(
 ): Promise<string[]> {
   if (options.only.length > 0) return options.only
 
-  const ranked = await client.listSlugs(options.limit)
-  console.log(`  ${ranked.length} ranked (the API list is capped here)`)
+  const ranked = await client.listSlugs(options.limit ?? LADDER_SIZE)
+  console.log(`  ${ranked.length} ranked (asked for ${options.limit ?? LADDER_SIZE})`)
   if (options.limit) return ranked.slice(0, options.limit)
 
   let discovered: string[] = []
@@ -212,29 +233,25 @@ async function planRun(
   if (owed.size > 0)
     console.log(`  ${owed.size} product(s) across ${claimed.length} claimed sheet(s)`)
 
-  const rankedSet = new Set(ranked)
-  const priority = [...owed].filter((slug) => !rankedSet.has(slug))
-  for (const slug of priority) rankedSet.add(slug)
-  const rest = discovered.filter((slug) => !rankedSet.has(slug))
-  const room = Math.max(0, options.budget - ranked.length - priority.length)
-  if (room === 0) return [...ranked, ...priority]
-
-  // Slugs we have never captured sort first (no row → null → nulls first),
-  // then the ones we have not seen in longest.
   const seen = await sql<{ startup_slug: string; last_on: string | null }[]>`
     select startup_slug, max(captured_on)::text as last_on
     from snapshots group by startup_slug
   `
   const lastSeen = new Map(seen.map((r) => [r.startup_slug, r.last_on ?? '']))
-  const queued = rest
-    .map((slug) => ({ slug, last: lastSeen.get(slug) }))
-    .sort((a, b) => (a.last ?? '').localeCompare(b.last ?? ''))
-    .slice(0, room)
-    .map((r) => r.slug)
 
-  const fresh = queued.filter((s) => !lastSeen.has(s)).length
-  console.log(`  + ${queued.length} rotating (${fresh} never collected before)`)
-  return [...ranked, ...priority, ...queued]
+  const plan = planQueue({
+    ranked,
+    owed: [...owed],
+    discovered,
+    lastSeen,
+    budget: options.budget,
+    ladder: LADDER_SIZE,
+  })
+  console.log(
+    `  ${plan.priority.length} claimed, ${plan.ladder.length} ladder, ` +
+      `+ ${plan.rotating.length} rotating (${plan.fresh} never collected before)`,
+  )
+  return plan.slugs
 }
 
 async function main() {

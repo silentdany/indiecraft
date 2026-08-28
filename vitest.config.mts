@@ -14,12 +14,18 @@ export default defineConfig({
     // for both, and the markdown renderers are share-text's problem again at
     // page scale: data in, prose out, wrong without throwing. The route handler
     // that feeds them does talk to Postgres and is not here.
+    //
+    // crawl-plan.ts is the same rule applied to the crawler: it decides what
+    // tonight collects, out of lists and dates, and a wrong answer is a list of
+    // the wrong length in the wrong order rather than an exception. The rest of
+    // the crawler is network and Postgres and is not here.
     include: [
       'engine/**/*.test.ts',
       'lib/share-text.test.ts',
       'lib/accept.test.ts',
       'lib/negotiable.test.ts',
       'lib/markdown/*.test.ts',
+      'lib/crawl-plan.test.ts',
     ],
   },
 })

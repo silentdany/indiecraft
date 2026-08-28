@@ -141,13 +141,19 @@ export class TrustmrrClient {
   }
 
   /**
-   * Every slug, page by page.
+   * Slugs by rank, page by page. Pass `limitTo` unless you truly want all of
+   * them — this list is no longer short.
    *
-   * Two server behaviours worth knowing, both measured rather than documented:
-   * the default page size is 1, and `limit` is capped server-side at
-   * PAGE_SIZE — asking for 100 still returns 10. We drive the loop off
-   * `meta.hasMore` and stop on an empty page either way, so a change to the
-   * envelope costs us a short run, never a night of history.
+   * Three server behaviours worth knowing, all measured rather than documented:
+   * the default page size is 1, `limit` is capped server-side at PAGE_SIZE —
+   * asking for 100 still returns 10 — and the list itself used to stop at 200.
+   * It stopped stopping on 2026-08-20 and now runs to ~5,000, which at ten
+   * requests a minute is 83 minutes of paging for a caller that wanted the top
+   * 200. `limitTo` breaks out early and is the difference between a two-minute
+   * plan and most of the night.
+   *
+   * We drive the loop off `meta.hasMore` and stop on an empty page either way,
+   * so a change to the envelope costs us a short run, never a night of history.
    */
   async listSlugs(limitTo?: number): Promise<string[]> {
     const slugs: string[] = []
@@ -188,15 +194,20 @@ export class TrustmrrClient {
    * Every slug TrustMRR publishes, from its sitemap.
    *
    * `listSlugs` cannot do this, and the reason took a while to see: the list
-   * endpoint is hard-capped at 200. `meta.total` says 200 and means "200 in
-   * this list", not "200 in the corpus" — the site itself advertises over two
-   * thousand, and the sitemap carries ~9,000. Page 21 returns an empty array,
-   * `limit=100` still returns 10, and nothing anywhere says the word "top".
+   * endpoint was hard-capped at 200. `meta.total` said 200 and meant "200 in
+   * this list", not "200 in the corpus" — the site itself advertised over two
+   * thousand, and the sitemap carries ~9,000. Page 21 returned an empty array,
+   * `limit=100` still returned 10, and nothing anywhere said the word "top".
    *
    * So the crawler spent every night collecting the same top 200 by rank and
    * the other nine tenths of TrustMRR did not exist as far as this armory was
    * concerned. A founder outside the top 200 could look themselves up and find
    * nothing, which is how this was finally noticed.
+   *
+   * The cap was lifted on 2026-08-20 and the list now reaches ~5,000 — still
+   * short of the sitemap's ~9,000, and still ranked rather than complete, so
+   * this stays the discovery path. The lesson is the one that cost eight nights
+   * the second time: what that endpoint returns is not ours to assume.
    *
    * robots.txt names this sitemap explicitly and allows every agent, so reading
    * it is exactly what it is published for. Detail lookups still go through the
