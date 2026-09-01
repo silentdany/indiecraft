@@ -57,8 +57,8 @@ export async function SiteFooter() {
               answers the ownership question the issue tracker was standing in
               for, so the route is now one button on your own sheet. */}
           <p className="muted sitefooter-note">
-            Nothing is shown that TrustMRR does not already show, and an unclaimed sheet is never
-            indexed. Sign in with X on your own sheet to claim it, or to remove it.
+            Nothing is shown that TrustMRR does not already show. Sign in with X on your own sheet
+            to claim it, or to remove it.
           </p>
         </div>
       </div>

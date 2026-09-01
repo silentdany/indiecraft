@@ -86,9 +86,11 @@ export async function POST(request: Request) {
     `
     changed = result.count
   } else if (action === 'unclaim') {
-    // Unclaiming is not removal. It puts the sheet back to noindex and out of
-    // the sitemap, which is the middle option somebody who regrets being
-    // findable actually wants — the alternative was "delete everything".
+    // Unclaiming is not removal. It puts the product links back to `nofollow`,
+    // which is the middle option somebody who regrets the backlink actually
+    // wants — the alternative was "delete everything". It no longer affects
+    // indexing: every sheet is indexed, claimed or not, so this is the whole of
+    // what claiming buys and the whole of what unclaiming gives back.
     const result = await sql`update founders set claimed_at = null where handle = ${handle}`
     changed = result.count
   } else {

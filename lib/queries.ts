@@ -1118,14 +1118,6 @@ export async function wasRemoved(rawHandle: string): Promise<boolean> {
 }
 
 /**
- * Handles that belong in the sitemap.
- *
- * Claimed only, and that is the whole point: an unclaimed sheet is `noindex`,
- * so listing it here would be asking search engines to crawl a page that tells
- * them to go away. The rule the spec cares about — nobody is indexed until they
- * ask to be — has to hold in both places or it holds in neither.
- */
-/**
  * The sheets worth submitting to a crawler.
  *
  * Two conditions, and they are not the same kind of rule.

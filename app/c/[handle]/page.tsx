@@ -136,9 +136,9 @@ export default async function CharacterSheet({ params }: Props) {
 
   /*
    * Every achievement is retroactive, so the first compute stamps them all with
-   * the day we first saw the founder. Those are not events — listing fifteen
-   * identical timestamps would say nothing happened. They fold into the entry
-   * line, and only what has happened since earns a row.
+   * the day we first saw the founder. Those are not events — listing
+   * thirty-five identical timestamps would say nothing happened. They fold into
+   * the entry line, and only what has happened since earns a row.
    */
   const seenDay = character.firstSeenAt.slice(0, 10)
   const since = character.achievements.filter((a) => a.earnedOn.slice(0, 10) > seenDay)

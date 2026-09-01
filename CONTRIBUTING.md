@@ -18,7 +18,7 @@ If you have to touch another file to propose a rebalance, the engine has a bug. 
 
 ### Two guardrails on classes
 
-**No class may read as a joke at someone's expense.** `Adventurer` is the class of insufficient data; it is neutral on purpose. A class that makes someone look like a failure doesn't ship, even if it's statistically accurate.
+**No class may read as a joke at someone's expense.** `Adventurer` is where the tree lands when somebody has shipped and earned nothing yet; it is neutral on purpose, and `Evoker` exists so that nobody with money coming in is told the armory cannot place them. A class that makes someone look like a failure doesn't ship, even if it's statistically accurate.
 
 **The test for every derived label:** would this person be happy to screenshot it? If not, it's a bug, not an opinion.
 
@@ -26,7 +26,7 @@ If you have to touch another file to propose a rebalance, the engine has a bug. 
 
 **Founder sheets.** They're computed from crawled data, never hand-edited. A PR must not be able to modify a sheet. The repo is the code, not the admin panel.
 
-To have a sheet removed: the "Remove my sheet" button on the sheet itself. No account, no email, immediate effect.
+To have a sheet removed: sign in with X on the sheet itself and press remove. No email, no waiting, immediate effect. Signing in is the whole of the ceremony — it exists because the endpoint used to take the handle from the request body, which made "anyone can remove their own sheet" also "anyone can remove anyone's".
 
 To correct a number: it comes from TrustMRR, so that's where it needs correcting.
 

@@ -13,13 +13,12 @@ The numbers come from [TrustMRR](https://trustmrr.com). The formula is entirely 
 ```
 XP    = lifetime revenue in dollars + 500 per product shipped
 level = the last tier reached in the table below
-iLvl  = the level you'd hold if you sustained your current MRR for twelve months
+iLvl  = the average item level of the gear you are wearing
 ```
 
-The gap between the two is the only genuinely interesting number:
+Level is what you have banked and cannot lose. Item level is what you are carrying right now: every stat on your sheet is one of seventeen equipment slots, each piece scores from where that stat sits on its own ladder, and your iLvl is their mean — which is how the game computes it too. A slot TrustMRR never filled is left out of the average rather than counted as a zero, because no data is not a bad score.
 
-- **iLvl > level** — taking off. Your gear is above your tier.
-- **iLvl < level** — veteran in a trough. Big level, rusty gear.
+There is deliberately no gap between the two numbers any more. iLvl used to be MRR projected over twelve months, which put it on the level scale and made `iLvl − level` mean something; the mean of a paper doll is a different scale, and the reference has level 60 characters at item level 66 without ever subtracting one from the other. What a player actually reads off a paper doll is how many slots are filled, and that is what the sheet prints.
 
 ### The level table
 
@@ -45,21 +44,23 @@ Deterministic tree, **first match wins**. Order matters: how you build and how y
 
 | # | Class | Condition | Share |
 | --- | --- | --- | --- |
-| 1 | **Adventurer** | no products, or level < 5 | — |
-| 2 | **Mage** | AI stack (`openai`, `anthropic`) | 4% |
-| 3 | **Hunter** | SEO channel with domain rating ≥ 30, or DR ≥ 50 alone | 24% |
-| 4 | **Warlock** | paid acquisition (`google-ads`, `meta-ads`, …) | 7% |
-| 5 | **Bard** | an audience they built (`twitter`, `youtube`, `newsletter`, …) | 2% |
-| 6 | **Priest** | measured retention > 60% on more than 50 customers | 4% |
-| 7 | **Monk** | real lifetime revenue, no recurring revenue at all | 17% |
-| 8 | **Rogue** | ARPU ≥ $300 | 10% |
-| 9 | **Warrior** | 100+ paying, ARPU < $30 | 17% |
-| 10 | **Paladin** | 10+ paying, ARPU ≥ $30 | 13% |
-| — | **Adventurer** | default | 1% |
+| 1 | **Adventurer** | No products yet, or nothing earned yet | 15% |
+| 2 | **Mage** | Builds on `openai` or `anthropic` | 8% |
+| 3 | **Hunter** | An SEO channel with domain rating 30+, or domain rating 50 on its own | 7% |
+| 4 | **Warlock** | Buys acquisition: search, social or influencer ads | 3% |
+| 5 | **Shaman** | Runs on an audience they built — X, YouTube, a newsletter | 6% |
+| 6 | **Priest** | Measured retention above 60% across more than 50 customers | 1% |
+| 7 | **Monk** | Real lifetime revenue and no recurring revenue at all | 23% |
+| 8 | **Rogue** | $300 or more per customer per month | 3% |
+| 9 | **Warrior** | 25+ paying, under $30 each | 8% |
+| 10 | **Paladin** | 3+ paying, $30 or more each | 9% |
+| 11 | **Evoker** | Real revenue that the rules above cannot yet place | 16% |
 
-`Adventurer` is the class of insufficient data. It's neutral and never demeaning: nobody should be able to read their class as a joke. `Monk` means you sell outright — nothing to renew, nothing to churn. Gumroad is a Monk.
+`Adventurer` sits first and almost never fires there: one product grants 500 XP, which is already level 17, so `level < 5` is out of reach for anybody who has shipped. Its 15% arrives at the other end of the tree, where nothing matched and the default applies — and since `Evoker` now takes everyone with revenue, that default means exactly one thing: shipped something, earned nothing yet. It is neutral and never demeaning; nobody should be able to read their class as a joke.
 
-The shares are measured over the real corpus, not estimated. The first version of this tree keyed on a `customers` field that TrustMRR populates 16% of the time, and 66% of founders came out Adventurer — a ladder where two thirds of people sit in the "we don't know" class isn't a game. The rules now lead with the fields that actually exist, and size falls back to `activeSubscriptions` (78% coverage) when `customers` is missing.
+`Monk` means you sell outright — nothing to renew, nothing to churn. Gumroad is a Monk.
+
+The shares are measured over the real corpus, not estimated, and they have been re-measured twice. The first tree keyed on a `customers` field that TrustMRR populates 16% of the time, and 66% of founders came out Adventurer — a ladder where two thirds of people sit in the "we don't know" class isn't a game; size now falls back to `activeSubscriptions` (78% coverage) when `customers` is missing. The second retune came when the crawler stopped seeing only the top 200 listings, which were the best-documented ones and had quietly been what the tree was fitted to. Against the rest of the corpus the base-size floors were far too high: 45 founders with real MRR and a real customer count were rejected for having fewer than ten, and four subscribers at $139 is a business. The floors came down to 25 and 3, and `Evoker` was added as the last rule that can see anything — because "we don't know" is the wrong answer for somebody with money coming in.
 
 ### Rarity
 
@@ -75,17 +76,19 @@ Indexed on your level. A purple border reads without a single word.
 
 ### Achievements
 
-Fifteen, all retroactive, all phrased positively. An earned achievement is never lost, even if the condition becomes false again. Full list: [`engine/tuning.ts`](engine/tuning.ts).
+Thirty-five, all retroactive, all phrased positively. An earned achievement is never lost, even if the condition becomes false again. Full list: [`engine/tuning.ts`](engine/tuning.ts).
 
 ---
 
 ## Your sheet
 
-**It is not indexed until you claim it.** Your products are always linked, but the link is `nofollow` until you claim the sheet — then it becomes a real dofollow backlink. Consent and interest are the same gesture. It also bounds the risk: an armory passing rank to hundreds of unvetted sites is how a directory gets read as a link farm, so only the links of people who put their hand up carry any weight.
+**Every sheet is indexed, and that is a decision rather than a default.** It used to be claimed-only, on the theory that consent and interest are the same gesture. The gesture never happened — one claim in 3,900 — and the cost was that the only free discovery channel the site has was switched off, so the founders whose numbers are already public on TrustMRR could not find the page about them either. TrustMRR's founder has since agreed to the whole corpus being indexed, which is the permission that was actually missing.
 
-**An unclaimed sheet shows nothing negative.** No declining trend, no iLvl trough. The negative only appears after you claim it, once you've chosen to be here.
+**Claiming buys a dofollow link.** Your products are always linked, but the link is `nofollow` until you claim the sheet — then it becomes a real backlink. It bounds the risk: an armory passing rank to hundreds of unvetted sites is how a directory gets read as a link farm, so only the links of people who put their hand up carry any weight.
 
-**Removal is temporarily unavailable from the sheet.** The button was one unauthenticated click, which meant anyone could remove anyone — a competitor, or a passer-by working down the ladder. It is disabled, endpoint included, until ownership can be checked. Ask via [an issue](https://github.com/silentdany/indiecraft/issues) in the meantime and it will be done by hand. Anyone already removed stays removed.
+**Removal is one click, and only yours to make.** Sign in with X on your own sheet and it is gone immediately — no email, nothing to wait for. The endpoint used to take the handle from the request body, which meant "anyone can remove their own sheet" was also "anyone can remove anyone's", and `/ladder` hands out a hundred handles at a time. The fix was not a better rate limit: the only handle the route can act on now is the one in the signed session cookie. Claiming is the way back, because a removed sheet 404s and its owner cannot otherwise reach the page to change their mind. Anyone already removed stays removed.
+
+**Unclaiming is the middle option.** It keeps the sheet and puts the product links back to `nofollow`, for somebody who regrets the backlink rather than the page. The alternative used to be "delete everything".
 
 Nothing is shown that TrustMRR doesn't already show.
 
@@ -112,11 +115,11 @@ pnpm dev
 | `pnpm test` | Engine tests |
 | `bash scripts/setup-x-auth.sh` | Walks you through creating the X OAuth app that lets founders claim their sheet |
 
-Claiming is off until that last one has been run: without `X_CLIENT_ID` and
-`X_CLIENT_SECRET` the sign-in, claim and removal routes all return 404, every
-sheet stays `noindex`, and the sitemap holds only the three static pages. The
-site works fine that way — it just cannot be found, and nobody can consent to
-being in it.
+Claiming is off until that last one has been run: without `X_API_KEY` and
+`X_API_SECRET` the sign-in, claim and removal routes all return 404. Nothing
+else changes — sheets are indexed and submitted either way, because indexing no
+longer depends on anybody claiming anything. What is missing is the ability to
+consent to, or opt out of, being in it.
 
 ### Architecture
 
@@ -168,7 +171,8 @@ Three things about the TrustMRR API that its docs don't say, measured on 2026-08
 | `DATABASE_URL` | Transaction pooler, port 6543 — the app (`prepare: false` mandatory) |
 | `DIRECT_URL` | Session pooler, port 5432 — the crawler (see note below) |
 | `CRON_SECRET` | Protects `/api/cron/compute` |
-| `X_CLIENT_ID` / `X_CLIENT_SECRET` | X OAuth 2.0 app — claiming is off without them |
+| `X_API_KEY` / `X_API_SECRET` | X OAuth 1.0a consumer keys — claiming and removal are off without them |
+| `X_CLIENT_ID` / `X_CLIENT_SECRET` | Optional OAuth 2.0 fallback, used only when the 1.0a keys are absent |
 | `AUTH_SECRET` | Signs the session cookie (falls back to `CRON_SECRET`) |
 | `NEXT_PUBLIC_POSTHOG_KEY` | Analytics |
 | `NEXT_PUBLIC_SITE_URL` | Base for absolute OG URLs, and the OAuth `redirect_uri` |

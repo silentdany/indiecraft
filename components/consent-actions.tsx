@@ -105,14 +105,22 @@ export function ConsentActions({
         <WowIcon slug={UI_ICONS.signedIn} glyph="crest" size={19} bare />
         <span>
           Signed in as <strong>@{viewer}</strong> — this is your sheet
+          {/*
+              Neither branch may say a sheet is out of search. Every sheet is
+              indexed now — see robots.ts — and this line went on telling
+              founders otherwise, which is the one inaccuracy on the site that
+              somebody could reasonably have relied on. What claiming actually
+              changes is the links: see GearItem's `linked`.
+          */}
           {claimed ? (
             <>
-              , and it is <strong className="gold">claimed</strong>. It is public, indexed and
-              linked from the ladder.
+              , and it is <strong className="gold">claimed</strong>, so the links to your products
+              are real backlinks.
             </>
           ) : (
             <>
-              . It is <strong>not claimed</strong> yet, so it stays unlisted and out of search.
+              . It is <strong>not claimed</strong> yet, so the links to your products are nofollow
+              and pass no rank.
             </>
           )}
         </span>
@@ -126,7 +134,7 @@ export function ConsentActions({
             disabled={state === 'working'}
             className="consent-remove label"
           >
-            Unclaim — make it unlisted again
+            Unclaim — put my product links back to nofollow
           </button>
         ) : (
           <button
