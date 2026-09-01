@@ -18,6 +18,7 @@ import {
   LockedAchievements,
   RankPanel,
   StatsPanel,
+  TalentPanel,
   Timeline,
   type TimelineEvent,
 } from '@/components/sheet-panels'
@@ -274,6 +275,25 @@ export default async function CharacterSheet({ params }: Props) {
                 />
                 {character.characterClass}
               </Link>
+              {/*
+                The build, immediately after the class and in the class's own
+                colour, because it is the same fact at a finer grain: `Mage`
+                says what they are and `Fire 31/11/9` says which kind. Two
+                Mages with nothing in common printed one identical word before
+                this line existed.
+
+                Empty for an Adventurer and for anybody under level 10, and it
+                renders nothing at all rather than an em dash — a placeholder
+                where a build goes reads as a build that failed to load.
+              */}
+              {character.talents.label && (
+                <span
+                  className="armory-spec"
+                  style={{ color: CLASS_COLORS[character.characterClass] }}
+                >
+                  {character.talents.label}
+                </span>
+              )}
               {character.profile.realm && (
                 <>
                   {' — '}
@@ -520,6 +540,21 @@ export default async function CharacterSheet({ params }: Props) {
                 />
               </section>
             </div>
+
+            {/*
+              Under the two number panels rather than beside them: Standing and
+              Statistics are both grids of figures and answer "where do I
+              stand"; this answers "what kind of thing am I", which is a
+              different question and gets its own width to say it in.
+            */}
+            {character.talents.trees.length > 0 && (
+              <Section title={`Talents — ${character.talents.label}`}>
+                <TalentPanel
+                  talents={character.talents}
+                  characterClass={character.characterClass}
+                />
+              </Section>
+            )}
 
             {character.cofounders.length > 0 && (
               <Section title="Guild">

@@ -788,10 +788,25 @@ function pickVariant(character: CharacterPage) {
       nameSize,
     }
   }
+  /*
+   * The spec as an adjective — `FIRE MAGE`, not `MAGE` — because that is how
+   * everybody who has played says it, and because it costs the kicker at most
+   * thirteen characters.
+   *
+   * The full `FIRE 31/11/9` is deliberately NOT here. At 22px with 4px of
+   * letter-spacing the worst case runs to roughly 780px inside a column of
+   * about 886, which is close enough that a name-length change or a font
+   * substitution clips it — and a kicker cut off mid-build is worse on a
+   * timeline than a shorter true one. The three numbers are on the sheet, on
+   * /rules and on the comparison page; the card's job is to be recognised at
+   * thumbnail size.
+   */
+  const spec = character.talents.spec
+  const title = spec ? `${spec} ${character.characterClass}` : character.characterClass
   return {
     icon: character.characterClass,
     slug: CLASS_ICONS[character.characterClass] as string | undefined,
-    kicker: `${character.characterClass.toUpperCase()} · RANK #${character.rank}`,
+    kicker: `${title.toUpperCase()} · RANK #${character.rank}`,
     // The class kicker wears the class colour: the shared image and the page
     // have to agree, or the colour system stops meaning anything the moment it
     // leaves the site.

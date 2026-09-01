@@ -18,6 +18,7 @@ import type {
   AchievementDef,
   ArmorType,
   CharacterClass,
+  ClassTalentsDef,
   EquipmentGlyph,
   Faction,
   FounderAggregate,
@@ -2811,3 +2812,501 @@ export const SLOTS: readonly SlotDef[] = [
 ]
 
 export const SLOTS_BY_KEY = new Map(SLOTS.map((s) => [s.key, s]))
+
+// ---------------------------------------------------------------------------
+// 9. Talents — which kind of a class somebody is
+// ---------------------------------------------------------------------------
+
+/**
+ * The class tree answers "what are you". This answers "what kind".
+ *
+ * A class is one word decided by one matched rule, so two Mages with nothing in
+ * common print the same word and read as the same founder. `Fire 31/11/9` is
+ * the difference: same class, and a build that says which of the three things a
+ * Mage can be this one actually is.
+ *
+ * ---------------------------------------------------------------------------
+ * WHY THE SIGNALS ARE THE SIGNALS.
+ *
+ * Every tree is a stat this project already computes. Not one of them is a new
+ * crawl field, and not one is invented — the same rule the paper doll follows,
+ * for the same reason: a number nobody can check is a number nobody should be
+ * ranked on.
+ *
+ * Every class has at least one tree its own CLASS_RULE guarantees is alive. A
+ * Mage matched on an AI stack, so `stack.length >= 1`; a Hunter matched on
+ * domain rating, so a rating is on record; a Warlock matched on a paid channel,
+ * so the paid count is at least one. That property is worth more than it looks
+ * — it is why the all-signals-dead fallback below is unreachable for a founder
+ * who actually holds the class — and engine/talents.test.ts asserts it per
+ * class so that a rebalance cannot quietly cost a class its floor.
+ *
+ * It is deliberately NOT the first tree in every case. Order is the reference's
+ * and the label's, never the allocator's: a player reading a Hunter's
+ * `31/11/9` expects Beast Mastery first, and rearranging three columns to suit
+ * an internal invariant would break the one thing borrowing this vocabulary
+ * buys.
+ *
+ * ---------------------------------------------------------------------------
+ * WHAT `read` RETURNS.
+ *
+ * A value on the tree's own `full` scale, or null when the corpus never
+ * answered. Null is not zero and never becomes zero: a tree fed a null takes no
+ * points, exactly as an unreported stat leaves a paper-doll slot empty instead
+ * of dressing somebody in grey.
+ *
+ * Several trees name a fallback signal — "retention, else margin" — and those
+ * are two different instruments. `asShareOf` re-expresses the fallback at the
+ * same STRENGTH it would have on its own ladder, which is the honest amount of
+ * comparability available: the fallback exists so the tree is not dead for a
+ * founder TrustMRR is thin about, not because a margin is secretly a retention
+ * rate. Where a tree is one signal, `read` hands back the raw stat.
+ *
+ * ---------------------------------------------------------------------------
+ * WHERE `full` COMES FROM.
+ *
+ * The legendary rung of the equipment slot carrying the same stat, wherever one
+ * exists — SLOTS is already calibrated against the live corpus, and a second
+ * set of anchors for the same numbers would be two tables free to disagree
+ * about what "the top" means. Followers saturate at 250,000 here because the
+ * Neck slot's legendary starts there. Domain rating at 70 because the Head
+ * slot's does, which is also Renowned's threshold.
+ *
+ * The three with no slot to borrow from: retention at 0.9 (Unkillable asks 80%,
+ * and the tail above it is thin), profit margin at 90 (Alchemist's threshold,
+ * held by 17.1% of the corpus), and the paid- and audience-channel counts at 3,
+ * because the vocabularies hold 8 and 10 slugs and nobody runs all of them.
+ */
+
+/** Tunables that are not a tree. Everything else about talents is the table below. */
+export const TALENTS = {
+  /**
+   * The level that grants the first point, and with it the whole build.
+   *
+   * Ten, which is the reference's own answer and lands here for a better reason
+   * than fidelity: a single shipped product grants 500 XP and therefore level
+   * 17, so every founder who has launched anything is already past it. The gate
+   * only ever catches somebody with no product and under $100 earned — which is
+   * the same population Adventurer's first rule describes, and they have no
+   * trees to spend in anyway.
+   */
+  firstPointAtLevel: 10,
+  /**
+   * How sharply a stronger signal outweighs a weaker one.
+   *
+   * Weights are raised to this power before the points are apportioned, and it
+   * exists because log normalisation is generous in the middle: a founder at a
+   * tenth of an anchor still scores about 0.75, so three decent signals came
+   * out 12/16/14 — arithmetically correct and useless to read. A build is
+   * supposed to say what somebody committed to.
+   *
+   * Two, measured on real shapes rather than picked for roundness. The same
+   * seven founders, at 1 / 2 / 3:
+   *
+   *   AI SaaS, sticky ....... 4/4/32    1/0/39    0/0/40
+   *   Gumroad-shaped ........ 20/13/17  24/9/17   26/7/17
+   *   Newsletter founder .... 21/7/0    25/3/0    27/1/0
+   *   SEO machine ........... 12/16/14  10/17/15  9/18/15
+   *
+   * Three starts rounding real signals to zero, which is the one thing this
+   * number must not do: zero already means "TrustMRR never said", and a tree
+   * that has a stat but prints 0 is indistinguishable from a tree that has
+   * nothing. Two sharpens the shape and leaves a live tree visible. The SEO
+   * machine stays flat at every setting, correctly — that founder genuinely is
+   * strong on all three axes, and a build is allowed to say so.
+   *
+   * It is applied to the apportionment only. `TalentBuild.trees[].weight` stays
+   * the raw normalised signal, because that is what it claims to be.
+   */
+  contrast: 2,
+} as const
+
+/** How many of a vocabulary a founder actually uses. `hasAny`'s counting twin. */
+const countIn = (values: string[], group: readonly string[]) =>
+  values.filter((v) => group.includes(v)).length
+
+/**
+ * A fallback signal, re-expressed on the primary's scale.
+ *
+ * `value` sits somewhere on its own ladder of `valueFull`; this returns the
+ * number that sits at the same fraction of `full`. Log-aware, because half the
+ * anchors here are log-scaled and a linear share mapped onto a log ladder is
+ * wildly generous — two audience channels out of three would come out at 0.97
+ * of 250,000 followers rather than at the 0.67 it means.
+ *
+ * `expm1` is the exact inverse of the `log1p` normalisation in talents.ts, so
+ * the round trip lands on the share it was given rather than near it.
+ */
+const asShareOf = (
+  value: number | null,
+  valueFull: number,
+  full: number,
+  log = false,
+): number | null => {
+  if (value === null || !Number.isFinite(value)) return null
+  const share = Math.min(Math.max(value, 0), valueFull) / valueFull
+  return log ? Math.expm1(share * Math.log1p(full)) : share * full
+}
+
+/** Growth only says something about a business that has monthly revenue to grow. */
+const growthOf = (a: FounderAggregate): number | null => (a.mrrUsd > 0 ? a.growthMrr30d : null)
+
+/** Retention, only where it was measured. Falls through to the tree's second source. */
+const retentionOf = (a: FounderAggregate): number | null =>
+  a.hasRetentionSignal ? a.retention : null
+
+/**
+ * Three trees per class, in the order the label prints them.
+ *
+ * Order is load-bearing twice — it fixes `a/b/c`, and it breaks a tie when two
+ * trees come out equally deep, first listed winning exactly as CLASS_RULES
+ * takes its first match. So it is written down here and nowhere else.
+ *
+ * Two orders are the specification's rather than the client's tab order:
+ * Paladin reads Holy / Retribution / Protection and Monk reads Brewmaster /
+ * Windwalker / Mistweaver. Noted because somebody will one day compare this
+ * against a talent calculator and find the middle two swapped, and the answer
+ * should be in the file rather than in a pull request thread.
+ *
+ * Adventurer is absent, and that absence is the feature. It is not a class —
+ * it is the state of having none yet — so it has no trees, prints no label, and
+ * spends no points. Giving it three would be inventing a specialism for
+ * somebody whose whole description is not having one.
+ */
+export const TALENT_TREES: readonly ClassTalentsDef[] = [
+  {
+    class: 'Mage',
+    trees: [
+      {
+        key: 'mage-arcane',
+        name: 'Arcane',
+        icon: 'spell_holy_magicalsentry',
+        blurb: 'Deep in the tools. The stack is the craft.',
+        // Guaranteed non-null for a Mage: the class rule matched on openai or
+        // anthropic being in this very list.
+        read: (a) => positive(a.stack.length),
+        full: 15,
+      },
+      {
+        key: 'mage-fire',
+        name: 'Fire',
+        icon: 'spell_fire_firebolt02',
+        blurb: 'Burning upward. Monthly revenue is climbing.',
+        read: growthOf,
+        full: 260,
+        log: true,
+      },
+      {
+        key: 'mage-frost',
+        name: 'Frost',
+        icon: 'spell_frost_frostbolt02',
+        blurb: 'Nothing melts. Customers stay, or the margin holds.',
+        read: (a) => retentionOf(a) ?? asShareOf(a.profitMargin30d, 90, 0.9),
+        full: 0.9,
+      },
+    ],
+  },
+  {
+    class: 'Hunter',
+    trees: [
+      {
+        key: 'hunter-beast-mastery',
+        name: 'Beast Mastery',
+        icon: 'ability_hunter_beasttaming',
+        blurb: 'An audience that follows them anywhere.',
+        read: (a) => (a.followers === null ? null : positive(a.followers)),
+        full: 250_000,
+        log: true,
+      },
+      {
+        key: 'hunter-marksmanship',
+        name: 'Marksmanship',
+        icon: 'ability_marksmanship',
+        blurb: 'Found before they go looking. The domain carries them.',
+        // The tree a Hunter cannot be dead in: the class rule matched on domain
+        // rating, so a rating is on record for every one of them.
+        read: (a) => positive(a.domainRating ?? 0),
+        full: 70,
+      },
+      {
+        key: 'hunter-survival',
+        name: 'Survival',
+        icon: 'ability_hunter_swiftstrike',
+        blurb: 'What actually came in this month.',
+        read: (a) => positive(a.last30dUsd),
+        full: 100_000,
+        log: true,
+      },
+    ],
+  },
+  {
+    class: 'Warlock',
+    trees: [
+      {
+        key: 'warlock-affliction',
+        name: 'Affliction',
+        icon: 'spell_shadow_deathcoil',
+        blurb: 'Acquisition they pay for, one channel at a time.',
+        // At least 1 for every Warlock: the class rule matched on this count.
+        read: (a) => positive(countIn(a.channels, PAID_CHANNELS)),
+        full: 3,
+      },
+      {
+        key: 'warlock-demonology',
+        name: 'Demonology',
+        icon: 'spell_shadow_metamorphosis',
+        blurb: 'More summoned than most. Every product is another one.',
+        read: (a) => positive(a.nProducts),
+        full: 7,
+      },
+      {
+        key: 'warlock-destruction',
+        name: 'Destruction',
+        icon: 'spell_shadow_rainoffire',
+        blurb: 'Big hits. Each customer is worth a great deal.',
+        read: (a, { arpu }) => (a.effectiveCustomers > 0 ? positive(arpu) : null),
+        full: 1_000,
+        log: true,
+      },
+    ],
+  },
+  {
+    class: 'Warrior',
+    trees: [
+      {
+        key: 'warrior-arms',
+        name: 'Arms',
+        icon: 'ability_warrior_savageblow',
+        blurb: 'Volume, earned one customer at a time.',
+        // 25 or more for every Warrior: the class rule matched on this number.
+        read: (a) => positive(a.effectiveCustomers),
+        full: 3_000,
+        log: true,
+      },
+      {
+        key: 'warrior-fury',
+        name: 'Fury',
+        icon: 'ability_warrior_innerrage',
+        blurb: 'Swinging faster. Monthly revenue is climbing.',
+        read: growthOf,
+        full: 260,
+        log: true,
+      },
+      {
+        key: 'warrior-protection',
+        name: 'Protection',
+        icon: 'ability_warrior_defensivestance',
+        blurb: 'Hard to knock over. It keeps what it earns, and it has lasted.',
+        read: (a) =>
+          asShareOf(a.profitMargin30d, 90, 0.9) ?? asShareOf(yearsSince(a.foundedFirst), 10, 0.9),
+        full: 0.9,
+      },
+    ],
+  },
+  {
+    class: 'Paladin',
+    trees: [
+      {
+        key: 'paladin-holy',
+        name: 'Holy',
+        icon: 'spell_holy_holybolt',
+        blurb: 'Their customers stay, and keep staying.',
+        read: (a) => retentionOf(a) ?? asShareOf(positive(a.activeSubscriptions), 2_000, 0.9),
+        full: 0.9,
+      },
+      {
+        key: 'paladin-retribution',
+        name: 'Retribution',
+        icon: 'spell_holy_auraoflight',
+        blurb: 'A price that holds, month after month.',
+        // The tree a Paladin cannot be dead in: the class rule matched on ARPU
+        // of $30 or more across at least three paying customers.
+        read: (a, { arpu }) => (a.effectiveCustomers > 0 ? positive(arpu) : null),
+        full: 1_000,
+        log: true,
+      },
+      {
+        key: 'paladin-protection',
+        name: 'Protection',
+        icon: 'spell_holy_devotionaura',
+        blurb: 'Time in the game. They were here before this was a market.',
+        read: (a) => yearsSince(a.foundedFirst),
+        full: 10,
+      },
+    ],
+  },
+  {
+    class: 'Rogue',
+    trees: [
+      {
+        key: 'rogue-assassination',
+        name: 'Assassination',
+        icon: 'ability_rogue_eviscerate',
+        blurb: 'Few marks, big scores.',
+        // $300 or more for every Rogue: the class rule matched on this number.
+        read: (a, { arpu }) => (a.effectiveCustomers > 0 ? positive(arpu) : null),
+        full: 1_000,
+        log: true,
+      },
+      {
+        key: 'rogue-combat',
+        name: 'Combat',
+        icon: 'ability_backstab',
+        blurb: 'Working every day. This month already landed.',
+        read: (a) => positive(a.last30dUsd),
+        full: 100_000,
+        log: true,
+      },
+      {
+        key: 'rogue-subtlety',
+        name: 'Subtlety',
+        icon: 'ability_stealth',
+        blurb: 'Many ways in. They arrive from more than one direction.',
+        read: (a) => positive(a.channels.length),
+        full: 10,
+      },
+    ],
+  },
+  {
+    class: 'Priest',
+    trees: [
+      {
+        key: 'priest-discipline',
+        name: 'Discipline',
+        icon: 'spell_holy_powerwordshield',
+        blurb: 'Almost nobody leaves.',
+        // Never dead for a Priest: the class rule matches only on a MEASURED
+        // retention above 60%, so `hasRetentionSignal` is true by construction.
+        read: retentionOf,
+        full: 0.9,
+      },
+      {
+        key: 'priest-holy',
+        name: 'Holy',
+        icon: 'spell_holy_heal',
+        blurb: 'A congregation. There are a lot of people to look after.',
+        read: (a) => positive(a.effectiveCustomers),
+        full: 3_000,
+        log: true,
+      },
+      {
+        key: 'priest-shadow',
+        name: 'Shadow',
+        icon: 'spell_shadow_shadowwordpain',
+        blurb: 'An audience of their own, built away from the product.',
+        read: (a) =>
+          (a.followers === null ? null : positive(a.followers)) ??
+          asShareOf(positive(countIn(a.channels, AUDIENCE_CHANNELS)), 3, 250_000, true),
+        full: 250_000,
+        log: true,
+      },
+    ],
+  },
+  {
+    class: 'Monk',
+    trees: [
+      {
+        key: 'monk-brewmaster',
+        name: 'Brewmaster',
+        icon: 'spell_monk_brewmaster_spec',
+        blurb: 'Takes no rent. Every sale is finished the day it happens.',
+        // Above zero for every Monk: the class rule is lifetime revenue with no
+        // recurring revenue at all.
+        read: (a) => positive(a.revenueTotalUsd),
+        full: 1_000_000,
+        log: true,
+      },
+      {
+        key: 'monk-windwalker',
+        name: 'Windwalker',
+        icon: 'spell_monk_windwalker_spec',
+        blurb: 'Keeps moving. Another thing shipped, and another.',
+        read: (a) => positive(a.nProducts),
+        full: 7,
+      },
+      {
+        key: 'monk-mistweaver',
+        name: 'Mistweaver',
+        icon: 'spell_monk_mistweaver_spec',
+        blurb: 'Little is lost on the way. The margin is theirs.',
+        read: (a) => a.profitMargin30d,
+        full: 90,
+      },
+    ],
+  },
+  {
+    class: 'Shaman',
+    trees: [
+      {
+        key: 'shaman-elemental',
+        name: 'Elemental',
+        icon: 'spell_nature_lightning',
+        blurb: 'Calling it down. Monthly revenue is climbing.',
+        read: growthOf,
+        full: 260,
+        log: true,
+      },
+      {
+        key: 'shaman-enhancement',
+        name: 'Enhancement',
+        icon: 'spell_nature_lightningshield',
+        blurb: 'Builds and sells with the same hands.',
+        // The tree a Shaman cannot be dead in: the class rule matched on an
+        // audience channel, so `channels` holds at least one entry.
+        read: (a) => positive(a.stack.length + a.channels.length),
+        full: 20,
+      },
+      {
+        key: 'shaman-restoration',
+        name: 'Restoration',
+        icon: 'spell_nature_magicimmunity',
+        blurb: 'What they win, they keep.',
+        read: (a) => retentionOf(a) ?? asShareOf(positive(a.activeSubscriptions), 2_000, 0.9),
+        full: 0.9,
+      },
+    ],
+  },
+  {
+    class: 'Evoker',
+    trees: [
+      {
+        key: 'evoker-devastation',
+        name: 'Devastation',
+        // The three Evoker trees wear their own spec crests rather than a
+        // signature ability each, unlike the other nine classes. Not a
+        // preference: `ability_evoker_ebon_might` is the obvious pick for
+        // Augmentation and the render host 403s it, so the set that actually
+        // exists is the one it ships — and a matched triple beats two abilities
+        // and a crest.
+        icon: 'classicon_evoker_devastation',
+        blurb: 'Money arriving every month, whatever shape it turns out to be.',
+        // Above zero for every Evoker who is not already a Monk: the class rule
+        // is revenue the tree above could not place, and no MRR at all with
+        // real lifetime revenue is Monk.
+        read: (a) => positive(a.mrrUsd),
+        full: 100_000,
+        log: true,
+      },
+      {
+        key: 'evoker-preservation',
+        name: 'Preservation',
+        icon: 'classicon_evoker_preservation',
+        blurb: 'It holds together — the customers, or the margin.',
+        read: (a) => retentionOf(a) ?? asShareOf(a.profitMargin30d, 90, 0.9),
+        full: 0.9,
+      },
+      {
+        key: 'evoker-augmentation',
+        name: 'Augmentation',
+        icon: 'classicon_evoker_augmentation',
+        blurb: 'Still assembling. The stack is where the shape is forming.',
+        read: (a) => positive(a.stack.length),
+        full: 15,
+      },
+    ],
+  },
+]
+
+export const TALENT_TREES_BY_CLASS: ReadonlyMap<CharacterClass, ClassTalentsDef> = new Map(
+  TALENT_TREES.map((def) => [def.class, def] as const),
+)

@@ -10,6 +10,23 @@ const FACTIONS: readonly Faction[] = ['B2B', 'B2C', 'Both']
  *
  * Pure function. No database access.
  */
+/**
+ * Revenue per customer per month, the way every consumer of it has to compute it.
+ *
+ * `Math.max(..., 1)` rather than a guard on zero, and the divisor is
+ * `effectiveCustomers` rather than `customers`: TrustMRR reports zero customers
+ * on 96% of listings, so dividing by the raw field turns every large business
+ * into a Rogue and dividing by zero turns it into Infinity.
+ *
+ * It lives here, on the aggregate it reads, because three callers now need the
+ * same number — the class tree, the talent trees, and the stats panel — and
+ * three copies of one formula is three chances for a sheet to disagree with the
+ * ladder about what somebody charges.
+ */
+export function arpuOf(a: Pick<FounderAggregate, 'mrrUsd' | 'effectiveCustomers'>): number {
+  return a.mrrUsd / Math.max(a.effectiveCustomers, 1)
+}
+
 export function aggregateFounder(handle: string, products: ProductInput[]): FounderAggregate {
   const revenueTotalUsd = sum(products, (p) => p.revenueTotalUsd)
   const mrrUsd = sum(products, (p) => p.mrrUsd)

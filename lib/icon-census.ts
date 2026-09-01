@@ -6,6 +6,7 @@ import {
   FACTIONS,
   SLOTS,
   STAT_ICONS,
+  TALENT_TREES,
   UI_ICONS,
 } from '@/engine/tuning'
 import type { RarityName } from '@/engine/types'
@@ -45,6 +46,7 @@ export const CENSUS_GROUPS = [
   'item',
   'achievement',
   'class',
+  'talent',
   'faction',
   'empty',
   'stat',
@@ -123,6 +125,28 @@ export function iconCensus(): CensusSection[] {
         icon,
         glyph: 'crest' as IconName,
       })),
+    },
+    {
+      group: 'talent',
+      key: 'talent',
+      title: 'Talent trees',
+      /*
+       * Thirty spec icons, and they are the group most likely to hold a slug
+       * somebody typed from memory: unlike an item, a tree has no `after` field
+       * naming the real thing it derives from, because it IS the real thing.
+       * So the verifier is the only check that a Mistweaver icon exists at all,
+       * and `/icons` is the only check that it is the Mistweaver one.
+       */
+      entries: TALENT_TREES.flatMap((cls) =>
+        cls.trees.map((tree) => ({
+          slot: 'talent',
+          tier: `talent:${tree.key}`,
+          name: `${cls.class} — ${tree.name}`,
+          after: tree.key,
+          icon: tree.icon,
+          glyph: cls.class as IconName,
+        })),
+      ),
     },
     {
       group: 'faction',

@@ -6,7 +6,7 @@
 
 Everything tunable lives in one file:
 
-**[`engine/tuning.ts`](engine/tuning.ts)** — level thresholds, rarity bands, the class decision tree, achievement definitions.
+**[`engine/tuning.ts`](engine/tuning.ts)** — level thresholds, rarity bands, the class decision tree, achievement definitions, the equipment table, and the talent trees with the signal and saturation anchor behind each one.
 
 If you have to touch another file to propose a rebalance, the engine has a bug. Open an issue and we'll fix it.
 

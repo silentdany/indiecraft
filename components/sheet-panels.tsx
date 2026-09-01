@@ -2,8 +2,15 @@ import Link from 'next/link'
 import type { CSSProperties } from 'react'
 import { ACHIEVEMENT_ICONS, type IconName } from '@/components/icon'
 import { WowIcon } from '@/components/wow-icon'
-import { ACHIEVEMENTS, achievementRarityHex, CLASS_COLORS, UI_ICONS } from '@/engine'
-import type { AchievementProgressInput, CharacterClass } from '@/engine/types'
+import {
+  ACHIEVEMENTS,
+  achievementRarityHex,
+  CLASS_COLORS,
+  TALENT_TREES_BY_CLASS,
+  TALENTS,
+  UI_ICONS,
+} from '@/engine'
+import type { AchievementProgressInput, CharacterClass, TalentBuild } from '@/engine/types'
 import type { HistoryPoint, RankContext, SheetStats } from '@/lib/queries'
 import { realmLabel } from '@/lib/realm'
 
@@ -282,6 +289,96 @@ export function StatsPanel({
 }
 
 /**
+ * The talent build: three trees, three integers, one of them the spec.
+ *
+ * Three rows and not a fifty-one-icon grid, and the restraint is the design
+ * rather than a first pass. A real tree is fifty-one talents deep because a
+ * player chooses each one; nobody chooses anything here, so a grid would be
+ * forty-eight pictures standing in for signals this project does not have. What
+ * a build actually communicates at a glance is the shape — 31/11/9 says
+ * "committed" and 19/17/15 says "spread thin" — and the shape needs three rows.
+ *
+ * The bar is drawn against the DEEPEST tree, not against the 51 available, so
+ * the spec always fills its row and the other two read as fractions of it. That
+ * is how the ratio is read out loud, and a bar scaled to 51 would leave every
+ * founder with three short stubs and no shape at all.
+ *
+ * `weight` is deliberately not what the bar shows. It is the signal before
+ * rounding, which is the right number for an engine and the wrong one for a
+ * row that has an integer printed at the end of it — a bar disagreeing with the
+ * number beside it reads as a bug, however defensible the disagreement is.
+ */
+export function TalentPanel({
+  talents,
+  characterClass,
+}: {
+  talents: TalentBuild
+  characterClass: CharacterClass
+}) {
+  // Under level 10, or Adventurer: there is no build, and a panel explaining
+  // that there is no build is furniture.
+  if (talents.trees.length === 0) return null
+
+  const color = CLASS_COLORS[characterClass]
+  // The blurbs live in tuning.ts beside the signals they describe, so a
+  // rebalance carries its own copy — the same rule /rules and the quest log
+  // already follow. They are not carried on the build: they are copy, and the
+  // engine has no business shipping sentences to a database.
+  const blurbs = new Map(
+    (TALENT_TREES_BY_CLASS.get(characterClass)?.trees ?? []).map((t) => [t.key, t.blurb]),
+  )
+  const deepest = Math.max(...talents.trees.map((t) => t.points), 1)
+
+  return (
+    <div className="talents">
+      <ul className="talent-trees">
+        {talents.trees.map((tree) => {
+          const isSpec = tree.key === talents.specKey
+          return (
+            <li key={tree.key} className={`talent-tree${isSpec ? ' is-spec' : ''}`}>
+              <WowIcon
+                slug={tree.icon}
+                glyph={characterClass}
+                size={34}
+                color={color}
+                className="talent-icon"
+              />
+              <span className="talent-body">
+                <span className="talent-head">
+                  <span className="serif talent-name" style={isSpec ? { color } : undefined}>
+                    {tree.name}
+                  </span>
+                  <span className="serif talent-points">{tree.points}</span>
+                </span>
+                <span className="bar talent-bar">
+                  <span
+                    style={{
+                      width: `${Math.round((tree.points / deepest) * 100)}%`,
+                      background: color,
+                    }}
+                  />
+                </span>
+                <span className="talent-blurb">{blurbs.get(tree.key)}</span>
+              </span>
+            </li>
+          )
+        })}
+      </ul>
+      {/*
+        What the three numbers add up to, and where they came from. Without it
+        the panel states a distribution and never says it is a distribution OF
+        anything — and "51 points" is the line that makes a reader who knows the
+        reference nod rather than wonder what scale this is on.
+      */}
+      <p className="talent-foot label">
+        {talents.points} point{talents.points === 1 ? '' : 's'}, one per level from{' '}
+        {LEVEL_OF_FIRST_POINT}. Nothing here is chosen — the numbers are.
+      </p>
+    </div>
+  )
+}
+
+/**
  * Locked achievements, with how close they are.
  *
  * "Centurion — 100 customers" is a wall; "62 of 100" is a checklist. The bar
@@ -443,6 +540,9 @@ function Sparkline({ points }: { points: number[] }) {
     </svg>
   )
 }
+
+/** Read from the engine so the sentence cannot outlive the rule it describes. */
+const LEVEL_OF_FIRST_POINT = TALENTS.firstPointAtLevel
 
 const fmt = (v: number) =>
   v >= 1000

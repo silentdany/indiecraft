@@ -14,7 +14,14 @@ import {
   RARITY_BY_NAME,
   SLOTS,
 } from '@/engine'
-import { CLASS_RULES, QUEST_RULES, QUESTS, XP_PER_PRODUCT } from '@/engine/tuning'
+import {
+  CLASS_RULES,
+  QUEST_RULES,
+  QUESTS,
+  TALENT_TREES,
+  TALENTS,
+  XP_PER_PRODUCT,
+} from '@/engine/tuning'
 import { getClassCounts, getFactionCounts, getRealmCounts } from '@/lib/queries'
 import { realmLabel } from '@/lib/realm'
 
@@ -166,6 +173,64 @@ export default async function Rules() {
           something, which most people never do. The colours are the canonical ones, not ours: a
           class is a colour before it is a word, and there is no point inventing a vocabulary that
           millions of people already read fluently.
+        </p>
+      </Section>
+
+      <Section title="Talents">
+        <p className="muted rules-note">
+          A class is one word, and two founders can share it while having nothing else in common.
+          Talents are the same fact at a finer grain: three trees each, one point per level from{' '}
+          {TALENTS.firstPointAtLevel}, fifty-one at {MAX_LEVEL}, and the deepest tree gives the spec
+          its name. <b>Mage — Fire 31/11/9</b> is a different founder from{' '}
+          <b>Mage — Frost 9/11/31</b>, and before this existed they were the same word.
+        </p>
+        <p className="muted rules-note">
+          Nobody spends the points. There is no player here to click anything, so the split is made
+          by three numbers that are already on the sheet — and each tree is mapped to the number the
+          reference already named it after. Fire is growth because fire is what a business taking
+          off looks like; Frost is what does not melt, which is retention, or a margin that holds;
+          Arcane is the stack, because it is the tree about the craft rather than the customer. Not
+          one of them is a new field: every signal below is a stat the equipment table above already
+          scores.
+        </p>
+        <p className="muted rules-note">
+          A tree whose stat TrustMRR never reported takes no points at all — it is never counted as
+          a zero, the same rule an empty equipment slot follows. The points it would have had go to
+          the trees that do have a signal, so a thin listing produces a lopsided build rather than a
+          wrong one.
+        </p>
+        <ul className="rules-talents">
+          {TALENT_TREES.map((cls) => (
+            <li key={cls.class} className="rules-talent">
+              <span className="rules-talent-class" style={{ color: CLASS_COLORS[cls.class] }}>
+                <WowIcon slug={CLASS_ICONS[cls.class]} glyph={cls.class} size={22} bare />
+                <span className="serif">{cls.class}</span>
+              </span>
+              <ul className="rules-talent-trees">
+                {cls.trees.map((tree) => (
+                  <li key={tree.key} className="rules-talent-tree">
+                    <WowIcon
+                      slug={tree.icon}
+                      glyph={cls.class}
+                      size={26}
+                      color={CLASS_COLORS[cls.class]}
+                    />
+                    <span className="rules-talent-body">
+                      <span className="serif rules-talent-name">{tree.name}</span>
+                      <span className="muted rules-talent-blurb">{tree.blurb}</span>
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            </li>
+          ))}
+        </ul>
+        <p className="muted rules-note">
+          Adventurer has no trees, and that absence is deliberate rather than missing work: it is
+          not a class, it is the state of having none yet, so there is nothing to specialise in. The
+          order of the three columns is the reference&rsquo;s own and never changes — it is what
+          makes 31/11/9 comparable between two founders — and it breaks a tie when two trees come
+          out equally deep, first listed winning exactly as the class tree takes its first match.
         </p>
       </Section>
 

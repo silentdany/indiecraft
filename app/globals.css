@@ -2196,6 +2196,177 @@ a.pager-num:hover {
   font-style: italic;
 }
 
+/* --- Talents --------------------------------------------------------------
+
+   Three rows, and the restraint is the point: a real tree is fifty-one talents
+   deep because a player picks each one, and nobody picks anything here. What a
+   build communicates at a glance is its SHAPE — 31/11/9 reads as committed and
+   19/17/15 as spread thin — and a shape needs three rows, not forty-eight
+   pictures standing in for signals this project does not have.
+
+   Every colour here is the class's, passed in as an inline style rather than
+   set in this file. A talent panel that was gold like everything else would
+   throw away the one thing the reader already knows how to read. */
+
+.armory-spec {
+  margin-left: 8px;
+  font-family: var(--ic-serif);
+  letter-spacing: 0.03em;
+  /* Tabular figures so `31/11/9` does not shuffle its own columns between two
+     founders of the same class — the whole value of the string is that two of
+     them can be compared at a glance. */
+  font-variant-numeric: tabular-nums;
+}
+
+.talent-trees {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.talent-tree {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 10px 12px;
+  border: 1px solid var(--ic-line);
+  background: var(--ic-surface);
+}
+
+/* The spec, marked by weight rather than by a badge. It is already the longest
+   bar and the largest number; a "SPEC" chip would be the third way of saying
+   one thing. */
+.talent-tree.is-spec {
+  border-color: var(--ic-line-2);
+}
+
+.talent-icon {
+  flex: none;
+}
+
+.talent-body {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  flex: 1;
+  min-width: 0;
+}
+
+.talent-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.talent-name {
+  font-size: 15px;
+  letter-spacing: 0.02em;
+  color: var(--ic-text);
+}
+
+.talent-points {
+  font-size: 17px;
+  font-variant-numeric: tabular-nums;
+  color: var(--ic-text);
+}
+
+/* A tree with nothing in it still draws its row and still says what it is. The
+   zero is the answer — this founder is not that — and greying it out to nothing
+   would turn a fact into a rendering artifact. */
+.talent-tree:not(.is-spec) .talent-points {
+  color: var(--ic-text-muted);
+}
+
+.talent-bar {
+  width: 100%;
+}
+
+.talent-blurb {
+  font-size: 12px;
+  color: var(--ic-text-muted);
+}
+
+.talent-foot {
+  margin: 10px 0 0;
+  color: var(--ic-text-muted);
+}
+
+/* Three across once there is room. Below that they stack, which is also how a
+   founder reads them on a phone: one line per tree, top to bottom. */
+@media (min-width: 720px) {
+  .talent-trees {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+/* The same three trees on /rules, one block per class. Not the sheet's panel
+   reused: there are no points to draw here and no spec to mark, because this is
+   the table rather than somebody's reading of it. */
+
+.rules-talents {
+  display: grid;
+  gap: 14px;
+  margin: 16px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.rules-talent {
+  border: 1px solid var(--ic-line);
+  background: var(--ic-surface);
+  padding: 12px 14px;
+}
+
+.rules-talent-class {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 15px;
+  letter-spacing: 0.03em;
+}
+
+.rules-talent-trees {
+  display: grid;
+  gap: 10px;
+  margin: 10px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.rules-talent-tree {
+  display: flex;
+  align-items: flex-start;
+  gap: 9px;
+}
+
+.rules-talent-body {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.rules-talent-name {
+  font-size: 14px;
+  color: var(--ic-text);
+}
+
+.rules-talent-blurb {
+  font-size: 12px;
+}
+
+@media (min-width: 720px) {
+  .rules-talents {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .rules-talent-trees {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
 /* --- Guild ----------------------------------------------------------------- */
 
 .guild {

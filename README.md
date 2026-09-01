@@ -62,6 +62,21 @@ Deterministic tree, **first match wins**. Order matters: how you build and how y
 
 The shares are measured over the real corpus, not estimated, and they have been re-measured twice. The first tree keyed on a `customers` field that TrustMRR populates 16% of the time, and 66% of founders came out Adventurer — a ladder where two thirds of people sit in the "we don't know" class isn't a game; size now falls back to `activeSubscriptions` (78% coverage) when `customers` is missing. The second retune came when the crawler stopped seeing only the top 200 listings, which were the best-documented ones and had quietly been what the tree was fitted to. Against the rest of the corpus the base-size floors were far too high: 45 founders with real MRR and a real customer count were rejected for having fewer than ten, and four subscribers at $139 is a business. The floors came down to 25 and 3, and `Evoker` was added as the last rule that can see anything — because "we don't know" is the wrong answer for somebody with money coming in.
 
+### Talents
+
+A class is one word, and two founders can share it while having nothing else in common. Talents are the same fact at a finer grain: **three trees per class, one point per level from 10, fifty-one at 60**, and the deepest tree names the spec.
+
+```
+Mage — Fire 31/11/9      taking off: growth is the deepest tree
+Mage — Frost 9/11/31     nothing melts: retention, or a margin that holds
+```
+
+Vanilla rules. No hero talents, no per-talent ranks, and nothing anybody picks — there is no player here to spend the points, so they are apportioned across the three trees by three numbers already on the sheet, largest remainder, so the integers always sum to the points available.
+
+Each tree is mapped to the stat the reference already named it after, and not one of them is a new field: every signal is something the equipment table above already scores. A tree whose stat TrustMRR never reported takes no points rather than a zero — the same rule an empty equipment slot follows — so a thin listing produces a lopsided build rather than a wrong one.
+
+Adventurer has no trees, because it is not a class: it is the state of having none yet. Full table, with the signal and the saturation anchor behind every tree: [`engine/tuning.ts`](engine/tuning.ts), section 9.
+
 ### Rarity
 
 Indexed on your level. A purple border reads without a single word.

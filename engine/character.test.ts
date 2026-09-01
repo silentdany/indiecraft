@@ -449,6 +449,55 @@ describe('full sheet', () => {
   })
 })
 
+describe('talents on the sheet', () => {
+  /**
+   * The sheet has to carry the build, not just be able to compute one. Two
+   * Mages printing the same word was the whole complaint; the fix only exists
+   * if it reaches CharacterSheet.
+   */
+  it('attaches a build a level 60 founder can screenshot', () => {
+    const sheet = computeCharacter(
+      founder({
+        revenueTotalUsd: 20_000_000,
+        mrrUsd: 100_000,
+        nProducts: 2,
+        stack: ['openai', 'nextjs', 'stripe'],
+        growthMrr30d: 60,
+      }),
+    )
+    expect(sheet.level).toBe(60)
+    expect(sheet.class).toBe('Mage')
+    expect(sheet.talents.points).toBe(51)
+    expect(sheet.talents.trees.reduce((sum, t) => sum + t.points, 0)).toBe(51)
+    expect(sheet.talents.label).toBe(
+      `${sheet.talents.spec} ${sheet.talents.trees.map((t) => t.points).join('/')}`,
+    )
+  })
+
+  it('leaves an Adventurer with nothing to print', () => {
+    // No product, so the first rule fires and there is no class to specialise.
+    const sheet = computeCharacter(founder({ nProducts: 0 }))
+    expect(sheet.class).toBe('Adventurer')
+    expect(sheet.talents.label).toBe('')
+    expect(sheet.talents.spec).toBeNull()
+  })
+
+  /**
+   * The build is a function of the class the sheet printed, never of a second
+   * opinion about it. A Mage's trees are Mage trees even though the class tree
+   * that decided it read the same `stack` field the Arcane tree reads.
+   */
+  it('builds against the class the sheet actually shows', () => {
+    const sheet = computeCharacter(founder({ nProducts: 1, stack: ['anthropic'], mrrUsd: 900 }))
+    expect(sheet.class).toBe('Mage')
+    expect(sheet.talents.trees.map((t) => t.key)).toEqual([
+      'mage-arcane',
+      'mage-fire',
+      'mage-frost',
+    ])
+  })
+})
+
 describe('the class roster', () => {
   /**
    * Bard and Ranger shipped for a day and are not classes anybody has played.

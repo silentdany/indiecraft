@@ -695,6 +695,148 @@ export interface EquipmentInput extends FounderAggregate {
   characterClass: CharacterClass
 }
 
+/* ---------------------------------------------------------------------------
+ * Talents — what kind of this class they are
+ *
+ * A class is one word and it is decided by one matched rule, which means two
+ * Mages with completely different businesses print the same word and look
+ * identical. That is the gap this fills: `Mage — Fire 31/11/9` says the class
+ * AND says which of the three things a Mage can be this founder actually is.
+ *
+ * Vanilla rules, deliberately. Three trees per class, one point per level from
+ * ten, 51 at level 60, and the deepest tree names the spec. No hero talents, no
+ * per-talent ranks, no tier gates, and nothing a founder chooses — there is
+ * nobody here to spend points, so the points are spent by the numbers.
+ *
+ * What is NOT modelled, and why the omission is the design rather than a
+ * shortcut: individual talents. A 51-icon grid would need 51 more signals we do
+ * not have, and would be inventing 48 of them. Three totals and a spec name is
+ * the whole of what the corpus can honestly support, and it is also the whole
+ * of what somebody reads off a build at a glance.
+ * ------------------------------------------------------------------------- */
+
+/**
+ * Every tree, namespaced by class.
+ *
+ * Namespaced because the names collide in the reference itself — a Warrior and
+ * a Paladin both have Protection, a Priest and a Paladin both have Holy — and
+ * two trees sharing a key would silently share a definition. The display name
+ * drops the prefix; only the key carries it.
+ */
+export type TalentTreeKey =
+  | 'mage-arcane'
+  | 'mage-fire'
+  | 'mage-frost'
+  | 'hunter-beast-mastery'
+  | 'hunter-marksmanship'
+  | 'hunter-survival'
+  | 'warlock-affliction'
+  | 'warlock-demonology'
+  | 'warlock-destruction'
+  | 'warrior-arms'
+  | 'warrior-fury'
+  | 'warrior-protection'
+  | 'paladin-holy'
+  | 'paladin-retribution'
+  | 'paladin-protection'
+  | 'rogue-assassination'
+  | 'rogue-combat'
+  | 'rogue-subtlety'
+  | 'priest-discipline'
+  | 'priest-holy'
+  | 'priest-shadow'
+  | 'monk-brewmaster'
+  | 'monk-windwalker'
+  | 'monk-mistweaver'
+  | 'shaman-elemental'
+  | 'shaman-enhancement'
+  | 'shaman-restoration'
+  | 'evoker-devastation'
+  | 'evoker-preservation'
+  | 'evoker-augmentation'
+
+export interface TalentTreeDef {
+  key: TalentTreeKey
+  /** The reference's own name, unprefixed: 'Fire', 'Beast Mastery'. */
+  name: string
+  /** Blizzard icon slug, same pipeline and same verifier as CLASS_ICONS. */
+  icon: string
+  /**
+   * One sentence, and it is held to the same test as a class reason: would this
+   * founder be happy to screenshot it? A tree is a description of how somebody
+   * built their business, never a verdict on it.
+   */
+  blurb: string
+  /**
+   * The stat this tree is, raw and unnormalised.
+   *
+   * Null when the corpus cannot answer — the same distinction EmptyReason draws
+   * on the paper doll, and for the same reason. A tree fed a null contributes
+   * no weight and takes no points; it never contributes a zero, because a zero
+   * would be a claim about the founder rather than about our data.
+   */
+  read: (a: FounderAggregate, ctx: { level: number; arpu: number }) => number | null
+  /**
+   * The value at which this tree is full, i.e. normalises to 1.
+   *
+   * Read off the legendary rung of the equipment slot that carries the same
+   * stat wherever one exists — those `min` values are already calibrated
+   * against the live corpus, and inventing a second set of anchors for the same
+   * numbers would be two tables that can disagree about what "the top" means.
+   */
+  full: number
+  /**
+   * Normalise on a log scale before dividing by `full`.
+   *
+   * Set on every money and count signal, for exactly the reason item levels are
+   * logarithmic: these ladders span $1 to $100K in one tree, and on a linear
+   * scale a founder at $2K and one at $9K are both indistinguishable from zero
+   * beside the anchor. Left off for the bounded ones — a domain rating, a
+   * percentage, a retention ratio — where a point really is a point.
+   */
+  log?: boolean
+}
+
+export interface ClassTalentsDef {
+  class: CharacterClass
+  /**
+   * Exactly three, in the reference's own order, and the order is load-bearing
+   * twice: it is the order the label prints in, and it is the tiebreak when two
+   * trees come out equally deep — first listed wins, the same rule CLASS_RULES
+   * uses for a first match.
+   */
+  trees: readonly [TalentTreeDef, TalentTreeDef, TalentTreeDef]
+}
+
+export interface TalentBuild {
+  /**
+   * Points available, which is also points spent: the allocator distributes all
+   * of them or none, so `points` always equals the sum of the trees. Zero for a
+   * founder under level 10 and for Adventurer, who has no trees to spend in.
+   */
+  points: number
+  /** The deepest tree's name, or null when there is no build. */
+  spec: string | null
+  specKey: TalentTreeKey | null
+  trees: readonly {
+    key: TalentTreeKey
+    name: string
+    icon: string
+    points: number
+    /**
+     * The normalised signal, 0–1, BEFORE it was turned into integers.
+     *
+     * Kept because it is the only thing that survives rounding: at one point
+     * available, two trees at 0.9 and 0.4 both round to 0 and 1, and the bar
+     * that says how strong each signal actually is has to come from here rather
+     * than from the integer that lost the argument.
+     */
+    weight: number
+  }[]
+  /** 'Fire 31/11/9', or '' when there is no build to state. */
+  label: string
+}
+
 /** The engine's output. Pure function: no database access, no side effects. */
 export interface CharacterSheet {
   handle: string
@@ -718,6 +860,16 @@ export interface CharacterSheet {
   realm: string | null
   faction: Faction | null
   achievements: string[]
+  /**
+   * Which kind of this class they are.
+   *
+   * Derived here rather than stored, on the same argument as the quest log: it
+   * is a pure function of an aggregate the caller already holds, and a `spec`
+   * column would be a cache of something cheaper to recompute than to
+   * invalidate — one that would go stale the moment a weight moves in
+   * tuning.ts.
+   */
+  talents: TalentBuild
   /** Remaining XP and [0,1] progress toward the next level. */
   progress: { current: number; next: number | null; ratio: number }
 }

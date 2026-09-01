@@ -13,6 +13,7 @@ import {
   RARITY_BY_NAME,
   rarityFor,
   scoreOnSlot,
+  talentsFor,
 } from '@/engine'
 import { XP_PER_PRODUCT } from '@/engine/tuning'
 import type {
@@ -23,6 +24,7 @@ import type {
   Quest,
   QuestDone,
   Rarity,
+  TalentBuild,
 } from '@/engine/types'
 import { toProduct } from '@/lib/compute'
 import { db } from '@/lib/db'
@@ -198,6 +200,15 @@ export interface CharacterPage {
    * always all seventeen — an empty slot is part of the answer.
    */
   doll: EquippedSlot[]
+  /**
+   * The talent build: three trees, one spec, `Fire 31/11/9`.
+   *
+   * Derived here beside the doll and from the same aggregate, on the same
+   * argument: a `spec` column would be a cache of a pure function, and the one
+   * thing that must never happen is a sheet whose spec disagrees with the class
+   * printed above it. Both read one object, so they cannot.
+   */
+  talents: TalentBuild
   /** The founder's products. Gear in the older sense, and a different section. */
   equipment: EquipmentPiece[]
   cofounders: string[]
@@ -475,36 +486,43 @@ const getCharacterUncached = async (rawHandle: string): Promise<CharacterPage | 
   const followers = maxOf(products.map((p) => asInt(p.raw?.xFollowerCount)))
 
   /*
-   * The paper doll, from the same aggregate the ladder was computed from.
+   * The aggregate the ladder was computed from, rebuilt once and read twice.
    *
-   * Re-derived here rather than stored: it is a pure function of the products
-   * we have already loaded, and a `doll` column would be a cache of something
-   * cheaper to recompute than to invalidate. Going through `toProduct` and
-   * `aggregateFounder` rather than assembling an input by hand is what keeps
-   * this honest — the doll cannot disagree with the stats panel above it,
-   * because both sides read the same object.
+   * Re-derived here rather than stored: the doll and the talent build are both
+   * pure functions of the products we have already loaded, and a `doll` or
+   * `spec` column would be a cache of something cheaper to recompute than to
+   * invalidate. Going through `toProduct` and `aggregateFounder` rather than
+   * assembling an input by hand is what keeps this honest — neither can
+   * disagree with the stats panel above them, because all three read one
+   * object.
    */
-  const doll = equipmentFor(
-    equipmentInput(
-      aggregateFounder(
-        handle,
-        products.map((p) =>
-          toProduct({
-            ...p,
-            startup_slug: p.slug,
-            // postgres.js returns a Date for a `date` column while compute.ts
-            // reads that column as a string. Both are right about their own
-            // query; normalising here is what lets the two share a mapper.
-            founded_date: asDay(p.founded_date),
-          }),
-        ),
-      ),
-      // The class as compute wrote it, never re-derived here: the doll decides
-      // whether this founder holds a staff or an axe, and it must agree with
-      // the class printed at the top of the same page.
-      row.class as CharacterClass,
+  const aggregate = aggregateFounder(
+    handle,
+    products.map((p) =>
+      toProduct({
+        ...p,
+        startup_slug: p.slug,
+        // postgres.js returns a Date for a `date` column while compute.ts
+        // reads that column as a string. Both are right about their own
+        // query; normalising here is what lets the two share a mapper.
+        founded_date: asDay(p.founded_date),
+      }),
     ),
   )
+  // The class as compute wrote it, never re-derived here: it decides whether
+  // this founder holds a staff or an axe and which three trees they have, and
+  // both must agree with the class printed at the top of the same page.
+  const characterClass = row.class as CharacterClass
+  const doll = equipmentFor(equipmentInput(aggregate, characterClass))
+  /*
+   * The build, off the same aggregate the doll just came from.
+   *
+   * The level is the stored one rather than one re-derived from revenue, for
+   * the same reason the class is: the sheet prints that level three inches
+   * above the label, and a build showing 51 points beside a level of 49 would
+   * be the page contradicting itself in one screenful.
+   */
+  const talents = talentsFor(aggregate, characterClass, level)
 
   const progressInput: AchievementProgressInput = {
     revenueTotalUsd,
@@ -609,7 +627,7 @@ const getCharacterUncached = async (rawHandle: string): Promise<CharacterPage | 
     level,
     ilvl: row.ilvl,
     equipped: equipmentScore(doll),
-    characterClass: row.class as CharacterClass,
+    characterClass,
     rarity: rarityFor(level),
     ilvlRarity: row.ilvl === null ? null : rarityFor(row.ilvl),
     xp,
@@ -678,6 +696,7 @@ const getCharacterUncached = async (rawHandle: string): Promise<CharacterPage | 
     },
     achievements: earned,
     doll,
+    talents,
     quests,
     questsDone: done,
     equipment: products.map((p) => {

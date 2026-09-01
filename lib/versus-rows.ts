@@ -112,8 +112,30 @@ export function versusRows(a: CharacterPage, b: CharacterPage): VersusRow[] {
     (v) => `${v.toFixed(1)}y`,
   )
 
-  // Realm and faction are not contests — nobody is "more French" — so they are
-  // stated and never marked.
+  /*
+   * Spec, realm and faction are not contests — nobody is "more French", and
+   * neither is anybody more Fire than somebody else is Frost — so all three are
+   * stated and never marked.
+   *
+   * The spec earns the first of them because it is the row this page exists
+   * for. Two founders of the same class used to arrive here and produce fifteen
+   * numbers with one identical word above them; `Fire 31/11/9` against
+   * `Frost 9/11/31` is the whole comparison in one line, and it is the only
+   * line that says what KIND of business each of them is.
+   *
+   * Dropped when either side has no build — an Adventurer, or somebody under
+   * level 10 — on the same rule every other row follows: a blank column is
+   * missing data, never a defeat.
+   */
+  if (a.talents.label && b.talents.label) {
+    rows.push({
+      label: 'Spec',
+      icon: 'characters',
+      a: a.talents.label,
+      b: b.talents.label,
+      winner: null,
+    })
+  }
   if (a.profile.realm && b.profile.realm) {
     rows.push({
       label: 'Realm',

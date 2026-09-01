@@ -1,4 +1,6 @@
+import { arpuOf } from './aggregate'
 import { equipmentFor, equipmentInput, equipmentScore, ilvlFromDoll } from './equipment'
+import { talentsFor } from './talents'
 import {
   ACHIEVEMENTS,
   CLASS_RULES,
@@ -79,8 +81,9 @@ export function ilvlFrom(
  * The order lives in tuning.ts and is deliberate.
  */
 export function classFrom(aggregate: FounderAggregate, level: number): CharacterClass {
-  const arpu = aggregate.mrrUsd / Math.max(aggregate.effectiveCustomers, 1)
-  const matched = CLASS_RULES.find((rule) => rule.test(aggregate, { level, arpu }))
+  const matched = CLASS_RULES.find((rule) =>
+    rule.test(aggregate, { level, arpu: arpuOf(aggregate) }),
+  )
   return matched?.class ?? DEFAULT_CLASS
 }
 
@@ -109,6 +112,14 @@ export function computeCharacter(aggregate: FounderAggregate): CharacterSheet {
   const doll = equipmentFor(equipmentInput(aggregate, characterClass))
   const ilvl = ilvlFromDoll(doll)
   const { current, next } = levelBounds(level)
+  /*
+   * Talents last, because they need both halves of what came before: the class
+   * decides which three trees exist, and the level decides how many points
+   * there are to put in them. Derived rather than stored for the same reason
+   * the quest log is — it is a pure function of an aggregate the caller already
+   * has, and a stored spec would go stale the moment a weight moved.
+   */
+  const talents = talentsFor(aggregate, characterClass, level)
 
   return {
     handle: aggregate.handle,
@@ -122,6 +133,7 @@ export function computeCharacter(aggregate: FounderAggregate): CharacterSheet {
     realm: aggregate.realm,
     faction: aggregate.faction,
     achievements: achievementsFrom(aggregate, level),
+    talents,
     progress: {
       current,
       next,

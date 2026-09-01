@@ -1,4 +1,4 @@
-export { aggregateFounder } from './aggregate'
+export { aggregateFounder, arpuOf } from './aggregate'
 export {
   achievementsFrom,
   classFrom,
@@ -11,6 +11,7 @@ export {
 } from './character'
 export { equipmentFor, equipmentInput, equipmentScore, scoreOnSlot } from './equipment'
 export { completion, QUEST_KINDS, questsDone, questsFor } from './quests'
+export { pointsFor, talentsFor } from './talents'
 export type { FactionDef } from './tuning'
 export {
   ACHIEVEMENTS,
@@ -31,12 +32,16 @@ export {
   SLOTS,
   SLOTS_BY_KEY,
   STAT_ICONS,
+  TALENT_TREES,
+  TALENT_TREES_BY_CLASS,
+  TALENTS,
   UI_ICONS,
 } from './tuning'
 export type {
   AchievementDef,
   CharacterClass,
   CharacterSheet,
+  ClassTalentsDef,
   EmptyReason,
   EquipmentGlyph,
   EquipmentInput,
@@ -55,4 +60,7 @@ export type {
   RarityName,
   SlotDef,
   SlotKey,
+  TalentBuild,
+  TalentTreeDef,
+  TalentTreeKey,
 } from './types'
