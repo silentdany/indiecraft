@@ -141,11 +141,10 @@ export type CharacterClass =
   | 'Rogue'
   | 'Warrior'
   | 'Paladin'
-  | 'Evoker'
+  | 'Druid'
   | 'Hunter'
   | 'Shaman'
   | 'Warlock'
-  | 'Monk'
   | 'Mage'
 
 /**
@@ -486,13 +485,13 @@ export type WeaponFamily = 'sword' | 'axe' | 'hammer' | 'dagger' | 'staff' | 'ma
  * The off hand used to key off ArmorType on the reasoning that heavy armour
  * means a shield. It does not, and the counterexample is the loudest one
  * available: Hunters wear mail and CANNOT equip a shield in any version of the
- * game. Nor can Evokers, who also wear mail. Shield proficiency simply does not
- * follow armour class — Shamans wear mail and can, Rogues wear leather and
- * cannot, Priests wear cloth and can.
+ * game. Nor can Druids, who wear the same leather as Rogues. Shield proficiency
+ * simply does not follow armour class — Shamans wear mail and can, Rogues wear
+ * leather and cannot, Priests wear cloth and can.
  *
  *   shield — Warrior, Paladin, Shaman
- *   blade  — the dual-wielders: Rogue, Monk, Hunter
- *   focus  — a tome or orb, for the casters who hold neither
+ *   blade  — the dual-wielders: Rogue, Hunter
+ *   focus  — a tome, an orb or an idol, for everyone who holds neither
  */
 export type OffHandKind = 'shield' | 'blade' | 'focus'
 
@@ -745,15 +744,12 @@ export type TalentTreeKey =
   | 'priest-discipline'
   | 'priest-holy'
   | 'priest-shadow'
-  | 'monk-brewmaster'
-  | 'monk-windwalker'
-  | 'monk-mistweaver'
+  | 'druid-balance'
+  | 'druid-feral'
+  | 'druid-restoration'
   | 'shaman-elemental'
   | 'shaman-enhancement'
   | 'shaman-restoration'
-  | 'evoker-devastation'
-  | 'evoker-preservation'
-  | 'evoker-augmentation'
 
 export interface TalentTreeDef {
   key: TalentTreeKey

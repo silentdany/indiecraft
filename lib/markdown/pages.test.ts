@@ -7,7 +7,7 @@ const ladderRows = [
     handle: 'levelsio',
     level: 60,
     ilvl: 251,
-    characterClass: 'Evoker',
+    characterClass: 'Druid',
     nProducts: 7,
     realm: 'NL',
     faction: 'Horde',
@@ -35,7 +35,7 @@ describe('homeMarkdown', () => {
     },
     top: ladderRows,
     factions: [{ value: 'Horde', count: 2100 }],
-    classes: [{ name: 'Evoker', count: 900 }],
+    classes: [{ name: 'Druid', count: 900 }],
     realms: [{ value: 'US', count: 1100 }],
   })
 
@@ -89,7 +89,7 @@ describe('characterMarkdown', () => {
     displayName: 'Pieter Levels',
     level: 60,
     ilvl: 251,
-    characterClass: 'Evoker',
+    characterClass: 'Druid',
     rarity: { name: 'legendary', hex: '#ff8000' },
     xp: 3_000_000,
     nProducts: 7,
@@ -127,7 +127,7 @@ describe('characterMarkdown', () => {
 
   it('carries the numbers the sheet is built on', () => {
     expect(md).toContain('60')
-    expect(md).toContain('Evoker')
+    expect(md).toContain('Druid')
     expect(md).toContain('#1')
   })
 

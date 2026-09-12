@@ -50,17 +50,19 @@ Deterministic tree, **first match wins**. Order matters: how you build and how y
 | 4 | **Warlock** | Buys acquisition: search, social or influencer ads | 3% |
 | 5 | **Shaman** | Runs on an audience they built — X, YouTube, a newsletter | 6% |
 | 6 | **Priest** | Measured retention above 60% across more than 50 customers | 1% |
-| 7 | **Monk** | Real lifetime revenue and no recurring revenue at all | 23% |
+| 7 | **Druid** | Real lifetime revenue and no recurring revenue at all | 23% |
 | 8 | **Rogue** | $300 or more per customer per month | 3% |
 | 9 | **Warrior** | 25+ paying, under $30 each | 8% |
 | 10 | **Paladin** | 3+ paying, $30 or more each | 9% |
-| 11 | **Evoker** | Real revenue that the rules above cannot yet place | 16% |
+| 11 | **Rogue** | Real revenue that the rules above cannot yet place | 16% |
 
-`Adventurer` sits first and almost never fires there: one product grants 500 XP, which is already level 17, so `level < 5` is out of reach for anybody who has shipped. Its 15% arrives at the other end of the tree, where nothing matched and the default applies — and since `Evoker` now takes everyone with revenue, that default means exactly one thing: shipped something, earned nothing yet. It is neutral and never demeaning; nobody should be able to read their class as a joke.
+`Adventurer` sits first and almost never fires there: one product grants 500 XP, which is already level 17, so `level < 5` is out of reach for anybody who has shipped. Its 15% arrives at the other end of the tree, where nothing matched and the default applies — and since rule 11 takes everyone with revenue, that default means exactly one thing: shipped something, earned nothing yet. It is neutral and never demeaning; nobody should be able to read their class as a joke.
 
-`Monk` means you sell outright — nothing to renew, nothing to churn. Gumroad is a Monk.
+`Druid` means you sell outright — nothing to renew, nothing to churn. Gumroad is a Druid.
 
-The shares are measured over the real corpus, not estimated, and they have been re-measured twice. The first tree keyed on a `customers` field that TrustMRR populates 16% of the time, and 66% of founders came out Adventurer — a ladder where two thirds of people sit in the "we don't know" class isn't a game; size now falls back to `activeSubscriptions` (78% coverage) when `customers` is missing. The second retune came when the crawler stopped seeing only the top 200 listings, which were the best-documented ones and had quietly been what the tree was fitted to. Against the rest of the corpus the base-size floors were far too high: 45 founders with real MRR and a real customer count were rejected for having fewer than ten, and four subscribers at $139 is a business. The floors came down to 25 and 3, and `Evoker` was added as the last rule that can see anything — because "we don't know" is the wrong answer for somebody with money coming in.
+`Rogue` appears twice, which is deliberate. This game has nine classes and the tree has ten rules that name one, so the catch-all shares a class with the rule above it rather than borrowing a name from an expansion nobody here is playing — an armory whose every item derives from a Classic one has no business handing somebody a Monk or an Evoker. Both Rogues are already being paid; the sheet prints which rule matched, so one reads *few marks, big scores* and the other *earning already, and still finding the shape of it*.
+
+The shares are measured over the real corpus, not estimated, and they have been re-measured twice. The first tree keyed on a `customers` field that TrustMRR populates 16% of the time, and 66% of founders came out Adventurer — a ladder where two thirds of people sit in the "we don't know" class isn't a game; size now falls back to `activeSubscriptions` (78% coverage) when `customers` is missing. The second retune came when the crawler stopped seeing only the top 200 listings, which were the best-documented ones and had quietly been what the tree was fitted to. Against the rest of the corpus the base-size floors were far too high: 45 founders with real MRR and a real customer count were rejected for having fewer than ten, and four subscribers at $139 is a business. The floors came down to 25 and 3, and a catch-all was added as the last rule that can see anything — because "we don't know" is the wrong answer for somebody with money coming in. The shares above are those measurements under the names the tree uses today: rules 7 and 11 were a Monk and an Evoker until the roster came back to the classes this game actually has, which moved the words and not a single threshold.
 
 ### Talents
 

@@ -139,9 +139,14 @@ export default async function Rules() {
         </p>
         <ol className="rules-classes">
           {CLASS_RULES.map((rule, i) => {
-            const n = share.get(rule.class)
+            // A class can be reached by more than one rule — Rogue is, since
+            // the roster came back to the nine classes Classic has — and the
+            // count is per class rather than per rule, so it is printed beside
+            // the first row that names one and left off the rest.
+            const firstOfClass = CLASS_RULES.findIndex((r) => r.class === rule.class) === i
+            const n = firstOfClass ? share.get(rule.class) : undefined
             return (
-              <li key={rule.class} className="rules-class">
+              <li key={rule.condition} className="rules-class">
                 <span className="rules-class-n label">{i + 1}</span>
                 <span
                   className="qsquare rules-class-icon"
@@ -168,11 +173,13 @@ export default async function Rules() {
           })}
         </ol>
         <p className="muted rules-note">
-          Anyone still earning falls through to Evoker, so Adventurer means one thing only: shipped,
-          and nothing coming in yet. It is never a verdict — every founder here has launched
-          something, which most people never do. The colours are the canonical ones, not ours: a
-          class is a colour before it is a word, and there is no point inventing a vocabulary that
-          millions of people already read fluently.
+          Anyone still earning falls through to the last rule, which is the second way into Rogue —
+          so Adventurer means one thing only: shipped, and nothing coming in yet. It is never a
+          verdict — every founder here has launched something, which most people never do. The
+          colours are the canonical ones, not ours: a class is a colour before it is a word, and
+          there is no point inventing a vocabulary that millions of people already read fluently.
+          They are also only the nine this game has: a Monk or an Evoker on a sheet whose every item
+          comes out of Classic would be a costume from the wrong decade.
         </p>
       </Section>
 

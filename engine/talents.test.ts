@@ -267,11 +267,15 @@ const REPRESENTATIVE: readonly { class: CharacterClass; aggregate: FounderAggreg
     class: 'Priest',
     aggregate: founder({ customers: 100, activeSubscriptions: 92, retention: 0.92 }),
   },
-  { class: 'Monk', aggregate: founder({ revenueTotalUsd: 5_000, mrrUsd: 0 }) },
+  { class: 'Druid', aggregate: founder({ revenueTotalUsd: 5_000, mrrUsd: 0 }) },
   { class: 'Rogue', aggregate: founder({ customers: 10, mrrUsd: 5_000 }) },
   { class: 'Warrior', aggregate: founder({ customers: 40, mrrUsd: 600 }) },
   { class: 'Paladin', aggregate: founder({ customers: 200, mrrUsd: 10_000 }) },
-  { class: 'Evoker', aggregate: founder({ mrrUsd: 39 }) },
+  // Rogue twice, and deliberately: it is the one class with two rules, and a
+  // founder who arrives on the catch-all has none of what the ARPU rule
+  // guarantees. Both entries have to keep a live tree or the build falls back
+  // to everything-in-the-first, which is a bug rather than a spec.
+  { class: 'Rogue', aggregate: founder({ mrrUsd: 39 }) },
 ]
 
 describe('the class roster', () => {

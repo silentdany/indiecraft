@@ -274,18 +274,41 @@ export const FUNDING_POLICY: 'mark' | 'exclude' | 'ignore' = 'mark'
  * ten. Four subscribers at $139 is a business, and the tree called it unknown.
  *
  * Two changes, both measured against the live corpus rather than guessed: the
- * base-size floors came down (see PALADIN_MIN_CUSTOMERS), and Evoker was added
- * as the last rule that can see anything — because "we don't know" is the wrong
- * answer for somebody with money coming in.
+ * base-size floors came down (see PALADIN_MIN_CUSTOMERS), and a catch-all was
+ * added as the last rule that can see anything — because "we don't know" is the
+ * wrong answer for somebody with money coming in.
  *
- * Resulting spread over 619 founders: Monk 23%, Evoker 16%, Adventurer 15%,
- * Paladin 9%, Mage 8%, Warrior 8%, Hunter 7%, Shaman 6%, Warlock 3%, Rogue 3%,
- * Priest 1%.
+ * Resulting spread over 619 founders, under the names the tree uses today:
+ * Druid 23%, Rogue 19% — 16 points of it the catch-all — Adventurer 15%,
+ * Paladin 9%, Mage 8%, Warrior 8%, Hunter 7%, Shaman 6%, Warlock 3%, Priest 1%.
  *
  * Adventurer is now exactly what it claims to be: 93 founders who have shipped
- * something and earned nothing yet. Worth watching as coverage grows — Monk is
+ * something and earned nothing yet. Worth watching as coverage grows — Druid is
  * the largest class because a listing with lifetime revenue and no MRR lands
  * there, and in the tail that is a great many of them.
+ *
+ * ---------------------------------------------------------------------------
+ * Renamed 2026-09-12, to the classes the reference actually has.
+ *
+ * Monk and Evoker postdate this game by eight and eighteen years. An armory
+ * whose every item derives from a Classic one cannot hand somebody a class
+ * Classic never had, and that is the whole of the argument.
+ *
+ * Not a retune: no predicate, no threshold and no share moved, only the words
+ * above them. There are nine classes in the reference, eight of them were
+ * already in use, and one name was free against two to replace — so the
+ * catch-all went where a second entry costs nothing. Rogue now has two rules,
+ * exactly as Adventurer has had from the start, and a founder reads which one
+ * matched from the reason on their sheet.
+ *
+ *   Monk   -> Druid   takes no rent. Leather and fists on both sides of the
+ *                     rename; Classic's Druid can hold neither a shield nor a
+ *                     second weapon, so the off hand became an idol.
+ *   Evoker -> Rogue   already being paid, and nobody can see how.
+ *
+ * The armour map that falls out is the reference's own, which is the check that
+ * this landed right: cloth Mage/Warlock/Priest, leather Rogue/Druid, mail
+ * Hunter/Shaman, plate Warrior/Paladin.
  * ---------------------------------------------------------------------------
  */
 export interface ClassRule {
@@ -327,8 +350,8 @@ export const CLASS_RULES: readonly ClassRule[] = [
     // rule almost never fires: a single product grants 500 XP, which is level
     // 17, so `level < 5` is unreachable for anyone with something shipped. The
     // count on /rules comes from the fallback at the end of the tree, and since
-    // Evoker now takes everyone with revenue, the fallback means exactly one
-    // thing — shipped, earning nothing yet.
+    // the catch-all Rogue takes everyone with revenue, the fallback means
+    // exactly one thing — shipped, earning nothing yet.
     condition: 'No products yet, or nothing earned yet',
     test: (a, { level }) => a.nProducts === 0 || level < 5,
   },
@@ -370,11 +393,16 @@ export const CLASS_RULES: readonly ClassRule[] = [
     test: (a) => a.hasRetentionSignal && a.retention > 0.6 && a.customers > 50,
   },
   {
-    class: 'Monk',
+    class: 'Druid',
     // Real lifetime revenue and no recurring revenue at all. That is a business
     // model, not missing data — Gumroad lands here, and so does every
     // boilerplate and template seller. Phrased as independence, because that is
     // what it is: nothing to renew, nothing to churn.
+    //
+    // This was a Monk until the classes were pulled back to the nine that exist
+    // in the version this armory is built on. The rule did not move an inch;
+    // only the word did, and Druid carries it better — it is the class that
+    // owes nothing to anybody and lives on what it makes.
     reason: 'Takes no rent. Every sale is finished the day it happens.',
     condition: 'Real lifetime revenue and no recurring revenue at all',
     test: (a) => a.mrrUsd === 0 && a.revenueTotalUsd > 0,
@@ -402,14 +430,20 @@ export const CLASS_RULES: readonly ClassRule[] = [
     test: (a, { arpu }) => a.effectiveCustomers >= PALADIN_MIN_CUSTOMERS && arpu >= 30,
   },
   {
-    class: 'Evoker',
-    // The last rule that can see anything. Everyone here is earning; what the
-    // corpus does not say is the shape of it — a handful of customers, or a
-    // price too low to read as either volume or premium, or a listing with
-    // revenue and no customer count at all.
+    class: 'Rogue',
+    // The second way into Rogue, and the last rule that can see anything.
+    // Everyone here is earning; what the corpus does not say is the shape of it
+    // — a handful of customers, or a price too low to read as either volume or
+    // premium, or a listing with revenue and no customer count at all.
     //
     // "We don't know" is the wrong answer for somebody with money coming in,
     // and it was the answer they got until the crawler saw past the top 200.
+    //
+    // Two rules, one class, exactly as Adventurer has had from the start: this
+    // was an Evoker until the classes came back to the nine the reference
+    // actually has, and a Rogue is the one who is already being paid without
+    // anybody being able to see how. The sheet prints the reason of whichever
+    // rule matched, so the two populations still read as different founders.
     reason: 'Earning already, and still finding the shape of it.',
     condition: 'Real revenue that the rules above cannot yet place',
     test: (a) => a.revenueTotalUsd > 0 || a.mrrUsd > 0,
@@ -421,13 +455,13 @@ export const CLASS_RULES: readonly ClassRule[] = [
  *
  * An earlier version invented both: a soft palette of our own, plus Bard and
  * Ranger, which are not classes anybody has ever played. That was the wrong
- * call. These thirteen hexes are the single most recognised piece of shared
+ * call. These nine hexes are the single most recognised piece of shared
  * vocabulary the genre has — every armory, every log site, every addon uses
  * them, and somebody who plays reads "Mage" off #3FC7EB before the word
  * arrives. Inventing a palette threw away the one thing that needed no
  * explaining, in exchange for tidiness nobody asked for.
  *
- * They are values, not assets: thirteen numbers that function as names. The
+ * They are values, not assets: nine numbers that function as names. The
  * no-Blizzard-assets rule is about fonts, icons and images, and it still holds
  * everywhere — every glyph in this project is drawn here.
  *
@@ -454,17 +488,16 @@ export const CLASS_COLORS: Record<CharacterClass, string> = {
   Warlock: '#8788EE',
   Shaman: '#0070DD',
   Priest: '#FFFFFF',
-  Monk: '#00FF98',
+  Druid: '#FF7C0A',
   Rogue: '#FFF468',
   Warrior: '#C69B6D',
   Paladin: '#F48CBA',
-  Evoker: '#33937F',
 }
 
 /**
  * The class emblems, borrowed rather than drawn.
  *
- * Ten of the eleven are the reference's own `classicon_*`, which is the most
+ * Nine of the ten are the reference's own `classicon_*`, which is the most
  * recognisable single picture each class has — a player reads Mage off it
  * faster than off the word, which is the entire argument for using them.
  *
@@ -479,11 +512,10 @@ export const CLASS_ICONS: Record<CharacterClass, string> = {
   Warlock: 'classicon_warlock',
   Shaman: 'classicon_shaman',
   Priest: 'classicon_priest',
-  Monk: 'classicon_monk',
+  Druid: 'classicon_druid',
   Rogue: 'classicon_rogue',
   Warrior: 'classicon_warrior',
   Paladin: 'classicon_paladin',
-  Evoker: 'classicon_evoker',
 }
 
 /** Safety net: never demeaning, always reachable. */
@@ -1051,9 +1083,10 @@ export const ACHIEVEMENTS_BY_CODE = new Map(ACHIEVEMENTS.map((a) => [a.code, a])
  *
  * Two calls worth defending:
  *
- *   Evoker wears mail, which is correct in the reference and also right here:
- *   it is the class of "earning already, still finding the shape of it", and
- *   mail is the armour of the classes that are half one thing and half another.
+ *   Druid holds an idol rather than a blade. It wears the same leather as the
+ *   Rogue and swings the same fists the class that used to hold this rule did,
+ *   but Classic's Druid can equip neither a shield nor a second weapon — so the
+ *   off hand is the one thing about this kit that the rename had to move.
  *
  *   Adventurer gets cloth and a plain sword. It is not a class — it is the state
  *   of having none yet — so it gets the starting kit rather than a specialism,
@@ -1068,9 +1101,8 @@ export const CLASS_GEAR: Record<
   Paladin: { armor: 'plate', weapon: 'hammer', offHand: 'shield' },
   Hunter: { armor: 'mail', weapon: 'sword', offHand: 'blade' },
   Shaman: { armor: 'mail', weapon: 'mace', offHand: 'shield' },
-  Evoker: { armor: 'mail', weapon: 'staff', offHand: 'focus' },
   Rogue: { armor: 'leather', weapon: 'dagger', offHand: 'blade' },
-  Monk: { armor: 'leather', weapon: 'fist', offHand: 'blade' },
+  Druid: { armor: 'leather', weapon: 'fist', offHand: 'focus' },
   Mage: { armor: 'cloth', weapon: 'staff', offHand: 'focus' },
   Warlock: { armor: 'cloth', weapon: 'dagger', offHand: 'focus' },
   Priest: { armor: 'cloth', weapon: 'mace', offHand: 'focus' },
@@ -2836,10 +2868,15 @@ export const SLOTS_BY_KEY = new Map(SLOTS.map((s) => [s.key, s]))
  * Every class has at least one tree its own CLASS_RULE guarantees is alive. A
  * Mage matched on an AI stack, so `stack.length >= 1`; a Hunter matched on
  * domain rating, so a rating is on record; a Warlock matched on a paid channel,
- * so the paid count is at least one. That property is worth more than it looks
- * — it is why the all-signals-dead fallback below is unreachable for a founder
- * who actually holds the class — and engine/talents.test.ts asserts it per
- * class so that a rebalance cannot quietly cost a class its floor.
+ * so the paid count is at least one. Rogue is the one class that has to hold
+ * this twice, having two rules: Assassination for the founders who came in on
+ * ARPU, Combat for the catch-all, who all have MRR by the time they reach the
+ * last rule — lifetime revenue without any is a Druid, four rules earlier.
+ *
+ * That property is worth more than it looks — it is why the all-signals-dead
+ * fallback below is unreachable for a founder who actually holds the class —
+ * and engine/talents.test.ts asserts it per class so that a rebalance cannot
+ * quietly cost a class its floor.
  *
  * It is deliberately NOT the first tree in every case. Order is the reference's
  * and the label's, never the allocator's: a player reading a Hunter's
@@ -2962,11 +2999,10 @@ const retentionOf = (a: FounderAggregate): number | null =>
  * trees come out equally deep, first listed winning exactly as CLASS_RULES
  * takes its first match. So it is written down here and nowhere else.
  *
- * Two orders are the specification's rather than the client's tab order:
- * Paladin reads Holy / Retribution / Protection and Monk reads Brewmaster /
- * Windwalker / Mistweaver. Noted because somebody will one day compare this
- * against a talent calculator and find the middle two swapped, and the answer
- * should be in the file rather than in a pull request thread.
+ * One order is the specification's rather than the client's tab order: Paladin
+ * reads Holy / Retribution / Protection. Noted because somebody will one day
+ * compare this against a talent calculator and find the middle two swapped, and
+ * the answer should be in the file rather than in a pull request thread.
  *
  * Adventurer is absent, and that absence is the feature. It is not a class —
  * it is the state of having none yet — so it has no trees, prints no label, and
@@ -3143,7 +3179,10 @@ export const TALENT_TREES: readonly ClassTalentsDef[] = [
         name: 'Assassination',
         icon: 'ability_rogue_eviscerate',
         blurb: 'Few marks, big scores.',
-        // $300 or more for every Rogue: the class rule matched on this number.
+        // $300 or more for every Rogue who came in on the ARPU rule, which
+        // matched on this exact number. The catch-all rule claims nothing about
+        // price, and a listing with no customer count reads null here — which
+        // is why Combat below carries the floor for that half of the class.
         read: (a, { arpu }) => (a.effectiveCustomers > 0 ? positive(arpu) : null),
         full: 1_000,
         log: true,
@@ -3152,8 +3191,13 @@ export const TALENT_TREES: readonly ClassTalentsDef[] = [
         key: 'rogue-combat',
         name: 'Combat',
         icon: 'ability_backstab',
-        blurb: 'Working every day. This month already landed.',
-        read: (a) => positive(a.last30dUsd),
+        blurb: 'Working every day. Money lands every month.',
+        // The month as reported, falling back to what recurs — the same shape
+        // and the same anchor, since one is the month that was counted and the
+        // other the month that is contracted. Never null for a Rogue who
+        // arrived on the catch-all: reaching the last rule with revenue means
+        // MRR above zero, because lifetime revenue and no MRR is a Druid.
+        read: (a) => positive(a.last30dUsd) ?? positive(a.mrrUsd),
         full: 100_000,
         log: true,
       },
@@ -3203,31 +3247,38 @@ export const TALENT_TREES: readonly ClassTalentsDef[] = [
     ],
   },
   {
-    class: 'Monk',
+    /*
+     * The three trees kept their signals through the rename; only the names on
+     * top of them moved, and each one landed on the tree the reference already
+     * named after the same idea. Balance is a ledger with nothing owed on it,
+     * Feral is the one that never stops moving, and Restoration is what is not
+     * lost on the way.
+     */
+    class: 'Druid',
     trees: [
       {
-        key: 'monk-brewmaster',
-        name: 'Brewmaster',
-        icon: 'spell_monk_brewmaster_spec',
+        key: 'druid-balance',
+        name: 'Balance',
+        icon: 'spell_nature_starfall',
         blurb: 'Takes no rent. Every sale is finished the day it happens.',
-        // Above zero for every Monk: the class rule is lifetime revenue with no
-        // recurring revenue at all.
+        // Above zero for every Druid: the class rule is lifetime revenue with
+        // no recurring revenue at all.
         read: (a) => positive(a.revenueTotalUsd),
         full: 1_000_000,
         log: true,
       },
       {
-        key: 'monk-windwalker',
-        name: 'Windwalker',
-        icon: 'spell_monk_windwalker_spec',
+        key: 'druid-feral',
+        name: 'Feral',
+        icon: 'ability_racial_bearform',
         blurb: 'Keeps moving. Another thing shipped, and another.',
         read: (a) => positive(a.nProducts),
         full: 7,
       },
       {
-        key: 'monk-mistweaver',
-        name: 'Mistweaver',
-        icon: 'spell_monk_mistweaver_spec',
+        key: 'druid-restoration',
+        name: 'Restoration',
+        icon: 'spell_nature_healingtouch',
         blurb: 'Little is lost on the way. The margin is theirs.',
         read: (a) => a.profitMargin30d,
         full: 90,
@@ -3263,45 +3314,6 @@ export const TALENT_TREES: readonly ClassTalentsDef[] = [
         blurb: 'What they win, they keep.',
         read: (a) => retentionOf(a) ?? asShareOf(positive(a.activeSubscriptions), 2_000, 0.9),
         full: 0.9,
-      },
-    ],
-  },
-  {
-    class: 'Evoker',
-    trees: [
-      {
-        key: 'evoker-devastation',
-        name: 'Devastation',
-        // The three Evoker trees wear their own spec crests rather than a
-        // signature ability each, unlike the other nine classes. Not a
-        // preference: `ability_evoker_ebon_might` is the obvious pick for
-        // Augmentation and the render host 403s it, so the set that actually
-        // exists is the one it ships — and a matched triple beats two abilities
-        // and a crest.
-        icon: 'classicon_evoker_devastation',
-        blurb: 'Money arriving every month, whatever shape it turns out to be.',
-        // Above zero for every Evoker who is not already a Monk: the class rule
-        // is revenue the tree above could not place, and no MRR at all with
-        // real lifetime revenue is Monk.
-        read: (a) => positive(a.mrrUsd),
-        full: 100_000,
-        log: true,
-      },
-      {
-        key: 'evoker-preservation',
-        name: 'Preservation',
-        icon: 'classicon_evoker_preservation',
-        blurb: 'It holds together — the customers, or the margin.',
-        read: (a) => retentionOf(a) ?? asShareOf(a.profitMargin30d, 90, 0.9),
-        full: 0.9,
-      },
-      {
-        key: 'evoker-augmentation',
-        name: 'Augmentation',
-        icon: 'classicon_evoker_augmentation',
-        blurb: 'Still assembling. The stack is where the shape is forming.',
-        read: (a) => positive(a.stack.length),
-        full: 15,
       },
     ],
   },

@@ -123,12 +123,14 @@ const PATHS: Record<IconName, React.ReactNode> = {
       <circle cx="12" cy="8.5" r="2.2" />
     </g>
   ),
-  /** Yin and yang: nothing owed, nothing owing. */
-  Monk: (
+  /** A paw print, the emblem the reference gives it. Takes no rent. */
+  Druid: (
     <g>
-      <circle cx="12" cy="12" r="8.5" />
-      <path d="M12 3.5a4.25 4.25 0 000 8.5 4.25 4.25 0 010 8.5" />
-      <path d="M12 7v.01M12 17v.01" />
+      <circle cx="5.8" cy="10.5" r="2" />
+      <circle cx="9.6" cy="6.6" r="2.05" />
+      <circle cx="14.4" cy="6.6" r="2.05" />
+      <circle cx="18.2" cy="10.5" r="2" />
+      <path d="M12 11.8c3.3 0 6 2.4 6 5.3 0 2-1.6 3.4-3.5 3.4-1 0-1.7-.4-2.5-.4s-1.5.4-2.5.4C7.6 20.5 6 19.1 6 17.1c0-2.9 2.7-5.3 6-5.3z" />
     </g>
   ),
   /** A dagger. Few marks, big scores. */
@@ -161,18 +163,6 @@ const PATHS: Record<IconName, React.ReactNode> = {
       <path d="M12 2.5l7.5 2.8v5.6c0 4.7-3.7 7.7-7.5 9.4-3.8-1.7-7.5-4.7-7.5-9.4V5.3z" />
       <path d="M8 7.5h8v3.5H8z" />
       <path d="M12 11v5" />
-    </g>
-  ),
-  /**
-   * A talon's mark. Two attempts at a dragon's head became a leaf and then a
-   * squiggle — a head in profile does not survive being shrunk to 14px, and
-   * three claws do.
-   */
-  Evoker: (
-    <g>
-      <path d="M4.5 2.5c-.8 6.5.6 12 4.2 16.5" />
-      <path d="M11.5 2c-.4 7 .8 12.6 3.6 17.5" />
-      <path d="M18.5 3.5c.6 6.6-.2 11.6-2.4 15.4" />
     </g>
   ),
 

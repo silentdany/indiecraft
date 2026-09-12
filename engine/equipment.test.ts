@@ -276,9 +276,9 @@ describe('class variants', () => {
     expect(wielded.get('Paladin')).toBe('Sulfuras, Hand of the Roadmap')
     expect(wielded.get('Mage')).toBe('Atiesh, Greatstaff of the Guild')
     expect(wielded.get('Rogue')).toBe('Cashfall')
-    expect(wielded.get('Monk')).toBe('Shipfury, Blessed Fists of the Bootstrapper')
-    // Eleven classes, and no two of them holding the same legendary would be
-    // the whole feature failing quietly.
+    expect(wielded.get('Druid')).toBe('Shipfury, Blessed Fists of the Bootstrapper')
+    // Ten classes, and no two of them holding the same legendary would be the
+    // whole feature failing quietly.
     expect(new Set(wielded.values()).size).toBeGreaterThan(4)
   })
 
@@ -324,10 +324,9 @@ describe('class variants', () => {
    *
    * This exists because the off hand was keyed on armour type — heavy armour
    * means a shield, which sounds right and is false. Hunters wear mail and
-   * cannot equip a shield in any version of the game; neither can Evokers, who
-   * also wear mail. Shield proficiency does not follow armour class in either
-   * direction: Shamans wear mail and can, Rogues wear leather and cannot,
-   * Priests wear cloth and can.
+   * cannot equip a shield in any version of the game. Shield proficiency does
+   * not follow armour class in either direction: Shamans wear mail and can,
+   * Rogues and Druids wear leather and cannot, Priests wear cloth and can.
    *
    * Written as data rather than as prose in a comment so the next person to add
    * a class or move a slot to a new axis gets a failing test instead of a
@@ -339,9 +338,9 @@ describe('class variants', () => {
     Shaman: true,
     // Mail, and still no shield — the case that made this test necessary.
     Hunter: false,
-    Evoker: false,
     Rogue: false,
-    Monk: false,
+    // Leather, an idol in the off hand, and no shield in any expansion.
+    Druid: false,
     Mage: false,
     Warlock: false,
     // True in the reference, but a caster's off hand is a tome here.
@@ -356,9 +355,9 @@ describe('class variants', () => {
     Paladin: ['sword', 'axe', 'hammer', 'mace'],
     Hunter: ['sword', 'axe', 'mace', 'hammer', 'dagger', 'staff', 'fist'],
     Shaman: ['mace', 'hammer', 'axe', 'dagger', 'staff', 'fist'],
-    Evoker: ['dagger', 'staff', 'sword', 'axe', 'mace', 'hammer', 'fist'],
     Rogue: ['dagger', 'sword', 'mace', 'hammer', 'axe', 'fist'],
-    Monk: ['fist', 'sword', 'axe', 'mace', 'hammer', 'staff', 'dagger'],
+    // No blade and no axe: the shortest proficiency list in the game.
+    Druid: ['fist', 'mace', 'hammer', 'staff', 'dagger'],
     Mage: ['dagger', 'staff', 'sword'],
     Warlock: ['dagger', 'staff', 'sword'],
     Priest: ['mace', 'hammer', 'dagger', 'staff'],

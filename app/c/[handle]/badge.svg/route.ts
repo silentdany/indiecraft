@@ -55,7 +55,7 @@ export async function GET(_request: Request, { params }: { params: Promise<{ han
    * Every width is measured at FONT_SIZE, the size the text is actually drawn
    * at. The first version measured at 9 while rendering at 11, which is a
    * fifth too narrow: "PALADIN" and "ILVL 50" collided into "PALADINILVL 50",
-   * and a short label like "MONK" ran through the right border. Two numbers
+   * and a short label like "MAGE" ran through the right border. Two numbers
    * that must agree, so there is now one of them.
    */
   const leftWidth = Math.ceil(widthOf(left, FONT_SIZE)) + PAD * 2

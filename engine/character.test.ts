@@ -285,14 +285,14 @@ describe('class', () => {
     expect(classFrom(unmeasured, 20)).not.toBe('Priest')
   })
 
-  it('returns Monk for real lifetime revenue with no recurring revenue', () => {
+  it('returns Druid for real lifetime revenue with no recurring revenue', () => {
     // Gumroad's shape: hundreds of millions earned, zero MRR. A business model,
     // not a gap in the data.
     const a = founder({ nProducts: 1, revenueTotalUsd: 878_595_860, mrrUsd: 0 })
-    expect(classFrom(a, 60)).toBe('Monk')
+    expect(classFrom(a, 60)).toBe('Druid')
   })
 
-  it('does not call someone a Monk for having earned nothing yet', () => {
+  it('does not call someone a Druid for having earned nothing yet', () => {
     expect(classFrom(founder({ nProducts: 1, revenueTotalUsd: 0, mrrUsd: 0 }), 20)).toBe(
       'Adventurer',
     )
@@ -335,9 +335,11 @@ describe('class', () => {
   it('gives anyone still earning a class, however little the corpus says', () => {
     // MRR but no customer count at all — a very common shape outside the top
     // 200, and one that used to land in "we do not know".
-    expect(classFrom(founder({ nProducts: 1, mrrUsd: 39, revenueTotalUsd: 0 }), 20)).toBe('Evoker')
-    // Lifetime revenue only, with no recurring, is Monk and stays Monk.
-    expect(classFrom(founder({ nProducts: 1, mrrUsd: 0, revenueTotalUsd: 4_000 }), 20)).toBe('Monk')
+    expect(classFrom(founder({ nProducts: 1, mrrUsd: 39, revenueTotalUsd: 0 }), 20)).toBe('Rogue')
+    // Lifetime revenue only, with no recurring, is Druid and stays Druid.
+    expect(classFrom(founder({ nProducts: 1, mrrUsd: 0, revenueTotalUsd: 4_000 }), 20)).toBe(
+      'Druid',
+    )
   })
 
   it('counts a small paying base as a base', () => {
@@ -350,7 +352,7 @@ describe('class', () => {
     // Cheap, and enough of them to be volume.
     expect(classFrom(founder({ nProducts: 1, customers: 40, mrrUsd: 600 }), 20)).toBe('Warrior')
     // Cheap, but three customers is not volume — that is somebody starting.
-    expect(classFrom(founder({ nProducts: 1, customers: 3, mrrUsd: 45 }), 20)).toBe('Evoker')
+    expect(classFrom(founder({ nProducts: 1, customers: 3, mrrUsd: 45 }), 20)).toBe('Rogue')
   })
 
   it('never leaves a class that could read as an insult', () => {
@@ -503,16 +505,18 @@ describe('the class roster', () => {
    * Bard and Ranger shipped for a day and are not classes anybody has played.
    * The point of borrowing this vocabulary is that it needs no explaining, and
    * an invented class explains nothing to the audience it was borrowed for.
+   *
+   * The list is the NINE, not the thirteen. Every item on this armory derives
+   * from a Classic one and the talent rules are Classic's, so a class the
+   * reference gained years later is as foreign here as an invented one — which
+   * is how a Monk and an Evoker lived in the tree for a month without anybody's
+   * test going red.
    */
   it('only uses classes that exist in the reference', () => {
     const real = new Set([
-      'Death Knight',
-      'Demon Hunter',
       'Druid',
-      'Evoker',
       'Hunter',
       'Mage',
-      'Monk',
       'Paladin',
       'Priest',
       'Rogue',

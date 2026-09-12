@@ -16,9 +16,11 @@ If you have to touch another file to propose a rebalance, the engine has a bug. 
 - Explains **what it changes for real people**, not just what it changes in the formula. "This moves boilerplate sellers from Rogue to Warrior" is a good argument. "It's more elegant" is not.
 - Passes `pnpm test`. The engine is the only tested part of the project, deliberately: it's the only part that deserves fine tuning.
 
-### Two guardrails on classes
+### Three guardrails on classes
 
-**No class may read as a joke at someone's expense.** `Adventurer` is where the tree lands when somebody has shipped and earned nothing yet; it is neutral on purpose, and `Evoker` exists so that nobody with money coming in is told the armory cannot place them. A class that makes someone look like a failure doesn't ship, even if it's statistically accurate.
+**No class may read as a joke at someone's expense.** `Adventurer` is where the tree lands when somebody has shipped and earned nothing yet; it is neutral on purpose, and the catch-all rule at the bottom of the tree exists so that nobody with money coming in is told the armory cannot place them. A class that makes someone look like a failure doesn't ship, even if it's statistically accurate.
+
+**Only the nine classes this game has.** Druid, Hunter, Mage, Paladin, Priest, Rogue, Shaman, Warlock, Warrior — plus `Adventurer`, which is not a class but the state of having none yet. Every item on a sheet derives from a Classic one and the talent rules are Classic's, so a class from a later expansion is as foreign here as an invented one; a Monk and an Evoker lived in the tree for a month before anybody noticed. There are more rules than classes, so a rule may share a class with another as long as each carries its own reason — `engine/character.test.ts` holds the roster.
 
 **The test for every derived label:** would this person be happy to screenshot it? If not, it's a bug, not an opinion.
 
