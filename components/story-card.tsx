@@ -65,8 +65,8 @@ export function StoryCard({ model, portrait }: { model: StoryCardModel; portrait
         position: 'relative',
         background: OG.well,
         backgroundImage: [
-          `radial-gradient(circle at 50% 28%, ${tint(glow, 0.42)} 0%, ${tint(glow, 0.12)} 45%, rgba(0,0,0,0) 72%)`,
-          `radial-gradient(ellipse at 50% 100%, ${tint(model.classColor, 0.16)} 0%, rgba(0,0,0,0) 70%)`,
+          `radial-gradient(circle at 50% 28%, ${tint(glow, 0.2)} 0%, ${tint(glow, 0.06)} 45%, rgba(0,0,0,0) 72%)`,
+          `radial-gradient(ellipse at 50% 100%, ${tint(model.classColor, 0.08)} 0%, rgba(0,0,0,0) 70%)`,
           `linear-gradient(180deg, ${OG.bg} 0%, ${OG.well} 100%)`,
         ].join(', '),
         fontFamily: 'Cinzel',
@@ -103,7 +103,7 @@ export function StoryCard({ model, portrait }: { model: StoryCardModel; portrait
               textAlign: 'center',
               justifyContent: 'center',
               maxWidth: 920,
-              textShadow: `0 0 36px ${tint(OG.gold, 0.55)}, 0 4px 0 ${OG.well}`,
+              textShadow: `0 0 28px ${tint(OG.gold, 0.3)}, 0 4px 0 ${OG.well}`,
             }}
           >
             {model.displayName}
@@ -124,7 +124,7 @@ export function StoryCard({ model, portrait }: { model: StoryCardModel; portrait
               style={{
                 display: 'flex',
                 border: `2px solid ${model.classColor}`,
-                boxShadow: `0 0 24px ${tint(model.classColor, 0.6)}`,
+                boxShadow: `0 0 16px ${tint(model.classColor, 0.3)}`,
               }}
             >
               <OgIcon
@@ -141,7 +141,7 @@ export function StoryCard({ model, portrait }: { model: StoryCardModel; portrait
                 fontSize: titleSize,
                 color: model.classColor,
                 letterSpacing: 4,
-                textShadow: `0 0 28px ${tint(model.classColor, 0.55)}`,
+                textShadow: `0 0 20px ${tint(model.classColor, 0.3)}`,
               }}
             >
               {model.classTitle}
@@ -198,7 +198,7 @@ export function StoryCard({ model, portrait }: { model: StoryCardModel; portrait
                     display: 'flex',
                     fontSize: 28,
                     color: best.color,
-                    textShadow: `0 0 18px ${tint(best.color, 0.5)}`,
+                    textShadow: `0 0 14px ${tint(best.color, 0.3)}`,
                   }}
                 >
                   {best.name}
@@ -295,7 +295,7 @@ function Frame({ color }: { color: string }) {
             height: 4,
             ...edgeAt,
             backgroundImage: `linear-gradient(90deg, rgba(0,0,0,0) 0%, ${color} 30%, ${color} 70%, rgba(0,0,0,0) 100%)`,
-            boxShadow: `0 0 24px ${tint(color, 0.8)}`,
+            boxShadow: `0 0 16px ${tint(color, 0.4)}`,
           }}
         />
       ))}
@@ -358,7 +358,7 @@ function Portrait({
         padding: 10,
         border: `2px solid ${OG.gold}`,
         background: OG.well,
-        boxShadow: `0 0 120px ${tint(color, 0.55)}, 0 0 40px ${tint(color, 0.45)}`,
+        boxShadow: `0 0 60px ${tint(color, 0.28)}`,
       }}
     >
       <div
@@ -411,7 +411,7 @@ function Portrait({
           border: `4px solid ${OG.gold}`,
           background: OG.well,
           backgroundImage: `radial-gradient(circle at 50% 35%, ${OG.panel} 0%, ${OG.well} 100%)`,
-          boxShadow: `0 0 0 6px ${OG.well}, 0 0 0 8px ${OG.frame}, 0 0 40px ${tint(OG.gold, 0.5)}`,
+          boxShadow: `0 0 0 6px ${OG.well}, 0 0 0 8px ${OG.frame}, 0 0 24px ${tint(OG.gold, 0.3)}`,
         }}
       >
         <div
@@ -421,7 +421,7 @@ function Portrait({
             color: OG.butter,
             lineHeight: 1,
             marginTop: 6,
-            textShadow: `0 0 20px ${tint(OG.gold, 0.7)}`,
+            textShadow: `0 0 16px ${tint(OG.gold, 0.4)}`,
           }}
         >
           {String(level)}
@@ -479,7 +479,7 @@ function Readout({ value, label, color }: { value: string; label: string; color:
           fontSize: value.length > 4 ? 100 : 124,
           color,
           lineHeight: 1,
-          textShadow: `0 0 40px ${tint(color, 0.55)}`,
+          textShadow: `0 0 28px ${tint(color, 0.3)}`,
         }}
       >
         {value}
@@ -505,7 +505,7 @@ function Square({ piece, gap }: { piece: StoryGear; gap: boolean }) {
         marginLeft: gap ? 22 : 0,
         border: `3px solid ${piece.color}`,
         background: OG.well,
-        boxShadow: `0 0 26px ${tint(piece.color, 0.55)}`,
+        boxShadow: `0 0 16px ${tint(piece.color, 0.3)}`,
       }}
     >
       {piece.src ? (

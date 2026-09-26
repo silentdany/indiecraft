@@ -3387,185 +3387,367 @@ ol + .rules-note,
   opacity: 0.85;
 }
 
-/* --- Share ----------------------------------------------------------------
-   The one action the whole product is measured on, so it gets the solid amber
-   block and sits directly under the identity block rather than in a footer. */
+/* --- Share studio ---------------------------------------------------------
+   One framed panel: a picker for where it is going, a stage showing exactly
+   what gets posted there, and the controls for it with a single gold button.
+   It replaced a mock tweet, a poster and a badge laid out as three separate
+   widgets, each trailing its own row of small grey links. */
 
-/* --- Share ----------------------------------------------------------------
-   Drawn as the post it becomes: avatar, name, handle, the words, the card.
-   The previous version put a miniature of the page beside a floating sentence
-   and labelled neither — the thumbnail read as a duplicate of the sheet
-   directly above it, and the sentence read as a stray statistic rather than as
-   text somebody was about to publish. Shaping it like the output removed the
-   need to explain any of it. */
-
-.share {
-  margin-top: 26px;
+.studio {
+  margin-top: 18px;
+  padding: 0;
 }
 
-/* Two columns, one per destination: the timeline post on the left, the story
-   on the right. The poster column is sized to the poster at phone width, so
-   the post takes whatever is left and never stretches into a banner. */
-.share-grid {
+.studio-formats {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 280px;
-  gap: 28px 40px;
-  align-items: start;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  border-bottom: 1px solid #4a3a1c;
 }
-@media (max-width: 760px) {
-  .share-grid {
-    grid-template-columns: minmax(0, 1fr);
-  }
-}
-
-.share-col {
-  display: flex;
-  flex-direction: column;
-  min-width: 0;
-}
-
-.share-head {
-  margin-bottom: 12px;
-}
-/* Named for where it goes, not for what it is: "Card" and "Poster" meant
-   nothing until somebody had seen both, and everybody knows what a story is. */
-.share-title {
-  margin: 0;
-  font-size: 15px;
-  font-weight: 500;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  color: var(--ic-gold);
-}
-.share-sub {
-  margin: 4px 0 0;
-  font-size: 13px;
-}
-
-/* A post is a column, and stretching it to full width would stop it reading
-   as one. */
-.share-post {
-  max-width: 560px;
-  padding: 14px 16px;
-  border: 1px solid var(--ic-line);
-  background: var(--ic-surface);
-}
-
-.share-author {
+.studio-format {
   display: flex;
   align-items: center;
-  gap: 9px;
-  margin-bottom: 10px;
+  gap: 14px;
+  padding: 14px 18px;
+  background: none;
+  border: 0;
+  border-right: 1px solid var(--ic-line);
+  color: var(--ic-text-muted);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  position: relative;
 }
-/* The one round element in the entire interface, and deliberately so: it is
-   quoting somebody else's design, not proposing a new one here. */
-.share-avatar {
+.studio-format:last-child {
+  border-right: 0;
+}
+.studio-format:hover {
+  color: var(--ic-text);
+  background: rgba(255, 255, 255, 0.03);
+}
+.studio-format[aria-selected="true"] {
+  color: var(--ic-text);
+  background: linear-gradient(180deg, rgba(248, 183, 0, 0.1), rgba(248, 183, 0, 0) 90%);
+}
+/* The selection is a bar of gold along the bottom edge, sitting on the rule,
+   the way the reference marks the open tab of a frame. */
+.studio-format[aria-selected="true"]::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -1px;
+  height: 2px;
+  background: var(--ic-gold);
+  box-shadow: 0 0 12px rgba(248, 183, 0, 0.6);
+}
+.studio-format:focus-visible {
+  outline: 2px solid var(--ic-gold-bright);
+  outline-offset: -2px;
+}
+
+/* The output's own proportions, drawn at a fixed height so the three shapes
+   compare at a glance: wide, tall, a strip. */
+.studio-format-shape {
+  flex: none;
+  height: 28px;
+  max-width: 44px;
+  border: 1.5px solid currentColor;
+  opacity: 0.55;
+}
+.studio-format:nth-child(3) .studio-format-shape {
+  height: 8px;
+}
+.studio-format[aria-selected="true"] .studio-format-shape {
+  border-color: var(--ic-gold);
+  background: rgba(248, 183, 0, 0.15);
+  opacity: 1;
+}
+.studio-format-words {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+.studio-format-name {
+  font-size: 15px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.studio-format[aria-selected="true"] .studio-format-name {
+  color: var(--ic-gold);
+}
+.studio-format-where {
+  font-size: 12px;
+  color: var(--ic-text-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.studio-body {
+  display: grid;
+  grid-template-columns: minmax(0, 1.5fr) minmax(280px, 1fr);
+}
+
+/* A dark well with the frame's light falling into it, so whatever sits on it
+   reads as the object on display rather than a thumbnail in a list. */
+.studio-stage {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 40px;
-  height: 40px;
-  flex-shrink: 0;
-  overflow: hidden;
-  border-radius: 50%;
-  background: var(--ic-well);
-  color: var(--ic-text-muted);
+  min-height: 460px;
+  padding: 32px;
+  background:
+    radial-gradient(ellipse at 50% 40%, rgba(248, 183, 0, 0.07), rgba(0, 0, 0, 0) 65%),
+    var(--ic-well);
+  border-right: 1px solid var(--ic-line);
 }
-.share-avatar img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
+.studio-body[data-format="badge"] .studio-stage {
+  min-height: 300px;
 }
-.share-author-name {
-  font-size: 14px;
-  color: var(--ic-text);
-}
-.share-author-handle {
-  font-size: 13px;
-}
-
-.share-text {
-  margin: 0 0 12px;
-  font-size: 16px;
-  line-height: 1.45;
-  color: var(--ic-text);
-}
-
-.share-card {
+.studio-preview {
   display: block;
-  border: 1px solid var(--ic-line-2);
   line-height: 0;
+  border: 1px solid var(--ic-line-2);
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6);
 }
-.share-card:hover {
+a.studio-preview:hover {
   border-color: var(--ic-gold);
 }
-.share-card img {
+.studio-preview img {
+  display: block;
   width: 100%;
   height: auto;
 }
-/* The URL strip X prints under a card image. It is here because it is the part
-   that tells a reader where the link goes. */
-.share-card-url {
-  display: block;
-  padding: 7px 10px;
-  border-top: 1px solid var(--ic-line-2);
-  font-size: 11.5px;
-  line-height: 1.3;
-  color: var(--ic-text-muted);
-  word-break: break-all;
+.studio-preview-card {
+  width: 100%;
+  max-width: 560px;
+  aspect-ratio: 1200 / 630;
 }
-
-.share-actions {
-  display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 16px;
-  margin-top: 14px;
-}
-
-/* The poster at the size it is posted: a phone screen. */
-.share-poster {
-  display: block;
+.studio-preview-poster {
+  width: 225px;
   aspect-ratio: 9 / 16;
-  max-width: 280px;
-  width: 100%;
-  border: 1px solid var(--ic-frame);
-  background: #100a06;
-  line-height: 0;
-  box-shadow: 0 18px 50px rgba(0, 0, 0, 0.55);
 }
-.share-poster img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
+.studio-preview-badge {
+  border: 0;
+  box-shadow: none;
 }
-.share-poster:hover {
-  border-color: var(--ic-gold);
+.studio-preview-badge img {
+  width: auto;
+  max-width: 100%;
 }
 @media (prefers-reduced-motion: no-preference) {
-  .share-poster {
-    transition:
-      transform 0.2s ease,
-      border-color 0.2s ease;
-  }
-  .share-poster:hover {
-    transform: translateY(-3px);
-  }
-  /* A reworded draft fades in, so the change is seen rather than inferred
-     from the counter. Keyed on the angle, so React remounts the paragraph. */
-  .share-text {
-    animation: share-text-in 0.25s ease;
+  .studio-preview {
+    animation: studio-in 0.3s ease;
+    transition: border-color 0.2s ease;
   }
 }
-@keyframes share-text-in {
+@keyframes studio-in {
   from {
     opacity: 0;
-    transform: translateY(3px);
+    transform: translateY(6px) scale(0.985);
   }
 }
+
+.studio-controls {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 24px;
+}
+.studio-label {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ic-gold);
+}
+
+.studio-text {
+  width: 100%;
+  min-height: 118px;
+  padding: 12px 14px;
+  resize: vertical;
+  border: 1px solid var(--ic-line-2);
+  background: var(--ic-well);
+  color: var(--ic-text);
+  font-family: inherit;
+  font-size: 16px;
+  line-height: 1.45;
+}
+.studio-text:focus {
+  outline: none;
+  border-color: var(--ic-gold);
+  box-shadow: 0 0 0 3px rgba(248, 183, 0, 0.15);
+}
+.studio-text-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: -4px;
+}
+.studio-chars {
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+  color: var(--ic-text-muted);
+}
+.studio-chars.is-over {
+  color: var(--ic-negative);
+}
+.studio-note {
+  margin: 0;
+  font-size: 12.5px;
+  line-height: 1.5;
+  color: var(--ic-text-muted);
+  word-break: break-word;
+}
+
+.studio-steps {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  counter-reset: step;
+  display: grid;
+  gap: 10px;
+}
+.studio-step {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  font-size: 14px;
+  line-height: 1.45;
+  color: var(--ic-text);
+  counter-increment: step;
+}
+.studio-step::before {
+  content: counter(step);
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border: 1px solid var(--ic-frame);
+  font-family: var(--ic-serif);
+  font-size: 12px;
+  color: var(--ic-gold);
+  transform: translateY(-1px);
+}
+
+.studio-code {
+  display: block;
+  padding: 12px 14px;
+  border: 1px solid var(--ic-line-2);
+  background: var(--ic-well);
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 12px;
+  line-height: 1.55;
+  color: var(--ic-text-muted);
+  word-break: break-all;
+  user-select: all;
+}
+
+/* The one gold block in the panel. Full width, pushed to the bottom of the
+   controls, so it sits in the same place whichever format is open. */
+.studio-primary {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: auto;
+  padding: 13px 18px;
+  border: 0;
+  background: var(--ic-gold);
+  color: #211510;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  text-decoration: none;
+  cursor: pointer;
+  box-shadow: 0 0 24px -8px rgba(248, 183, 0, 0.6);
+}
+.studio-primary:hover {
+  color: #211510;
+  background: var(--ic-gold-bright);
+}
+.studio-primary[aria-busy="true"] {
+  opacity: 0.7;
+  cursor: progress;
+}
+.studio-primary:focus-visible {
+  outline: 2px solid var(--ic-gold-bright);
+  outline-offset: 3px;
+}
+
+.studio-secondary {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 4px 22px;
+}
+.studio-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 6px 0;
+  background: none;
+  border: 0;
+  color: var(--ic-text-muted);
+  font: inherit;
+  font-size: 13px;
+  text-decoration: none;
+  cursor: pointer;
+}
+.studio-link:hover {
+  color: var(--ic-gold);
+}
+/* Which of the drafts is on screen. Boxed so it reads as a position in a set
+   and not as part of the word before it. */
+.studio-count {
+  padding: 0 5px;
+  border: 1px solid var(--ic-line-2);
+  font-size: 10px;
+  letter-spacing: 0.04em;
+  font-variant-numeric: tabular-nums;
+}
+
 @media (max-width: 760px) {
-  .share-poster {
-    max-width: 240px;
+  .studio-body {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .studio-stage {
+    min-height: 0;
+    padding: 24px 16px;
+    border-right: 0;
+    border-bottom: 1px solid var(--ic-line);
+  }
+  .studio-preview-poster {
+    width: 190px;
+  }
+  .studio-controls {
+    padding: 18px 16px 20px;
+  }
+  .studio-primary {
+    margin-top: 4px;
+  }
+  .studio-format {
+    justify-content: center;
+    gap: 9px;
+    padding: 13px 8px;
+  }
+  .studio-format-shape {
+    height: 20px;
+    max-width: 30px;
+  }
+  .studio-format:nth-child(3) .studio-format-shape {
+    height: 6px;
+  }
+  .studio-format-name {
+    font-size: 13px;
+  }
+  .studio-format-where {
+    display: none;
   }
 }
 
@@ -3600,47 +3782,7 @@ ol + .rules-note,
   margin-top: auto;
 }
 
-/* --- The badge block ------------------------------------------------------
-   The rendered badge and two buttons. The Markdown snippet is deliberately not
-   shown: a one-line string in a horizontally scrolling code box is an ugly
-   object that also asks to be read, and nobody reads it — they press the
-   button. */
-
-.badgeblock {
-  display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 18px;
-  margin-top: 12px;
-  padding: 16px 18px;
-  border: 1px solid var(--ic-line);
-  background: var(--ic-surface);
-}
-/* The badge is drawn at its own intrinsic size — it is a preview of an object
-   that will sit at exactly this size in somebody's README, so scaling it here
-   would be showing them the wrong thing. */
-.badgeblock-preview {
-  flex: 0 0 auto;
-  max-width: 100%;
-}
-.badgeblock-body {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  flex: 1 1 260px;
-  min-width: 0;
-}
-.badgeblock-body p {
-  margin: 0;
-  font-size: 13px;
-  line-height: 1.5;
-}
-.badgeblock-actions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 16px;
-}
-
+/* The two buttons the poster tool uses. */
 .share-x {
   padding: 9px 18px;
   font-size: 12px;
@@ -3653,12 +3795,6 @@ ol + .rules-note,
 .share-x:hover {
   color: #211510;
   background: var(--ic-gold-bright);
-}
-/* Share poster is a <button>, Post on X an <a>; one control to a reader. */
-button.share-x {
-  border: 0;
-  cursor: pointer;
-  font-family: inherit;
 }
 
 .share-copy {
@@ -3674,15 +3810,6 @@ button.share-x {
 }
 .share-copy:hover {
   color: var(--ic-gold);
-}
-/* Which of the drafts is on screen. Boxed rather than bare so it reads as a
-   position in a set and not as part of the word before it. */
-.share-count {
-  padding: 0 5px;
-  border: 1px solid var(--ic-line-2);
-  font-size: 10px;
-  letter-spacing: 0.04em;
-  font-variant-numeric: tabular-nums;
 }
 
 /* --- The poster tool ------------------------------------------------------

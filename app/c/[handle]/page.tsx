@@ -2,7 +2,6 @@ import type { Metadata } from 'next'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import type { CSSProperties } from 'react'
-import { BadgeBlock } from '@/components/badge-block'
 import { ConsentActions } from '@/components/consent-actions'
 import { type DingEvent, DingToast } from '@/components/ding-toast'
 import { Frame } from '@/components/frame'
@@ -638,7 +637,6 @@ export default async function CharacterSheet({ params }: Props) {
             <ShareSheet
               handle={character.handle}
               displayName={character.displayName}
-              avatarUrl={character.avatarUrl}
               level={character.level}
               ilvl={character.ilvl}
               characterClass={character.characterClass}
@@ -667,14 +665,6 @@ export default async function CharacterSheet({ params }: Props) {
                 mrrUsd: character.mrrUsd,
               }}
             />
-
-            <Section title="Badge">
-              <BadgeBlock
-                handle={character.handle}
-                level={character.level}
-                characterClass={character.characterClass}
-              />
-            </Section>
           </div>
         </div>
       </div>

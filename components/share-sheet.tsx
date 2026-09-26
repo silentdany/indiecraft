@@ -12,21 +12,31 @@ import { capture } from './posthog-provider'
  * The share block, which is the one thing the whole product is measured on:
  * whether people post their sheet unprompted.
  *
- * It is drawn as the post it will become — avatar, name, handle, the words, the
- * card underneath — because the previous version was a miniature of the page
- * next to a floating sentence and nothing said what either was for. The
- * thumbnail read as a redundant copy of the sheet directly above it, and "Top
- * 10% of 140 indie founders, apparently." read as a stray statistic rather than
- * as draft text somebody was about to publish under their own name.
+ * One panel, three outputs: the timeline post, the story poster, the README
+ * badge. The previous version stacked them — a mock tweet, a poster beside
+ * it, a badge in a separate section underneath — and every one of them came
+ * with its own row of small grey links, so the tab read as three unrelated
+ * widgets and the eye had nowhere to start.
  *
- * Nothing here needed explaining once it was shaped like the thing it produces.
- * Anybody who has used X knows what this is at a glance, which is worth more
- * than any caption we could have written above it.
+ * Now it is a picker, a stage and a set of controls. You choose where it is
+ * going, you see exactly what will be posted there, and there is one gold
+ * button that does it. Everything else is secondary and looks it.
  */
+
+type Format = 'post' | 'story' | 'badge'
+
+const FORMATS: { key: Format; name: string; where: string; ratio: string }[] = [
+  { key: 'post', name: 'Post', where: 'X, LinkedIn', ratio: '1200 / 630' },
+  { key: 'story', name: 'Story', where: 'Instagram, TikTok', ratio: '9 / 16' },
+  { key: 'badge', name: 'Badge', where: 'README, site', ratio: '6 / 1' },
+]
+
+/** X counts a link as 23 characters, whatever its length. */
+const X_LIMIT = 280 - 24
+
 export function ShareSheet({
   handle,
   displayName,
-  avatarUrl,
   level,
   ilvl,
   characterClass,
@@ -34,14 +44,17 @@ export function ShareSheet({
 }: {
   handle: string
   displayName: string
-  avatarUrl: string | null
   level: number
   ilvl: number | null
   characterClass: string
   facts: ShareFacts
 }) {
-  const [copied, setCopied] = useState(false)
+  const [format, setFormat] = useState<Format>('post')
+  const [copied, setCopied] = useState<string | null>(null)
   const [angle, setAngle] = useState(0)
+  const posts = useMemo(() => sharePosts(facts), [facts])
+  const [text, setText] = useState(posts[0]?.text ?? '')
+  const [edited, setEdited] = useState(false)
   // Decided after mount: the server cannot know, and rendering the button on
   // one side only is a hydration mismatch.
   const [canShareFiles, setCanShareFiles] = useState(false)
@@ -56,45 +69,40 @@ export function ShareSheet({
     }
   }, [])
 
-  const posts = useMemo(() => sharePosts(facts), [facts])
-  const post = posts[angle % posts.length] ?? posts[0]
-
   /*
    * The `?s=` stamp is not redundant with the OG image's own versioned path.
    * That one stops X serving a stale IMAGE; this one stops X serving a stale
    * CARD, which it caches against the shared page URL and will not re-scrape.
-   * A founder who levels up and reshares the bare URL gets last month's card
-   * back, image id or no image id.
-   */
-  /*
-   * The configured site URL, not `window.location.origin`.
    *
-   * Reading the origin off the browser meant the server rendered "/c/handle"
-   * and the client rendered "indiecraft.quest/c/handle", which is a hydration
-   * mismatch on every character sheet — React threw, discarded the subtree and
-   * rebuilt it, and the share URL visibly changed after load. It was in the dev
-   * log on every visit.
-   *
-   * `NEXT_PUBLIC_SITE_URL` is inlined at build time, so both renders agree, and
-   * it is what robots.txt, the sitemap and the metadata base already use.
+   * The configured site URL, not `window.location.origin`: reading the origin
+   * off the browser made the server and client render different strings, a
+   * hydration mismatch on every sheet.
    */
   const origin = process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000'
   const url = `${origin}/c/${handle}?s=${ogImageId(level, ilvl)}`
   const card = ogImagePath(handle, level, ilvl)
   const poster = storyCardPath(handle, level, ilvl)
-  // Shown the way X shows it in a post: the host and path, no scheme.
-  const displayUrl = `${origin.replace(/^https?:\/\//, '')}/c/${handle}`
+  const badge = `/c/${handle}/badge.svg`
+  const badgeMarkdown = `[![World of Indiecraft](${origin}${badge})](${origin}/c/${handle})`
 
-  async function copy() {
+  async function copy(what: string, value: string, event: string, target: string) {
     try {
-      await navigator.clipboard.writeText(url)
-      setCopied(true)
-      capture('share_clicked', { handle, target: 'copy' })
-      setTimeout(() => setCopied(false), 2000)
+      await navigator.clipboard.writeText(value)
+      setCopied(what)
+      capture(event, { handle, target })
+      setTimeout(() => setCopied((c) => (c === what ? null : c)), 2000)
     } catch {
       // Clipboard is refused on insecure origins and in some embedded views.
-      // Selecting the address bar still works, so this is not worth an alert.
+      // The value is on screen either way, so this is not worth an alert.
     }
+  }
+
+  function reword() {
+    const next = (angle + 1) % posts.length
+    setAngle(next)
+    setText(posts[next]?.text ?? '')
+    setEdited(false)
+    capture('share_angle_changed', { handle })
   }
 
   /*
@@ -120,162 +128,242 @@ export function ShareSheet({
     }
   }
 
+  const remaining = X_LIMIT - text.length
+
   return (
-    <section className="share" aria-label="Share this sheet">
-      {/*
-        Two outputs, side by side, each under the name of where it goes.
+    <section className="studio frame" aria-label="Share this sheet">
+      <span className="corner corner-tl" />
+      <span className="corner corner-tr" />
+      <span className="corner corner-bl" />
+      <span className="corner corner-br" />
 
-        The poster used to be a text link at the end of a row of five, and it
-        is the only one of the two that is a picture of the founder rather
-        than of a spreadsheet. Nobody saved a thing they had not seen. Now it
-        is drawn at the size it will be posted, next to the post it is the
-        alternative to.
-      */}
-      <div className="share-grid">
-        <div className="share-col">
-          <div className="share-head">
-            <h3 className="share-title serif">For the timeline</h3>
-            <p className="share-sub muted">
-              A draft, not a button. Reword it until it sounds like you.
-            </p>
-          </div>
+      <div className="studio-formats" role="tablist" aria-label="Where it is going">
+        {FORMATS.map((f) => (
+          <button
+            key={f.key}
+            type="button"
+            role="tab"
+            aria-selected={format === f.key}
+            className="studio-format"
+            onClick={() => {
+              setFormat(f.key)
+              capture('share_format_changed', { handle, format: f.key })
+            }}
+          >
+            {/* The shape of the output, drawn. Faster to read than any
+                dimensions written out. */}
+            <span className="studio-format-shape" style={{ aspectRatio: f.ratio }} />
+            <span className="studio-format-words">
+              <span className="studio-format-name serif">{f.name}</span>
+              <span className="studio-format-where">{f.where}</span>
+            </span>
+          </button>
+        ))}
+      </div>
 
-          <div className="share-post">
-            <div className="share-author">
-              <span className="share-avatar">
-                {avatarUrl ? (
-                  // biome-ignore lint/performance/noImgElement: matches the sheet portrait, which shares no pipeline with next/image.
-                  <img src={avatarUrl} alt="" width={40} height={40} />
-                ) : (
-                  <span className="serif">{handle.slice(0, 1).toUpperCase()}</span>
-                )}
-              </span>
-              <span className="share-author-name">{displayName}</span>
-              <span className="share-author-handle muted">@{handle}</span>
-            </div>
-
-            <p className="share-text" key={post?.key}>
-              {post?.text}
-            </p>
-
-            <a className="share-card" href={card} target="_blank" rel="noreferrer">
-              {/* The same endpoint X fetches, at the shape X renders it. Lazy: it is
-                  a 1200×630 PNG rendered on demand, and the sheet above it is what
-                  people came for. */}
+      <div className="studio-body" data-format={format}>
+        <div className="studio-stage">
+          {format === 'post' && (
+            <a
+              className="studio-preview studio-preview-card"
+              href={card}
+              target="_blank"
+              rel="noreferrer"
+            >
               {/* biome-ignore lint/performance/noImgElement: the exact bytes X will attach. */}
               <img
                 src={card}
                 alt={`Level ${level} ${characterClass} card`}
-                loading="lazy"
                 width={1200}
                 height={630}
               />
-              <span className="share-card-url">{displayUrl}</span>
             </a>
-          </div>
-
-          <div className="share-actions">
+          )}
+          {format === 'story' && (
             <a
-              className="share-x"
-              href={`https://x.com/intent/tweet?text=${encodeURIComponent(post?.text ?? '')}&url=${encodeURIComponent(url)}`}
+              className="studio-preview studio-preview-poster"
+              href={poster}
               target="_blank"
               rel="noreferrer"
-              onClick={() => capture('share_clicked', { handle, target: 'x', angle: post?.key })}
+              onClick={() => capture('share_clicked', { handle, target: 'poster_open' })}
             >
-              Post on X
+              {/* biome-ignore lint/performance/noImgElement: the exact bytes the download saves. */}
+              <img
+                src={poster}
+                alt={`${displayName}, level ${level} ${characterClass} poster`}
+                width={1080}
+                height={1920}
+              />
             </a>
-
-            {/* Only when there is somewhere to cycle to: a founder with a single
-                candidate would otherwise get a button that visibly does nothing.
-
-                The counter is the fix for a button that changed a paragraph you
-                were not looking at: without it, clicking twice on a founder with
-                two angles landed back on the original text and read as broken. */}
-            {posts.length > 1 && (
-              <button
-                type="button"
-                className="share-copy label"
-                onClick={() => {
-                  setAngle((a) => a + 1)
-                  capture('share_angle_changed', { handle })
-                }}
-              >
-                <WowIcon slug={UI_ICONS.reword} glyph="shuffle" size={16} bare />
-                Reword
-                <span className="share-count">
-                  {(angle % posts.length) + 1}/{posts.length}
-                </span>
-              </button>
-            )}
-
-            <button type="button" className="share-copy label" onClick={copy}>
-              <WowIcon slug={UI_ICONS.copyLink} glyph="link" size={16} bare />
-              {copied ? 'Copied' : 'Copy link'}
-            </button>
-
-            {/*
-              The card is a 1200×630 PNG at a stable URL, and until now the only way
-              to get it was to right-click an <img> — so anybody posting anywhere
-              other than X, or writing their own words, had no route to the picture
-              at all. `download` on a same-origin href is the whole feature.
-            */}
-            <a className="share-copy label" href={card} download={`indiecraft-${handle}.png`}>
-              <WowIcon slug={UI_ICONS.saveCard} glyph="download" size={16} bare />
-              Save card
-            </a>
-          </div>
+          )}
+          {format === 'badge' && (
+            <div className="studio-preview studio-preview-badge">
+              {/* biome-ignore lint/performance/noImgElement: an SVG shown at the size it will be embedded. */}
+              <img src={badge} alt={`Level ${level} ${characterClass} badge`} />
+            </div>
+          )}
         </div>
 
-        <div className="share-col share-col-story">
-          <div className="share-head">
-            <h3 className="share-title serif">For your story</h3>
-            <p className="share-sub muted">9:16, your face on it. Instagram, TikTok, X.</p>
-          </div>
+        <div className="studio-controls">
+          {format === 'post' && (
+            <>
+              <label className="studio-label" htmlFor="studio-text">
+                Your post
+              </label>
+              {/* Editable. It was a paragraph you could only cycle, and the
+                  one thing a founder most wants to do with a draft is put it
+                  in their own words. */}
+              <textarea
+                id="studio-text"
+                className="studio-text"
+                value={text}
+                rows={4}
+                onChange={(e) => {
+                  setText(e.target.value)
+                  setEdited(true)
+                }}
+              />
+              <div className="studio-text-foot">
+                {posts.length > 1 ? (
+                  <button type="button" className="studio-link" onClick={reword}>
+                    <WowIcon slug={UI_ICONS.reword} glyph="shuffle" size={16} bare />
+                    Another wording
+                    <span className="studio-count">
+                      {angle + 1}/{posts.length}
+                    </span>
+                  </button>
+                ) : (
+                  <span />
+                )}
+                <span className={remaining < 0 ? 'studio-chars is-over' : 'studio-chars'}>
+                  {remaining}
+                </span>
+              </div>
+              <p className="studio-note">
+                The card is attached from the link — {origin.replace(/^https?:\/\//, '')}/c/
+                {handle}
+              </p>
 
-          <a
-            className="share-poster"
-            href={poster}
-            target="_blank"
-            rel="noreferrer"
-            onClick={() => capture('share_clicked', { handle, target: 'poster_open' })}
-          >
-            {/* biome-ignore lint/performance/noImgElement: the exact bytes the download saves. */}
-            <img
-              src={poster}
-              alt={`${displayName}, level ${level} ${characterClass} poster`}
-              loading="lazy"
-              width={1080}
-              height={1920}
-            />
-          </a>
+              <a
+                className="studio-primary"
+                href={`https://x.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(url)}`}
+                target="_blank"
+                rel="noreferrer"
+                onClick={() =>
+                  capture('share_clicked', {
+                    handle,
+                    target: 'x',
+                    angle: posts[angle]?.key,
+                    edited,
+                  })
+                }
+              >
+                Post on X
+              </a>
+              <div className="studio-secondary">
+                <button
+                  type="button"
+                  className="studio-link"
+                  onClick={() => copy('link', url, 'share_clicked', 'copy')}
+                >
+                  <WowIcon slug={UI_ICONS.copyLink} glyph="link" size={16} bare />
+                  {copied === 'link' ? 'Copied' : 'Copy link'}
+                </button>
+                <a className="studio-link" href={card} download={`indiecraft-${handle}.png`}>
+                  <WowIcon slug={UI_ICONS.saveCard} glyph="download" size={16} bare />
+                  Save image
+                </a>
+              </div>
+            </>
+          )}
 
-          <div className="share-actions">
-            {canShareFiles ? (
-              <button type="button" className="share-x" onClick={sharePoster} aria-busy={sharing}>
-                {sharing ? 'Opening…' : 'Share poster'}
+          {format === 'story' && (
+            <>
+              <span className="studio-label">How to post it</span>
+              <ol className="studio-steps">
+                <li className="studio-step">
+                  {canShareFiles ? 'Share the poster to your story.' : 'Save the poster.'}
+                </li>
+                <li className="studio-step">Add a link sticker with your sheet’s address.</li>
+                <li className="studio-step">
+                  Post it. Whoever taps the sticker lands on your sheet.
+                </li>
+              </ol>
+
+              {canShareFiles ? (
+                <button
+                  type="button"
+                  className="studio-primary"
+                  onClick={sharePoster}
+                  aria-busy={sharing}
+                >
+                  {sharing ? 'Opening…' : 'Share poster'}
+                </button>
+              ) : (
+                <a
+                  className="studio-primary"
+                  href={poster}
+                  download={`indiecraft-${handle}-poster.png`}
+                  onClick={() => capture('share_clicked', { handle, target: 'poster_save' })}
+                >
+                  Save poster
+                </a>
+              )}
+              <div className="studio-secondary">
+                <button
+                  type="button"
+                  className="studio-link"
+                  onClick={() => copy('sticker', url, 'share_clicked', 'poster_link')}
+                >
+                  <WowIcon slug={UI_ICONS.copyLink} glyph="link" size={16} bare />
+                  {copied === 'sticker' ? 'Copied' : 'Copy link for the sticker'}
+                </button>
+                {canShareFiles && (
+                  <a
+                    className="studio-link"
+                    href={poster}
+                    download={`indiecraft-${handle}-poster.png`}
+                    onClick={() => capture('share_clicked', { handle, target: 'poster_save' })}
+                  >
+                    <WowIcon slug={UI_ICONS.saveCard} glyph="download" size={16} bare />
+                    Save
+                  </a>
+                )}
+              </div>
+            </>
+          )}
+
+          {format === 'badge' && (
+            <>
+              <span className="studio-label">Markdown</span>
+              {/* Shown now, where before it was hidden: with the badge on its
+                  own stage there is room for the snippet, and seeing it is
+                  how somebody knows the button copies a link and not a
+                  picture. */}
+              <code className="studio-code">{badgeMarkdown}</code>
+              <p className="studio-note">
+                Updates itself every night and links back to this sheet.
+              </p>
+
+              <button
+                type="button"
+                className="studio-primary"
+                onClick={() => copy('md', badgeMarkdown, 'badge_copied', 'md')}
+              >
+                {copied === 'md' ? 'Copied' : 'Copy Markdown'}
               </button>
-            ) : (
-              <a
-                className="share-x"
-                href={poster}
-                download={`indiecraft-${handle}-poster.png`}
-                onClick={() => capture('share_clicked', { handle, target: 'poster_save' })}
-              >
-                Save poster
-              </a>
-            )}
-            {canShareFiles && (
-              <a
-                className="share-copy label"
-                href={poster}
-                download={`indiecraft-${handle}-poster.png`}
-                onClick={() => capture('share_clicked', { handle, target: 'poster_save' })}
-              >
-                <WowIcon slug={UI_ICONS.saveCard} glyph="download" size={16} bare />
-                Save
-              </a>
-            )}
-          </div>
+              <div className="studio-secondary">
+                <button
+                  type="button"
+                  className="studio-link"
+                  onClick={() => copy('url', `${origin}${badge}`, 'badge_copied', 'url')}
+                >
+                  <WowIcon slug={UI_ICONS.copyLink} glyph="link" size={16} bare />
+                  {copied === 'url' ? 'Copied' : 'Copy image URL'}
+                </button>
+              </div>
+            </>
+          )}
         </div>
       </div>
     </section>
