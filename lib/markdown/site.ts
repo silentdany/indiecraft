@@ -89,6 +89,7 @@ export function llmsTxt(origin: string = CANONICAL_ORIGIN): string {
     `- [The ladder](${origin}/ladder) — every founder in the corpus, ranked, filterable by realm, class, faction and achievement`,
     `- [The rules](${origin}/rules) — the level table, the class tree, the rarity bands, all seventeen equipment slots, the quest log and every achievement`,
     `- [Compare founders](${origin}/compare) — two characters side by side`,
+    `- [Poster](${origin}/card) — a free 9:16 card of any founder, at /c/<handle>/poster/<level>-<ilvl>`,
     `- [Character sheets](${origin}/c/) — one page per founder, at /c/<handle>`,
     '',
     '## For agents and developers',

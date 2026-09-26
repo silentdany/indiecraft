@@ -5,7 +5,7 @@
  * line in proxy.ts:
  *
  *   1. Pages with a markdown twin — negotiated.
- *   2. Pages that exist and have no twin (/compare, /icons, a versus page) —
+ *   2. Pages that exist and have no twin (/compare, /card, a versus page) —
  *      left on HTML. Routing these to the markdown handler would answer with a
  *      404 for a page that is plainly there, which is a worse lie than serving
  *      an agent the HTML it did not ask for.
@@ -24,10 +24,12 @@ const MARKDOWN_PAGES = new Set(['/', '/ladder', '/rules'])
  * production, so on the deployed site it is not a page at all and an agent
  * asking about it should get the markdown 404 like any other dead address.
  */
-const HTML_ONLY_PAGES = new Set(['/compare'])
+const HTML_ONLY_PAGES = new Set(['/compare', '/card'])
 
 const CHARACTER_SHEET = /^\/c\/[^/]+$/
 const VERSUS = /^\/c\/[^/]+\/vs\/[^/]+$/
+/** The 9:16 poster. An image, so negotiation must not touch it. */
+const POSTER = /^\/c\/[^/]+\/poster\/[^/]+$/
 
 export function hasMarkdownTwin(pathname: string): boolean {
   return MARKDOWN_PAGES.has(pathname) || CHARACTER_SHEET.test(pathname)
@@ -44,7 +46,7 @@ export function isNegotiable(pathname: string): boolean {
   if (/\.[a-z0-9]+$/i.test(last)) return false
 
   if (hasMarkdownTwin(pathname)) return true
-  if (HTML_ONLY_PAGES.has(pathname) || VERSUS.test(pathname)) return false
+  if (HTML_ONLY_PAGES.has(pathname) || VERSUS.test(pathname) || POSTER.test(pathname)) return false
 
   // Nothing known lives here, so let the markdown route answer with its 404.
   return true

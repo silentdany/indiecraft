@@ -8,6 +8,10 @@ const nextConfig: NextConfig = {
   // the character card moved out of /api.
   outputFileTracingIncludes: {
     '**/opengraph-image': ['./public/fonts/**'],
+    // The poster route is /c/[handle]/poster/[id], not opengraph-image, so the
+    // glob above does not see it. Same failure if it is missing: the font read
+    // works locally and 500s once the route is deployed on its own.
+    '**/poster/**': ['./public/fonts/**'],
   },
   images: {
     // TrustMRR / X avatars. Read-only, no uploads.

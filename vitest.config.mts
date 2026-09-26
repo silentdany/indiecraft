@@ -6,7 +6,9 @@ export default defineConfig({
     //
     // The engine was the whole list until share-text.ts, which earns a place on
     // the same grounds — it is copy generated from data, so it goes wrong by
-    // quietly producing the wrong sentence rather than by throwing. Everything
+    // quietly producing the wrong sentence rather than by throwing. The poster
+    // line, the handle parser and the poster path are the same kind of thing.
+    // Everything
     // else in lib/ talks to Postgres and is checked by running the thing.
     //
     // accept.ts and lib/markdown/ join on that second rule. Content negotiation
@@ -26,6 +28,9 @@ export default defineConfig({
     include: [
       'engine/**/*.test.ts',
       'lib/share-text.test.ts',
+      'lib/handle.test.ts',
+      'lib/poster-copy.test.ts',
+      'lib/card-image.test.ts',
       'lib/accept.test.ts',
       'lib/negotiable.test.ts',
       'lib/markdown/*.test.ts',

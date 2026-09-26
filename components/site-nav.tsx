@@ -22,6 +22,7 @@ const TABS = [
   // you on the ladder. A tab is the difference between a feature and a feature
   // somebody can find.
   { href: '/compare', label: 'Compare' },
+  { href: '/card', label: 'Poster' },
   { href: '/rules', label: 'Rules' },
 ]
 

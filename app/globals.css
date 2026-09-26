@@ -872,6 +872,12 @@ a:hover {
 .inspect button:hover {
   background: var(--ic-gold-bright);
 }
+/* The front page centers the box under the crest. A page that already has a
+   heading wants it on the left, with the heading. */
+.inspect-left {
+  margin-left: 0;
+  margin-right: 0;
+}
 
 .hero-note {
   margin: 18px 0 0;
@@ -3596,6 +3602,36 @@ ol + .rules-note,
   font-size: 10px;
   letter-spacing: 0.04em;
   font-variant-numeric: tabular-nums;
+}
+
+/* --- The poster tool ------------------------------------------------------
+   The picture is 1080×1920. Shown at phone width, because that is the size it
+   is posted at; the download is the full file. */
+
+.poster {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-top: 28px;
+}
+.poster img {
+  width: min(360px, 100%);
+  height: auto;
+  border: 1px solid var(--ic-line-2);
+  background: #170e09;
+}
+.poster-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 18px;
+  margin-top: 16px;
+}
+.poster-note {
+  margin: 22px auto 0;
+  max-width: 46ch;
+  text-align: center;
 }
 /* `Save card` is an <a download>, the other two are <button>. They are the same
    control to a reader and must not be told apart by their default styling. */

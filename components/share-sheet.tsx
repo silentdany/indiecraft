@@ -3,6 +3,7 @@
 import { useMemo, useState } from 'react'
 import { WowIcon } from '@/components/wow-icon'
 import { UI_ICONS } from '@/engine'
+import { storyCardPath } from '@/lib/card-image'
 import { ogImageId, ogImagePath } from '@/lib/og-image'
 import { type ShareFacts, sharePosts } from '@/lib/share-text'
 import { capture } from './posthog-provider'
@@ -67,6 +68,7 @@ export function ShareSheet({
   const origin = process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000'
   const url = `${origin}/c/${handle}?s=${ogImageId(level, ilvl)}`
   const card = ogImagePath(handle, level, ilvl)
+  const poster = storyCardPath(handle, level, ilvl)
   // Shown the way X shows it in a post: the host and path, no scheme.
   const displayUrl = `${origin.replace(/^https?:\/\//, '')}/c/${handle}`
 
@@ -175,6 +177,11 @@ export function ShareSheet({
         <a className="share-copy label" href={card} download={`indiecraft-${handle}.png`}>
           <WowIcon slug={UI_ICONS.saveCard} glyph="download" size={16} bare />
           Save card
+        </a>
+
+        <a className="share-copy label" href={poster} download={`indiecraft-${handle}-poster.png`}>
+          <WowIcon slug={UI_ICONS.saveCard} glyph="download" size={16} bare />
+          Save poster
         </a>
       </div>
     </section>

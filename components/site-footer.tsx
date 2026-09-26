@@ -39,6 +39,7 @@ export async function SiteFooter() {
         <nav className="sitefooter-col" aria-label="Armory">
           <p className="label">Armory</p>
           <Link href="/ladder">The ladder</Link>
+          <Link href="/card">Poster</Link>
           <Link href="/rules">The rules</Link>
           <Link href="/rules#the-class-tree">Classes</Link>
         </nav>

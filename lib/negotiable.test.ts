@@ -24,6 +24,7 @@ describe('isNegotiable', () => {
    */
   it('leaves pages that exist without a markdown twin on HTML', () => {
     expect(isNegotiable('/compare')).toBe(false)
+    expect(isNegotiable('/card')).toBe(false)
     expect(isNegotiable('/c/levelsio/vs/marc')).toBe(false)
   })
 
@@ -38,6 +39,7 @@ describe('isNegotiable', () => {
     expect(isNegotiable('/robots.txt')).toBe(false)
     expect(isNegotiable('/llms.txt')).toBe(false)
     expect(isNegotiable('/c/levelsio/badge.svg')).toBe(false)
+    expect(isNegotiable('/c/levelsio/poster/60-44')).toBe(false)
   })
 
   it('treats an explicit .md URL as markdown whatever else it looks like', () => {

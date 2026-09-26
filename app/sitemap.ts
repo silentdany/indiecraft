@@ -13,7 +13,7 @@ export const revalidate = 3600
 const BASE = process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000'
 
 /**
- * Every sheet with something on it, plus the three standing pages.
+ * Every sheet with something on it, plus the standing pages.
  *
  * This was three URLs until TrustMRR's founder agreed to the corpus being
  * indexed: sheets carried `noindex` until claimed, one founder in 3,900 ever
@@ -60,6 +60,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: BASE, lastModified: fresh, changeFrequency: 'daily', priority: 1 },
     { url: `${BASE}/ladder`, lastModified: fresh, changeFrequency: 'daily', priority: 0.9 },
     { url: `${BASE}/rules`, lastModified: fresh, changeFrequency: 'monthly', priority: 0.6 },
+    { url: `${BASE}/card`, lastModified: fresh, changeFrequency: 'monthly', priority: 0.5 },
     ...facets.map((query) => ({
       url: `${BASE}/ladder?${query}`,
       lastModified: fresh,
