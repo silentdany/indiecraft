@@ -61,7 +61,8 @@ export async function GET(
     classColor: CLASS_COLORS[character.characterClass],
     classGlyph: character.characterClass,
     classIcon: icons.get(classSlug),
-    rankLabel: rankLabel(character.rank, character.rankContext?.total ?? null),
+    rank: `#${new Intl.NumberFormat('en-US').format(character.rank)}`,
+    rankLabel: rankLabel(character.rankContext?.total ?? null),
     line: posterLine({
       level: character.level,
       characterClass: character.characterClass,
@@ -89,9 +90,7 @@ function classTitle(character: CharacterPage): string {
   return (spec ? `${spec} ${character.characterClass}` : character.characterClass).toUpperCase()
 }
 
-function rankLabel(rank: number, total: number | null): string {
-  const format = new Intl.NumberFormat('en-US')
-  const n = format.format(rank)
-  if (!total) return `RANK #${n}`
-  return `RANK #${n} OF ${format.format(total)}`
+function rankLabel(total: number | null): string {
+  if (!total) return 'RANK'
+  return `RANK OF ${new Intl.NumberFormat('en-US').format(total)}`
 }

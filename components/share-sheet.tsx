@@ -1,6 +1,6 @@
 'use client'
 
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { WowIcon } from '@/components/wow-icon'
 import { UI_ICONS } from '@/engine'
 import { storyCardPath } from '@/lib/card-image'
@@ -42,6 +42,19 @@ export function ShareSheet({
 }) {
   const [copied, setCopied] = useState(false)
   const [angle, setAngle] = useState(0)
+  // Decided after mount: the server cannot know, and rendering the button on
+  // one side only is a hydration mismatch.
+  const [canShareFiles, setCanShareFiles] = useState(false)
+  const [sharing, setSharing] = useState(false)
+
+  useEffect(() => {
+    try {
+      const probe = new File([''], 'probe.png', { type: 'image/png' })
+      setCanShareFiles(Boolean(navigator.canShare?.({ files: [probe] })))
+    } catch {
+      setCanShareFiles(false)
+    }
+  }, [])
 
   const posts = useMemo(() => sharePosts(facts), [facts])
   const post = posts[angle % posts.length] ?? posts[0]
@@ -84,105 +97,186 @@ export function ShareSheet({
     }
   }
 
+  /*
+   * The poster is a story, and a story is posted from a phone. The share
+   * sheet hands the PNG straight to Instagram or X on the device instead of
+   * making somebody save it, leave, find it in their camera roll and come
+   * back. Desktop browsers that cannot share a file never see the button.
+   */
+  async function sharePoster() {
+    if (sharing) return
+    setSharing(true)
+    try {
+      const response = await fetch(poster)
+      const file = new File([await response.blob()], `indiecraft-${handle}.png`, {
+        type: 'image/png',
+      })
+      await navigator.share({ files: [file], url })
+      capture('share_clicked', { handle, target: 'poster_native' })
+    } catch {
+      // A dismissed share sheet rejects too, and that is not an error.
+    } finally {
+      setSharing(false)
+    }
+  }
+
   return (
     <section className="share" aria-label="Share this sheet">
       {/*
-        The heading used to read SHARE, under a tab that already reads Share.
-        A panel whose first line repeats the control that opened it is a line
-        spent saying nothing. What a founder actually needs to know here is that
-        the draft below is editable before it goes out — which is the one thing
-        the old caption, "This is what gets posted", got slightly wrong.
-      */}
-      <p className="share-intro">
-        A draft, not a button. Cycle the wording, then post it or take the card.
-      </p>
+        Two outputs, side by side, each under the name of where it goes.
 
-      <div className="share-post">
-        <div className="share-author">
-          <span className="share-avatar">
-            {avatarUrl ? (
-              // biome-ignore lint/performance/noImgElement: matches the sheet portrait, which shares no pipeline with next/image.
-              <img src={avatarUrl} alt="" width={40} height={40} />
-            ) : (
-              <span className="serif">{handle.slice(0, 1).toUpperCase()}</span>
+        The poster used to be a text link at the end of a row of five, and it
+        is the only one of the two that is a picture of the founder rather
+        than of a spreadsheet. Nobody saved a thing they had not seen. Now it
+        is drawn at the size it will be posted, next to the post it is the
+        alternative to.
+      */}
+      <div className="share-grid">
+        <div className="share-col">
+          <div className="share-head">
+            <h3 className="share-title serif">For the timeline</h3>
+            <p className="share-sub muted">
+              A draft, not a button. Reword it until it sounds like you.
+            </p>
+          </div>
+
+          <div className="share-post">
+            <div className="share-author">
+              <span className="share-avatar">
+                {avatarUrl ? (
+                  // biome-ignore lint/performance/noImgElement: matches the sheet portrait, which shares no pipeline with next/image.
+                  <img src={avatarUrl} alt="" width={40} height={40} />
+                ) : (
+                  <span className="serif">{handle.slice(0, 1).toUpperCase()}</span>
+                )}
+              </span>
+              <span className="share-author-name">{displayName}</span>
+              <span className="share-author-handle muted">@{handle}</span>
+            </div>
+
+            <p className="share-text" key={post?.key}>
+              {post?.text}
+            </p>
+
+            <a className="share-card" href={card} target="_blank" rel="noreferrer">
+              {/* The same endpoint X fetches, at the shape X renders it. Lazy: it is
+                  a 1200×630 PNG rendered on demand, and the sheet above it is what
+                  people came for. */}
+              {/* biome-ignore lint/performance/noImgElement: the exact bytes X will attach. */}
+              <img
+                src={card}
+                alt={`Level ${level} ${characterClass} card`}
+                loading="lazy"
+                width={1200}
+                height={630}
+              />
+              <span className="share-card-url">{displayUrl}</span>
+            </a>
+          </div>
+
+          <div className="share-actions">
+            <a
+              className="share-x"
+              href={`https://x.com/intent/tweet?text=${encodeURIComponent(post?.text ?? '')}&url=${encodeURIComponent(url)}`}
+              target="_blank"
+              rel="noreferrer"
+              onClick={() => capture('share_clicked', { handle, target: 'x', angle: post?.key })}
+            >
+              Post on X
+            </a>
+
+            {/* Only when there is somewhere to cycle to: a founder with a single
+                candidate would otherwise get a button that visibly does nothing.
+
+                The counter is the fix for a button that changed a paragraph you
+                were not looking at: without it, clicking twice on a founder with
+                two angles landed back on the original text and read as broken. */}
+            {posts.length > 1 && (
+              <button
+                type="button"
+                className="share-copy label"
+                onClick={() => {
+                  setAngle((a) => a + 1)
+                  capture('share_angle_changed', { handle })
+                }}
+              >
+                <WowIcon slug={UI_ICONS.reword} glyph="shuffle" size={16} bare />
+                Reword
+                <span className="share-count">
+                  {(angle % posts.length) + 1}/{posts.length}
+                </span>
+              </button>
             )}
-          </span>
-          <span className="share-author-name">{displayName}</span>
-          <span className="share-author-handle muted">@{handle}</span>
+
+            <button type="button" className="share-copy label" onClick={copy}>
+              <WowIcon slug={UI_ICONS.copyLink} glyph="link" size={16} bare />
+              {copied ? 'Copied' : 'Copy link'}
+            </button>
+
+            {/*
+              The card is a 1200×630 PNG at a stable URL, and until now the only way
+              to get it was to right-click an <img> — so anybody posting anywhere
+              other than X, or writing their own words, had no route to the picture
+              at all. `download` on a same-origin href is the whole feature.
+            */}
+            <a className="share-copy label" href={card} download={`indiecraft-${handle}.png`}>
+              <WowIcon slug={UI_ICONS.saveCard} glyph="download" size={16} bare />
+              Save card
+            </a>
+          </div>
         </div>
 
-        <p className="share-text">{post?.text}</p>
+        <div className="share-col share-col-story">
+          <div className="share-head">
+            <h3 className="share-title serif">For your story</h3>
+            <p className="share-sub muted">9:16, your face on it. Instagram, TikTok, X.</p>
+          </div>
 
-        <a className="share-card" href={card} target="_blank" rel="noreferrer">
-          {/* The same endpoint X fetches, at the shape X renders it. Lazy: it is
-              a 1200×630 PNG rendered on demand, and the sheet above it is what
-              people came for. */}
-          {/* biome-ignore lint/performance/noImgElement: the exact bytes X will attach. */}
-          <img
-            src={card}
-            alt={`Level ${level} ${characterClass} card`}
-            loading="lazy"
-            width={1200}
-            height={630}
-          />
-          <span className="share-card-url">{displayUrl}</span>
-        </a>
-      </div>
-
-      <div className="share-actions">
-        <a
-          className="share-x"
-          href={`https://x.com/intent/tweet?text=${encodeURIComponent(post?.text ?? '')}&url=${encodeURIComponent(url)}`}
-          target="_blank"
-          rel="noreferrer"
-          onClick={() => capture('share_clicked', { handle, target: 'x', angle: post?.key })}
-        >
-          Post on X
-        </a>
-
-        {/* Only when there is somewhere to cycle to: a founder with a single
-            candidate would otherwise get a button that visibly does nothing.
-
-            The counter is the fix for a button that changed a paragraph you
-            were not looking at: without it, clicking twice on a founder with
-            two angles landed back on the original text and read as broken. */}
-        {posts.length > 1 && (
-          <button
-            type="button"
-            className="share-copy label"
-            onClick={() => {
-              setAngle((a) => a + 1)
-              capture('share_angle_changed', { handle })
-            }}
+          <a
+            className="share-poster"
+            href={poster}
+            target="_blank"
+            rel="noreferrer"
+            onClick={() => capture('share_clicked', { handle, target: 'poster_open' })}
           >
-            <WowIcon slug={UI_ICONS.reword} glyph="shuffle" size={16} bare />
-            Reword
-            <span className="share-count">
-              {(angle % posts.length) + 1}/{posts.length}
-            </span>
-          </button>
-        )}
+            {/* biome-ignore lint/performance/noImgElement: the exact bytes the download saves. */}
+            <img
+              src={poster}
+              alt={`${displayName}, level ${level} ${characterClass} poster`}
+              loading="lazy"
+              width={1080}
+              height={1920}
+            />
+          </a>
 
-        <button type="button" className="share-copy label" onClick={copy}>
-          <WowIcon slug={UI_ICONS.copyLink} glyph="link" size={16} bare />
-          {copied ? 'Copied' : 'Copy link'}
-        </button>
-
-        {/*
-          The card is a 1200×630 PNG at a stable URL, and until now the only way
-          to get it was to right-click an <img> — so anybody posting anywhere
-          other than X, or writing their own words, had no route to the picture
-          at all. `download` on a same-origin href is the whole feature.
-        */}
-        <a className="share-copy label" href={card} download={`indiecraft-${handle}.png`}>
-          <WowIcon slug={UI_ICONS.saveCard} glyph="download" size={16} bare />
-          Save card
-        </a>
-
-        <a className="share-copy label" href={poster} download={`indiecraft-${handle}-poster.png`}>
-          <WowIcon slug={UI_ICONS.saveCard} glyph="download" size={16} bare />
-          Save poster
-        </a>
+          <div className="share-actions">
+            {canShareFiles ? (
+              <button type="button" className="share-x" onClick={sharePoster} aria-busy={sharing}>
+                {sharing ? 'Opening…' : 'Share poster'}
+              </button>
+            ) : (
+              <a
+                className="share-x"
+                href={poster}
+                download={`indiecraft-${handle}-poster.png`}
+                onClick={() => capture('share_clicked', { handle, target: 'poster_save' })}
+              >
+                Save poster
+              </a>
+            )}
+            {canShareFiles && (
+              <a
+                className="share-copy label"
+                href={poster}
+                download={`indiecraft-${handle}-poster.png`}
+                onClick={() => capture('share_clicked', { handle, target: 'poster_save' })}
+              >
+                <WowIcon slug={UI_ICONS.saveCard} glyph="download" size={16} bare />
+                Save
+              </a>
+            )}
+          </div>
+        </div>
       </div>
     </section>
   )
