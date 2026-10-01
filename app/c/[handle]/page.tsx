@@ -7,6 +7,7 @@ import { type DingEvent, DingToast } from '@/components/ding-toast'
 import { Frame } from '@/components/frame'
 import { GearItem } from '@/components/gear-item'
 import { ACHIEVEMENT_ICONS } from '@/components/icon'
+import { InstanceJournal } from '@/components/instance-journal'
 import { JsonLd } from '@/components/json-ld'
 import { PaperDoll } from '@/components/paper-doll'
 import { QuestLog } from '@/components/quest-log'
@@ -525,6 +526,7 @@ export default async function CharacterSheet({ params }: Props) {
                     characterClass={character.characterClass}
                     mrrUsd={character.mrrUsd}
                     handle={character.handle}
+                    season={character.season}
                   />
                 </section>
               )}
@@ -546,6 +548,10 @@ export default async function CharacterSheet({ params }: Props) {
               stand"; this answers "what kind of thing am I", which is a
               different question and gets its own width to say it in.
             */}
+            <Section title="Dungeons and raids">
+              <InstanceJournal instances={character.instances} season={character.season} />
+            </Section>
+
             {character.talents.trees.length > 0 && (
               <Section title={`Talents — ${character.talents.label}`}>
                 <TalentPanel

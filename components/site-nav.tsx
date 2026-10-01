@@ -18,6 +18,7 @@ import { useState } from 'react'
 const TABS = [
   { href: '/', label: 'Armory' },
   { href: '/ladder', label: 'Ladder' },
+  { href: '/season', label: 'Season' },
   // Comparing used to be reachable only from the two founders either side of
   // you on the ladder. A tab is the difference between a feature and a feature
   // somebody can find.

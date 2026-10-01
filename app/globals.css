@@ -4422,3 +4422,107 @@ a.share-copy {
   color: var(--ic-text-muted);
   font-size: 12.5px;
 }
+
+/* --- Dungeons, raids, and the season board --------------------------------
+   Flat, like everything else. Cleared is the one green on the sheet that
+   means a wing is finished. Locked is the absence of a level, not a failure. */
+
+.instances {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  background: var(--ic-line);
+  border: 1px solid var(--ic-line);
+}
+.instance {
+  padding: 12px 14px 14px;
+  background: var(--ic-surface);
+}
+.instance-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 6px 16px;
+}
+.instance-head h3 {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  font-size: 15px;
+  letter-spacing: 0.04em;
+}
+.instance-status {
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+.instance-cleared {
+  color: var(--ic-positive);
+}
+.instance-locked {
+  color: var(--ic-text-muted);
+}
+.instance-open {
+  color: var(--ic-gold);
+}
+.instance-blurb {
+  margin: 8px 0 0;
+  font-size: 13.5px;
+}
+.instance-gate {
+  margin: 6px 0 0;
+  color: var(--ic-frame);
+}
+.boss-list {
+  margin: 10px 0 0;
+  padding: 0;
+  list-style: none;
+}
+.boss {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 4px 12px;
+  padding: 7px 0;
+  border-top: 1px solid var(--ic-line);
+  font-size: 13.5px;
+}
+.boss-name {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+.boss-req {
+  color: var(--ic-text-muted);
+  font-size: 12.5px;
+}
+.boss-state {
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+.boss-down {
+  color: var(--ic-positive);
+}
+.boss-up {
+  color: var(--ic-text-muted);
+}
+.season-stand {
+  margin: 0;
+  padding: 12px 14px;
+  background: var(--ic-surface);
+  font-size: 14px;
+}
+.season-stand a {
+  color: var(--ic-gold);
+}
+.season-realms {
+  flex-wrap: wrap;
+  margin: 8px 0 18px;
+}
+.season-switch {
+  margin: 0 0 14px;
+}

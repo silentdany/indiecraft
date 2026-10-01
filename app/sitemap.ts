@@ -59,6 +59,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   return [
     { url: BASE, lastModified: fresh, changeFrequency: 'daily', priority: 1 },
     { url: `${BASE}/ladder`, lastModified: fresh, changeFrequency: 'daily', priority: 0.9 },
+    { url: `${BASE}/season`, lastModified: fresh, changeFrequency: 'daily', priority: 0.8 },
     { url: `${BASE}/rules`, lastModified: fresh, changeFrequency: 'monthly', priority: 0.6 },
     { url: `${BASE}/card`, lastModified: fresh, changeFrequency: 'monthly', priority: 0.5 },
     ...facets.map((query) => ({

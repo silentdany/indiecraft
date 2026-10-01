@@ -6,6 +6,7 @@ import {
   equipmentFor,
   equipmentInput,
   equipmentScore,
+  instancesFor,
   levelBounds,
   levelFromXp,
   questsDone,
@@ -13,6 +14,8 @@ import {
   RARITY_BY_NAME,
   rarityFor,
   scoreOnSlot,
+  seasonStanding,
+  seasonWindowOn,
   talentsFor,
 } from '@/engine'
 import { XP_PER_PRODUCT } from '@/engine/tuning'
@@ -21,9 +24,13 @@ import type {
   CharacterClass,
   EquippedSlot,
   Faction,
+  InstanceProgress,
   Quest,
   QuestDone,
   Rarity,
+  SeasonFounder,
+  SeasonSample,
+  SeasonStanding,
   TalentBuild,
 } from '@/engine/types'
 import { toProduct } from '@/lib/compute'
@@ -224,6 +231,16 @@ export interface CharacterPage {
   /** Drives the OG image variant. */
   recentLevelUp: { level: number; at: string } | null
   recentAchievement: { code: string; earnedOn: string } | null
+  /**
+   * Dungeons and the raid, from `instancesFor` on the same aggregate as the doll.
+   * Cleared and locked are that function's answers, not a second pass.
+   */
+  instances: InstanceProgress[]
+  /**
+   * This season on the founder's realm, from `seasonStanding`.
+   * Null when they have no realm.
+   */
+  season: SeasonStanding | null
 }
 
 interface CharacterRow {
@@ -284,38 +301,42 @@ const getCharacterUncached = async (rawHandle: string): Promise<CharacterPage | 
   `
   if (!row) return null
 
-  const [achievements, products, rankRow, edges, historyRows, bestRow] = await Promise.all([
-    // `earned_on` is a date column, so it arrives as a Date. Third time this
-    // has bitten: every date and timestamp out of postgres.js is an object, and
-    // everything downstream of this file expects a string.
-    sql<{ code: string; earned_on: Date | string }[]>`
+  const seasonWindow = seasonWindowOn(new Date().toISOString().slice(0, 10))
+  const realmCode = normalizeRealm(row.realm)
+
+  const [achievements, products, rankRow, edges, historyRows, bestRow, seasonPeers] =
+    await Promise.all([
+      // `earned_on` is a date column, so it arrives as a Date. Third time this
+      // has bitten: every date and timestamp out of postgres.js is an object, and
+      // everything downstream of this file expects a string.
+      sql<{ code: string; earned_on: Date | string }[]>`
       select code, earned_on from character_achievements
       where handle = ${handle}
       order by earned_on desc, code
     `,
-    sql<
-      {
-        slug: string
-        name: string | null
-        website: string | null
-        icon_url: string | null
-        funding_status: string | null
-        mrr_cents: string | null
-        last30d_cents: string | null
-        customers: number | null
-        domain_rating: number | null
-        // postgres.js hands back a Date for a `date` column, not a string.
-        founded_date: Date | string | null
-        raw: TrustmrrStartup | null
-        /* The four below are read by nothing on this page directly. They are
+      sql<
+        {
+          slug: string
+          name: string | null
+          website: string | null
+          icon_url: string | null
+          funding_status: string | null
+          mrr_cents: string | null
+          last30d_cents: string | null
+          customers: number | null
+          domain_rating: number | null
+          // postgres.js hands back a Date for a `date` column, not a string.
+          founded_date: Date | string | null
+          raw: TrustmrrStartup | null
+          /* The four below are read by nothing on this page directly. They are
            here so `toProduct` can run over these rows and hand the engine a
            real aggregate for the paper doll — see the `doll` field. */
-        revenue_total_cents: string | null
-        active_subscriptions: number | null
-        growth_mrr_30d: string | null
-        visitors_30d: number | null
-      }[]
-    >`
+          revenue_total_cents: string | null
+          active_subscriptions: number | null
+          growth_mrr_30d: string | null
+          visitors_30d: number | null
+        }[]
+      >`
       -- Through founder_startups, not startups.founder_handle: a cofounded
       -- product counts in n_products and must therefore show up as gear.
       --
@@ -339,33 +360,33 @@ const getCharacterUncached = async (rawHandle: string): Promise<CharacterPage | 
       where fs.handle = ${handle}
       order by snap.mrr_cents desc nulls last
     `,
-    /*
-     * Rank, class rank, total, and the two neighbours — one pass.
-     *
-     * "#14" on its own is inert. "3rd of 18 Paladins" is a position somebody
-     * can actually hold, and the founder immediately above is a target rather
-     * than a statistic.
-     */
-    sql<
-      {
-        rank: string
-        total: string
-        class_rank: string
-        class_total: string
-        realm: string | null
-        realm_rank: string | null
-        realm_total: string | null
-        realm_above_level: number | null
-        realm_above_ilvl: number | null
-        above_handle: string | null
-        above_level: number | null
-        above_mrr: string | null
-        above_total: string | null
-        below_handle: string | null
-        below_level: number | null
-        below_mrr: string | null
-      }[]
-    >`
+      /*
+       * Rank, class rank, total, and the two neighbours — one pass.
+       *
+       * "#14" on its own is inert. "3rd of 18 Paladins" is a position somebody
+       * can actually hold, and the founder immediately above is a target rather
+       * than a statistic.
+       */
+      sql<
+        {
+          rank: string
+          total: string
+          class_rank: string
+          class_total: string
+          realm: string | null
+          realm_rank: string | null
+          realm_total: string | null
+          realm_above_level: number | null
+          realm_above_ilvl: number | null
+          above_handle: string | null
+          above_level: number | null
+          above_mrr: string | null
+          above_total: string | null
+          below_handle: string | null
+          below_level: number | null
+          below_mrr: string | null
+        }[]
+      >`
       with ranked as (
         select c.handle, c.class, c.realm, c.level, c.mrr_cents,
                row_number() over w                                as rank,
@@ -408,20 +429,20 @@ const getCharacterUncached = async (rawHandle: string): Promise<CharacterPage | 
       from ranked r
       where r.handle = ${handle}
     `,
-    sql<{ other: string }[]>`
+      sql<{ other: string }[]>`
       select case when a_handle = ${handle} then b_handle else a_handle end as other
       from cofounder_edges
       where a_handle = ${handle} or b_handle = ${handle}
     `,
-    /*
-     * The daily series, summed across the founder's products.
-     *
-     * This is the one thing on the sheet a clone cannot copy: the snapshots
-     * accumulate and nobody can backfill them. Today it is two days deep and
-     * shows almost nothing, which is exactly why the read path exists now —
-     * every day it does not is a day of history lost for good.
-     */
-    sql<{ day: string; mrr: string | null; total: string | null }[]>`
+      /*
+       * The daily series, summed across the founder's products.
+       *
+       * This is the one thing on the sheet a clone cannot copy: the snapshots
+       * accumulate and nobody can backfill them. Today it is two days deep and
+       * shows almost nothing, which is exactly why the read path exists now —
+       * every day it does not is a day of history lost for good.
+       */
+      sql<{ day: string; mrr: string | null; total: string | null }[]>`
       select sn.captured_on::text as day,
              sum(sn.mrr_cents)           as mrr,
              sum(sn.revenue_total_cents) as total
@@ -431,16 +452,16 @@ const getCharacterUncached = async (rawHandle: string): Promise<CharacterPage | 
       group by sn.captured_on
       order by sn.captured_on
     `,
-    /*
-     * Best rank ever held.
-     *
-     * Read from character_days rather than cached on `characters`, because
-     * `characters` is dropped by a reset and this must not be: the ladder as it
-     * stood last Tuesday cannot be recomputed from anything. `days` comes back
-     * so the caller can refuse to print "best ever" on the first day, when it
-     * would only be restating today's rank.
-     */
-    sql<{ rank: number | null; day: Date | string | null; days: number }[]>`
+      /*
+       * Best rank ever held.
+       *
+       * Read from character_days rather than cached on `characters`, because
+       * `characters` is dropped by a reset and this must not be: the ladder as it
+       * stood last Tuesday cannot be recomputed from anything. `days` comes back
+       * so the caller can refuse to print "best ever" on the first day, when it
+       * would only be restating today's rank.
+       */
+      sql<{ rank: number | null; day: Date | string | null; days: number }[]>`
       select min(rank)::int as rank,
              (select captured_on from character_days
                where handle = ${handle} order by rank, captured_on limit 1) as day,
@@ -448,7 +469,10 @@ const getCharacterUncached = async (rawHandle: string): Promise<CharacterPage | 
       from character_days
       where handle = ${handle}
     `,
-  ])
+      realmCode
+        ? readSeasonPeers(realmCode, seasonWindow.startsOn, seasonWindow.endsOn)
+        : Promise.resolve([]),
+    ])
 
   const level = row.level
   const mrrUsd = Number(row.mrr_cents) / 100
@@ -571,6 +595,14 @@ const getCharacterUncached = async (rawHandle: string): Promise<CharacterPage | 
   const earned = achievements.map((a) => ({ code: a.code, earnedOn: asDay(a.earned_on) ?? '' }))
 
   /*
+   * Wings and the season, from the same aggregate and the same peer list the
+   * panels below will draw. The log receives those objects rather than
+   * computing a second copy.
+   */
+  const instances = instancesFor(aggregate, level)
+  const season = realmCode ? seasonStanding(seasonPeers, seasonWindow, handle) : null
+
+  /*
    * The quest log, derived here rather than stored — same argument as the doll.
    *
    * It reads the doll and the progress input that this function has already
@@ -608,6 +640,8 @@ const getCharacterUncached = async (rawHandle: string): Promise<CharacterPage | 
     // The founder page rather than a product page: a founder may have five
     // listings and the quest is about the person, not one of them.
     listingUrl: `https://trustmrr.com/founder/${row.handle}`,
+    instances,
+    season,
     earned: earned.map((a) => a.code),
     progress: progressInput,
     level,
@@ -738,6 +772,8 @@ const getCharacterUncached = async (rawHandle: string): Promise<CharacterPage | 
     cofounders: edges.map((e) => e.other),
     recentLevelUp: leveledRecently ? { level, at: leveledAt } : null,
     recentAchievement: freshAchievement ?? null,
+    instances,
+    season,
   }
 }
 
@@ -759,6 +795,80 @@ const getCharacterUncached = async (rawHandle: string): Promise<CharacterPage | 
  * with the class printed above it.
  */
 export const getCharacter = cache(cachedCorpusRead('character', getCharacterUncached))
+
+/**
+ * Every opted-in founder on one realm, with the monthly-revenue readings
+ * `character_days` already stored inside one season.
+ *
+ * This does not rank them. `seasonBoard` does, and it is the only order the
+ * season page is allowed to show.
+ */
+export async function readSeasonPeers(
+  realm: string,
+  startsOn: string,
+  endsOn: string,
+): Promise<SeasonFounder[]> {
+  const sql = db()
+  const rows = await sql<
+    {
+      handle: string
+      level: number
+      class: string
+      revenue_total_cents: string
+      realm: string | null
+      day: string | null
+      mrr_cents: string | null
+    }[]
+  >`
+    select c.handle, c.level, c.class, c.revenue_total_cents, c.realm,
+           d.captured_on::text as day, d.mrr_cents
+    from characters c
+    join founders f on f.handle = c.handle
+    left join character_days d
+      on d.handle = c.handle
+     and d.captured_on >= ${startsOn}::date
+     and d.captured_on < ${endsOn}::date
+    where f.opted_out_at is null
+      and c.realm = ${realm}
+  `
+  return seasonFoundersFrom(rows)
+}
+
+export const getSeasonPeers = cachedCorpusRead('season-peers', readSeasonPeers)
+
+function seasonFoundersFrom(
+  rows: {
+    handle: string
+    level: number
+    class: string
+    revenue_total_cents: string
+    realm: string | null
+    day: string | null
+    mrr_cents: string | null
+  }[],
+): SeasonFounder[] {
+  const byHandle = new Map<string, Omit<SeasonFounder, 'samples'> & { samples: SeasonSample[] }>()
+  for (const row of rows) {
+    const sample =
+      row.day && row.mrr_cents !== null
+        ? { day: row.day.slice(0, 10), recentUsd: Number(row.mrr_cents) / 100 }
+        : null
+    const existing = byHandle.get(row.handle)
+    if (existing) {
+      if (sample) existing.samples.push(sample)
+      continue
+    }
+    byHandle.set(row.handle, {
+      handle: row.handle,
+      realm: normalizeRealm(row.realm),
+      revenueTotalUsd: Number(row.revenue_total_cents) / 100,
+      level: row.level,
+      characterClass: row.class as CharacterClass,
+      samples: sample ? [sample] : [],
+    })
+  }
+  return [...byHandle.values()]
+}
 
 export interface LadderRow {
   rank: number

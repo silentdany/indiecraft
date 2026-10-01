@@ -10,7 +10,16 @@ export {
   xpFrom,
 } from './character'
 export { equipmentFor, equipmentInput, equipmentScore, scoreOnSlot } from './equipment'
+export { instancesFor } from './instances'
 export { completion, QUEST_KINDS, questsDone, questsFor } from './quests'
+export {
+  seasonBoard,
+  seasonScore,
+  seasonStanding,
+  seasonWindowBefore,
+  seasonWindowById,
+  seasonWindowOn,
+} from './season'
 export { pointsFor, talentsFor } from './talents'
 export type { FactionDef } from './tuning'
 export {
@@ -24,11 +33,13 @@ export {
   FACTIONS,
   FACTIONS_BY_KEY,
   FUNDING_POLICY,
+  INSTANCES,
   LEVEL_THRESHOLDS,
   MAX_LEVEL,
   QUESTS,
   RARITY_BANDS,
   RARITY_BY_NAME,
+  SEASON,
   SLOTS,
   SLOTS_BY_KEY,
   STAT_ICONS,
@@ -39,6 +50,7 @@ export {
 } from './tuning'
 export type {
   AchievementDef,
+  BossProgress,
   CharacterClass,
   CharacterSheet,
   ClassTalentsDef,
@@ -49,6 +61,9 @@ export type {
   EquippedSlot,
   Faction,
   FounderAggregate,
+  InstanceDef,
+  InstanceKind,
+  InstanceProgress,
   ItemDef,
   ProductInput,
   Quest,
@@ -58,6 +73,12 @@ export type {
   QuestKind,
   Rarity,
   RarityName,
+  SeasonBoard,
+  SeasonFounder,
+  SeasonRow,
+  SeasonSample,
+  SeasonStanding,
+  SeasonWindow,
   SlotDef,
   SlotKey,
   TalentBuild,

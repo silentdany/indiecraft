@@ -25,6 +25,7 @@ describe('isNegotiable', () => {
   it('leaves pages that exist without a markdown twin on HTML', () => {
     expect(isNegotiable('/compare')).toBe(false)
     expect(isNegotiable('/card')).toBe(false)
+    expect(isNegotiable('/season')).toBe(false)
     expect(isNegotiable('/c/levelsio/vs/marc')).toBe(false)
   })
 

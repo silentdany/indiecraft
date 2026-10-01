@@ -8,10 +8,12 @@ import {
   CLASS_COLORS,
   CLASS_ICONS,
   FACTIONS,
+  INSTANCES,
   LEVEL_THRESHOLDS,
   MAX_LEVEL,
   RARITY_BANDS,
   RARITY_BY_NAME,
+  SEASON,
   SLOTS,
 } from '@/engine'
 import {
@@ -423,6 +425,36 @@ export default async function Rules() {
           accept or dismiss one, because a quest here is finished by the number moving, not by
           anybody pressing a button.
         </p>
+      </Section>
+
+      <Section title={`Dungeons and raids — ${INSTANCES.length}`}>
+        <p className="muted rules-note">
+          A wing is a list of bosses, and a boss is one rung of a slot on the sheet above. Down
+          means that rung is met. Cleared means every boss is down and the level has opened the
+          wing. There is one difficulty. Nothing here grants XP.
+        </p>
+        <p className="muted rules-note">
+          Seasons are {SEASON.lengthDays} days, starting {SEASON.epoch}. A season ranks one realm by
+          the latest monthly revenue recorded inside it. Lifetime revenue is the ladder, and a
+          founder with no realm is left off the board.
+        </p>
+        <ol className="rules-classes">
+          {INSTANCES.map((wing) => (
+            <li className="rules-class" key={wing.code}>
+              <span className="rules-class-n label">{wing.requiredLevel}</span>
+              <span className="rules-class-body">
+                <span className="rules-class-head">
+                  <span className="serif gold">{wing.name}</span>
+                  <span className="label">{wing.kind}</span>
+                </span>
+                <span className="rules-class-cond">{wing.blurb}</span>
+                <span className="muted rules-class-reason">
+                  {wing.bosses.map((boss) => boss.requirement).join(' · ')}
+                </span>
+              </span>
+            </li>
+          ))}
+        </ol>
       </Section>
 
       <Section title={`Achievements — ${ACHIEVEMENTS.length}`}>

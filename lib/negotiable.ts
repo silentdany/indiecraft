@@ -24,7 +24,7 @@ const MARKDOWN_PAGES = new Set(['/', '/ladder', '/rules'])
  * production, so on the deployed site it is not a page at all and an agent
  * asking about it should get the markdown 404 like any other dead address.
  */
-const HTML_ONLY_PAGES = new Set(['/compare', '/card'])
+const HTML_ONLY_PAGES = new Set(['/compare', '/card', '/season'])
 
 const CHARACTER_SHEET = /^\/c\/[^/]+$/
 const VERSUS = /^\/c\/[^/]+\/vs\/[^/]+$/

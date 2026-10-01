@@ -10,7 +10,12 @@ import {
   TALENTS,
   UI_ICONS,
 } from '@/engine'
-import type { AchievementProgressInput, CharacterClass, TalentBuild } from '@/engine/types'
+import type {
+  AchievementProgressInput,
+  CharacterClass,
+  SeasonStanding,
+  TalentBuild,
+} from '@/engine/types'
 import type { HistoryPoint, RankContext, SheetStats } from '@/lib/queries'
 import { realmLabel } from '@/lib/realm'
 
@@ -45,11 +50,13 @@ export function RankPanel({
   characterClass,
   mrrUsd,
   handle,
+  season,
 }: {
   context: RankContext
   characterClass: CharacterClass
   mrrUsd: number
   handle: string
+  season: SeasonStanding | null
 }) {
   const gap = context.above ? context.above.mrrUsd - mrrUsd : 0
   const realm = context.realmRank
@@ -78,6 +85,15 @@ export function RankPanel({
               value={`#${realm.rank}`}
               of={realm.total}
               href={`/ladder?realm=${realm.realm}`}
+            />
+          )}
+          {season && (
+            <RankRow
+              label="Season"
+              value={`#${season.rank}`}
+              of={season.total}
+              href={`/season?realm=${season.realm}`}
+              note={usdCompact(season.scoreUsd)}
             />
           )}
           <RankRow label="Percentile" value={`top ${context.percentile}%`} />

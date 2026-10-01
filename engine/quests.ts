@@ -52,6 +52,8 @@ export function questsFor(input: QuestInput): Quest[] {
     ...rankQuest(input),
     ...realmQuest(input),
     ...setQuest(input),
+    ...instanceQuest(input),
+    ...seasonQuest(input),
   ]
 
   /*
@@ -478,6 +480,92 @@ function setQuest(input: QuestInput): Candidate[] {
   ]
 }
 
+/**
+ * The next wing that is not cleared, and one boss of it.
+ *
+ * An open wing names the first boss still up, in the wing's own order. A
+ * locked wing names the level that opens it: the bosses may already be down
+ * on the metrics, and saying so would pretend the wing was open.
+ */
+function instanceQuest(input: QuestInput): Candidate[] {
+  const next = input.instances.find((wing) => !wing.cleared)
+  if (!next) return []
+  if (next.locked) {
+    return [
+      {
+        code: `instance:${next.code}:level`,
+        kind: 'instance',
+        title: `Reach level ${next.requiredLevel}`,
+        requirement: `Level ${next.requiredLevel} opens ${next.name}`,
+        reward: next.name,
+        rewardIcon: next.icon,
+        rewardRarity: null,
+        action: `Lifetime revenue is what carries a sheet to level ${next.requiredLevel}`,
+        href: input.listingUrl,
+        progress: {
+          current: input.level,
+          target: next.requiredLevel,
+          ratio: ratio(input.level, next.requiredLevel),
+        },
+        chain: null,
+      },
+    ]
+  }
+  const boss = next.bosses.find((entry) => !entry.down)
+  if (!boss) return []
+  const step = next.bosses.findIndex((entry) => entry.code === boss.code) + 1
+  return [
+    {
+      code: `instance:${next.code}:${boss.code}`,
+      kind: 'instance',
+      title: `Down ${boss.name}`,
+      requirement: boss.requirement,
+      reward: next.name,
+      rewardIcon: boss.icon,
+      rewardRarity: null,
+      action: `Bring ${boss.stat} on the sheet to the mark ${next.name} reads`,
+      href: input.listingUrl,
+      progress:
+        boss.current === null
+          ? null
+          : { current: boss.current, target: boss.target, ratio: ratio(boss.current, boss.target) },
+      chain: { step, of: next.bosses.length },
+    },
+  ]
+}
+
+/**
+ * One step up the season, named as a rank.
+ *
+ * The person above is a score, not a handle. A founder with no realm has no
+ * season to climb, and a tie is not a distance.
+ */
+function seasonQuest(input: QuestInput): Candidate[] {
+  const season = input.season
+  if (!season || season.rank <= 1 || season.aboveScoreUsd === null) return []
+  const gap = season.aboveScoreUsd - season.scoreUsd
+  if (!Number.isFinite(gap) || gap < 1) return []
+  return [
+    {
+      code: 'season:next',
+      kind: 'season',
+      title: `Take #${season.rank - 1} on the ${season.realm} season`,
+      requirement: `${usd(gap)} more recent revenue this season`,
+      reward: `#${season.rank - 1} of ${season.total}`,
+      rewardIcon: STAT_ICONS.banner ?? null,
+      rewardRarity: null,
+      action: 'This season sorts recent revenue inside your own realm',
+      href: null,
+      progress: {
+        current: season.scoreUsd,
+        target: season.aboveScoreUsd,
+        ratio: ratio(season.scoreUsd, season.aboveScoreUsd),
+      },
+      chain: null,
+    },
+  ]
+}
+
 function usd(value: number): string {
   return new Intl.NumberFormat('en-US', {
     style: 'currency',
@@ -496,6 +584,8 @@ export const QUEST_KINDS: readonly QuestKind[] = [
   'level',
   'rank',
   'set',
+  'instance',
+  'season',
 ]
 
 /**

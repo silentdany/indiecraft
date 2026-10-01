@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
-import { levelFromXp } from './character'
+import { levelFromXp, xpFrom } from './character'
 import { equipmentFor, equipmentInput } from './equipment'
+import { instancesFor } from './instances'
 import { completion, questsDone, questsFor } from './quests'
 import type { AchievementProgressInput, FounderAggregate, QuestInput } from './types'
 
@@ -73,6 +74,8 @@ function input(over: Partial<QuestInput> = {}, agg: Partial<FounderAggregate> = 
     progress: progress(),
     level: 1,
     xp: 0,
+    instances: [],
+    season: null,
     ...over,
   }
 }
@@ -287,6 +290,52 @@ describe('questsFor', () => {
       expect(completion(full)).toBe(1)
       expect(questsFor(full)[0]?.kind).not.toBe('equip')
     })
+  })
+
+  it('offers the next open boss and still offers an equip and a level', () => {
+    const stats = aggregate({ revenueTotalUsd: 600, nProducts: 1, mrrUsd: 0, last30dUsd: 0 })
+    const xp = xpFrom(stats)
+    const level = levelFromXp(xp)
+    const instances = instancesFor(stats, level)
+    const once = questsFor(input({ instances, level, xp }, stats))
+    const twice = questsFor(input({ instances, level, xp }, stats))
+    expect(once.map((quest) => quest.code)).toEqual(twice.map((quest) => quest.code))
+    expect(once.some((quest) => quest.code === 'instance:venture-deeps:first-invoice')).toBe(true)
+    expect(once.some((quest) => quest.kind === 'equip')).toBe(true)
+    expect(once.some((quest) => quest.kind === 'level')).toBe(true)
+    const boss = once.find((quest) => quest.kind === 'instance')
+    expect(boss?.title.startsWith('Down ')).toBe(true)
+    const text = once
+      .flatMap((quest) => [quest.title, quest.requirement, quest.reward, quest.action])
+      .join(' ')
+      .toLowerCase()
+    for (const phrase of ['not reported', 'unreported', 'missing', 'you have not', "you haven't"]) {
+      expect(text, phrase).not.toContain(phrase)
+    }
+  })
+
+  it('offers a season step as a rank to climb, and skips a founder with no realm', () => {
+    const season = {
+      window: { id: '2026-04-01', startsOn: '2026-04-01', endsOn: '2026-07-01' },
+      realm: 'FR',
+      rank: 4,
+      total: 12,
+      scoreUsd: 100,
+      aboveHandle: 'ada',
+      aboveScoreUsd: 400,
+    }
+    const quests = questsFor(input({ season }))
+    const step = quests.find((quest) => quest.kind === 'season')
+    expect(step?.title).toBe('Take #3 on the FR season')
+    expect(step?.requirement).toBe('$300 more recent revenue this season')
+    expect(step?.title).not.toContain('ada')
+    expect(step?.action.toLowerCase()).not.toContain('fail')
+    expect(questsFor(input()).some((quest) => quest.kind === 'season')).toBe(false)
+    expect(
+      questsFor(input({ season: { ...season, rank: 1, aboveScoreUsd: null } })).some(
+        (q) => q.kind === 'season',
+      ),
+    ).toBe(false)
   })
 })
 

@@ -17,15 +17,18 @@
 import type {
   AchievementDef,
   ArmorType,
+  BossDef,
   CharacterClass,
   ClassTalentsDef,
   EquipmentGlyph,
   Faction,
   FounderAggregate,
+  InstanceDef,
   OffHandKind,
   Rarity,
   RarityName,
   SlotDef,
+  SlotKey,
   WeaponFamily,
 } from './types'
 
@@ -1209,12 +1212,24 @@ export const QUESTS = {
       set: 55,
       rank: 45,
       achievement: 42,
+      instance: 40,
+      season: 38,
       product: 35,
       upgrade: 30,
       level: 20,
     },
     /** Sheet is dressed: the numbers themselves have to move. */
-    growing: { equip: 35, level: 85, rank: 80, upgrade: 75, product: 70, achievement: 65, set: 50 },
+    growing: {
+      equip: 35,
+      level: 85,
+      rank: 80,
+      instance: 78,
+      upgrade: 75,
+      product: 70,
+      season: 68,
+      achievement: 65,
+      set: 50,
+    },
   },
   /**
    * Slots left before "finish the set" is worth saying.
@@ -1337,7 +1352,34 @@ export const QUEST_RULES: readonly { kind: string; when: string; why: string }[]
     when: 'Three slots or fewer are still empty.',
     why: 'A full set is the oldest carrot there is, but "fill fifteen slots" is not a quest, it is a description of being new.',
   },
+  {
+    kind: 'instance',
+    when: 'A dungeon or the raid on the sheet is not cleared.',
+    why: "The log names the next boss that is still up, in the order the wing lists them. A wing under the founder's level stays locked, and the line asks for that level rather than pretending the boss is open.",
+  },
+  {
+    kind: 'season',
+    when: 'The founder has a realm, and somebody on it is ahead this season.',
+    why: 'The season sorts recent revenue inside one realm. It names a rank, never a person, and a founder with no realm is not placed on a board in order to be given this quest.',
+  },
 ] as const
+
+/**
+ * Realm PvP seasons.
+ *
+ * A season is a stretch of days with a hard edge. Recent performance inside it
+ * is the latest monthly-revenue reading `character_days` already stores. The
+ * previous season stays readable because its window is a different pair of
+ * dates, not because anyone archives a second score.
+ *
+ * Ninety days is one quarter of the armory's year, long enough that a single
+ * crawl is not a season and short enough that last quarter is still news.
+ */
+export const SEASON = {
+  /** First season opens on this day. Windows walk forward from here. */
+  epoch: '2026-01-01',
+  lengthDays: 90,
+} as const
 
 export const STAT_ICONS: Record<string, string> = {
   characters: 'inv_misc_grouplooking',
@@ -2844,6 +2886,176 @@ export const SLOTS: readonly SlotDef[] = [
 ]
 
 export const SLOTS_BY_KEY = new Map(SLOTS.map((s) => [s.key, s]))
+
+/**
+ * A boss is one rung of one slot.
+ *
+ * The threshold is read off the slot at build time. Editing the doll and
+ * forgetting the wing is not a state the file can be in.
+ */
+function boss(
+  code: string,
+  name: string,
+  blurb: string,
+  slotKey: SlotKey,
+  rarity: RarityName,
+): BossDef {
+  const slot = SLOTS_BY_KEY.get(slotKey)
+  const item = slot?.items.find((entry) => entry.rarity === rarity)
+  if (!slot || !item) throw new Error(`no ${rarity} rung on ${slotKey}`)
+  const min = item.min
+  const read = (aggregate: FounderAggregate): number | null =>
+    slot.read({ ...aggregate, characterClass: DEFAULT_CLASS })
+  return {
+    code,
+    name,
+    blurb,
+    stat: slot.stat,
+    min,
+    requirement: `${slot.stat} of ${slot.format(min)}`,
+    icon: item.icon,
+    read,
+    test: (aggregate) => {
+      const value = read(aggregate)
+      return value !== null && value >= min
+    },
+  }
+}
+
+/**
+ * Dungeons up the level climb, then one raid above all of them.
+ *
+ * One difficulty, and no size: a wing is a list of bosses the sheet can
+ * already measure. The raid asks for more of those bosses at once than any
+ * dungeon, and it stays locked until a higher level than any dungeon asks.
+ *
+ * Names are the same derivation the items use — a Classic wing, said in the
+ * words the doll already uses for a good month. Nothing here is a new race
+ * or a raid from the season that has not opened yet.
+ */
+export const INSTANCES: readonly InstanceDef[] = [
+  {
+    code: 'venture-deeps',
+    kind: 'dungeon',
+    name: 'The Venture Deeps',
+    blurb: 'The first wing on the climb. Both bosses read a number a young sheet can already hold.',
+    requiredLevel: 18,
+    difficulty: 'normal',
+    icon: 'inv_sword_04',
+    bosses: [
+      boss(
+        'first-invoice',
+        'Foreman of the First Invoice',
+        'A monthly revenue the sheet can show.',
+        'mainHand',
+        'common',
+      ),
+      boss(
+        'open-book',
+        'Auditor of the Open Book',
+        'A month of revenue, written where the sheet already writes it.',
+        'legs',
+        'common',
+      ),
+    ],
+  },
+  {
+    code: 'halls-indexed',
+    kind: 'dungeon',
+    name: 'Halls of the Indexed',
+    blurb: 'Further up the climb. The halls read the site and the people who follow the work.',
+    requiredLevel: 34,
+    difficulty: 'normal',
+    icon: 'inv_helmet_18',
+    bosses: [
+      boss(
+        'curator',
+        'Curator of the Domain',
+        'The rating of the site, the same number the helm already wears.',
+        'head',
+        'uncommon',
+      ),
+      boss(
+        'feed',
+        'Keeper of the Feed',
+        'The people following the work, the same number the neck already wears.',
+        'neck',
+        'uncommon',
+      ),
+    ],
+  },
+  {
+    code: 'sanctum-renewals',
+    kind: 'dungeon',
+    name: 'Sanctum of Renewals',
+    blurb: 'The last dungeon. It reads who stays, who arrives, and who pays.',
+    requiredLevel: 46,
+    difficulty: 'normal',
+    icon: 'inv_misc_cape_20',
+    bosses: [
+      boss(
+        'recurring',
+        'Baron of Renewals',
+        'Subscribers, the same number the cloak already wears.',
+        'back',
+        'uncommon',
+      ),
+      boss(
+        'audience',
+        'Warden of the Audience',
+        'Visitors, the same number the bow already wears.',
+        'ranged',
+        'uncommon',
+      ),
+      boss(
+        'adopters',
+        'Steward of the Early Adopters',
+        'Customers, the same number the chest already wears.',
+        'chest',
+        'uncommon',
+      ),
+    ],
+  },
+  {
+    code: 'core-unchurned',
+    kind: 'raid',
+    name: 'Core of the Unchurned',
+    blurb: 'The only raid. It opens after every dungeon, and every boss has to be down together.',
+    requiredLevel: 58,
+    difficulty: 'normal',
+    icon: 'achievement_boss_ragnaros',
+    bosses: [
+      boss(
+        'banner-hand',
+        'Hand of the Banner Month',
+        'Monthly revenue at the epic rung of the weapon.',
+        'mainHand',
+        'epic',
+      ),
+      boss(
+        'banner-month',
+        'Keeper of the Banner Month',
+        'Last 30 days at the epic rung of the legs.',
+        'legs',
+        'epic',
+      ),
+      boss(
+        'backlink',
+        'Archivist of the Backlink',
+        'Domain rating at the epic rung of the helm.',
+        'head',
+        'epic',
+      ),
+      boss(
+        'subscription',
+        'Keeper of Subscription',
+        'Subscribers at the epic rung of the cloak.',
+        'back',
+        'epic',
+      ),
+    ],
+  },
+]
 
 // ---------------------------------------------------------------------------
 // 9. Talents — which kind of a class somebody is

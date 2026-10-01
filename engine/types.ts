@@ -236,7 +236,16 @@ export interface AchievementDef {
  * seventy candidates is trivial; choosing three is the whole feature.
  * ------------------------------------------------------------------------- */
 
-export type QuestKind = 'equip' | 'upgrade' | 'achievement' | 'level' | 'product' | 'rank' | 'set'
+export type QuestKind =
+  | 'equip'
+  | 'upgrade'
+  | 'achievement'
+  | 'level'
+  | 'product'
+  | 'rank'
+  | 'set'
+  | 'instance'
+  | 'season'
 
 /**
  * The reference's own difficulty scale, five bands, grey through red.
@@ -334,6 +343,130 @@ export interface QuestDone {
   on: string
 }
 
+/** A dungeon or the one raid. There is no second difficulty and no flexible size. */
+export type InstanceKind = 'dungeon' | 'raid'
+
+/**
+ * One boss, reading one rung of a slot the sheet already scores.
+ *
+ * `min` is that rung, copied from the slot when the table is built, so a
+ * rebalance of the doll moves the boss with it.
+ */
+export interface BossDef {
+  code: string
+  name: string
+  blurb: string
+  /** The slot's own word for the stat. */
+  stat: string
+  min: number
+  /** What the sheet says the boss asks for, already formatted. */
+  requirement: string
+  icon: string
+  test: (aggregate: FounderAggregate) => boolean
+  /** The live number. Null when the slot has nothing usable. */
+  read: (aggregate: FounderAggregate) => number | null
+}
+
+export interface InstanceDef {
+  code: string
+  kind: InstanceKind
+  name: string
+  blurb: string
+  /** The wing stays locked, and therefore uncleared, under this level. */
+  requiredLevel: number
+  /** The only difficulty. Every wing carries the same word. */
+  difficulty: 'normal'
+  icon: string
+  bosses: readonly BossDef[]
+}
+
+export interface BossProgress {
+  code: string
+  name: string
+  blurb: string
+  stat: string
+  requirement: string
+  icon: string
+  /**
+   * Down only when the metric condition is met.
+   *
+   * The level gate does not flip this. A boss can be down on a wing the
+   * founder is still too low to clear.
+   */
+  down: boolean
+  current: number | null
+  target: number
+}
+
+export interface InstanceProgress {
+  code: string
+  kind: InstanceKind
+  name: string
+  blurb: string
+  requiredLevel: number
+  difficulty: 'normal'
+  icon: string
+  /** The founder's level is under the wing's requirement. */
+  locked: boolean
+  /** Every boss is down, and the wing is open. */
+  cleared: boolean
+  bosses: readonly BossProgress[]
+}
+
+/**
+ * One season, half-open on the calendar: `startsOn` inclusive, `endsOn` exclusive.
+ *
+ * `id` is the start date, which is the only stable name a link needs.
+ */
+export interface SeasonWindow {
+  id: string
+  startsOn: string
+  endsOn: string
+}
+
+/** One day's public recent performance. Monthly revenue, not lifetime. */
+export interface SeasonSample {
+  day: string
+  recentUsd: number
+}
+
+export interface SeasonFounder {
+  handle: string
+  realm: string | null
+  /** Carried so a caller can prove it does not order the board. Never used to sort. */
+  revenueTotalUsd: number
+  level: number
+  characterClass: CharacterClass
+  samples: readonly SeasonSample[]
+}
+
+export interface SeasonRow {
+  rank: number
+  handle: string
+  realm: string
+  scoreUsd: number
+  revenueTotalUsd: number
+  level: number
+  characterClass: CharacterClass
+}
+
+export interface SeasonBoard {
+  window: SeasonWindow
+  realm: string
+  rows: readonly SeasonRow[]
+}
+
+export interface SeasonStanding {
+  window: SeasonWindow
+  realm: string
+  rank: number
+  total: number
+  scoreUsd: number
+  /** The founder one place up. Null at rank 1. Their handle is not a quest. */
+  aboveHandle: string | null
+  aboveScoreUsd: number | null
+}
+
 /**
  * What the quest log reads.
  *
@@ -392,6 +525,21 @@ export interface QuestInput {
   progress: AchievementProgressInput
   level: number
   xp: number
+  /**
+   * Wings already evaluated for this sheet.
+   *
+   * Passed in, like the doll, so the log cannot disagree with the panel that
+   * drew them. An empty list is a caller that has not asked, not a founder
+   * who has cleared everything.
+   */
+  instances: readonly InstanceProgress[]
+  /**
+   * This season's standing on the founder's own realm.
+   *
+   * Null when they have no realm. They are left off the board rather than
+   * folded into a cross-realm pool, and the log has nothing to offer them.
+   */
+  season: SeasonStanding | null
 }
 
 export interface Rarity {
