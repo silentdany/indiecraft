@@ -26,6 +26,8 @@ const FALLBACK: Record<QuestKind, IconName> = {
   product: 'stack',
   rank: 'crest',
   set: 'gear',
+  instance: 'crown',
+  season: 'banner',
 }
 
 export function QuestCard({ quest }: { quest: Quest }) {
