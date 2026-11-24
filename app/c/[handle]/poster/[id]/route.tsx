@@ -1,4 +1,4 @@
-import { ImageResponse } from '@vercel/og'
+import { ImageResponse } from 'next/og'
 import { NextResponse } from 'next/server'
 import { StoryCard, type StoryCardModel } from '@/components/story-card'
 import { CLASS_COLORS, CLASS_ICONS } from '@/engine'

@@ -1,4 +1,4 @@
-import { ImageResponse } from '@vercel/og'
+import { ImageResponse } from 'next/og'
 import { OG, OG_SIZE, OgCard, OgIcon } from '@/components/og-card'
 import { CLASS_ICONS, CLASS_RULES } from '@/engine/tuning'
 import { wowIcons } from '@/lib/og-fetch'

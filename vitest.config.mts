@@ -36,6 +36,7 @@ export default defineConfig({
       'lib/markdown/*.test.ts',
       'lib/crawl-plan.test.ts',
       'scripts/crawl-workflow.test.ts',
+      'scripts/dependency-floor.test.ts',
     ],
   },
 })
