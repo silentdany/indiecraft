@@ -39,6 +39,7 @@ export default defineConfig({
       'scripts/crawl-workflow.test.ts',
       'scripts/dependency-floor.test.ts',
       'scripts/next-config.test.ts',
+      'scripts/no-datafast.test.ts',
     ],
   },
 })

@@ -37,9 +37,9 @@ describe('next.config', () => {
     expect(directive('frame-ancestors')).toBe("frame-ancestors 'none'")
     expect(directive('object-src')).toBe("object-src 'none'")
     expect(directive('default-src')).toBe("default-src 'self'")
-    // PostHog's API host must be reachable, and nothing else beyond the counters.
+    // PostHog's API host must be reachable, and nothing else.
     const posthog = process.env.NEXT_PUBLIC_POSTHOG_HOST ?? 'https://eu.i.posthog.com'
-    expect(directive('connect-src')).toBe(`connect-src 'self' ${posthog} https://datafa.st`)
+    expect(directive('connect-src')).toBe(`connect-src 'self' ${posthog}`)
     expect(directive('script-src')).not.toContain("'unsafe-eval'")
     expect(directive('script-src')).not.toMatch(/\shttps:(\s|$)/)
   })
