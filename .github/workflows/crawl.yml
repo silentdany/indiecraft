@@ -42,11 +42,14 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 180
     steps:
-      - uses: actions/checkout@v4
+      # Pinned by commit: this job holds DIRECT_URL, TRUSTMRR_API_KEY and
+      # CRON_SECRET, and a moved tag would run someone else's code with them.
+      # These are the exact commits the v4 tags pointed at when pinned.
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
 
-      - uses: pnpm/action-setup@v4
+      - uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4.3.0
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
           node-version: 22
           cache: pnpm
@@ -99,12 +102,27 @@ jobs:
         # --fail-with-body turns a 401 or a 500 into a red run instead of a
         # cheerful log line, which is how the old in-script trigger managed to
         # report success while doing nothing.
+        #
+        # The canonical domain, written here rather than read from a variable.
+        # The variable pointed at the project's vercel.app alias, which is due
+        # to answer with a 308 to this domain. curl does not follow that by
+        # default, and --fail-with-body does not count a 3xx as a failure: the
+        # run would go green while compute never ran. Checking for a 200 makes
+        # any redirect, today or later, a red run instead.
         run: |
-          curl --fail-with-body --silent --show-error \
+          rm -f response.json
+          status=$(curl --silent --show-error \
             --retry 3 --retry-delay 30 --retry-all-errors \
-            --max-time 600 \
+            --fail-with-body --max-time 600 \
+            --output response.json --write-out '%{http_code}' \
             -X POST "$SITE_URL/api/cron/compute" \
-            -H "Authorization: Bearer $CRON_SECRET"
+            -H "Authorization: Bearer $CRON_SECRET") || true
+          cat response.json 2>/dev/null || true
+          echo
+          if [ "${status:-000}" != "200" ]; then
+            echo "::error::compute answered HTTP $status from $SITE_URL"
+            exit 1
+          fi
         env:
-          SITE_URL: ${{ vars.SITE_URL }}
+          SITE_URL: https://indiecraft.quest
           CRON_SECRET: ${{ secrets.CRON_SECRET }}
