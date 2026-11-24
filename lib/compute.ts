@@ -2,6 +2,7 @@ import type postgres from 'postgres'
 import { aggregateFounder, computeCharacter } from '@/engine'
 import { FUNDING_POLICY, REALM_FIRST_CODE, REALM_FIRST_MIN_SIZE } from '@/engine/tuning'
 import type { ProductInput } from '@/engine/types'
+import { batchesFor } from '@/lib/batch'
 import { normalizeRealm } from '@/lib/realm'
 import { centsToUsd, normalizeHandle, type TrustmrrStartup } from '@/lib/trustmrr'
 
@@ -159,10 +160,10 @@ export async function computeAll(sql: postgres.Sql): Promise<ComputeReport> {
       founder_handle: normalizeHandle(row.founder_handle ?? row.raw?.xHandle),
       funding_status: row.funding_status,
     }))
-    if (startupRows.length > 0) {
+    for (const rows of batchesFor(startupRows, 6)) {
       await tx`
         insert into startups ${tx(
-          startupRows,
+          rows,
           'slug',
           'name',
           'website',
@@ -206,7 +207,7 @@ export async function computeAll(sql: postgres.Sql): Promise<ComputeReport> {
       }
     })
 
-    for (const rows of chunk(founderRows, 1000)) {
+    for (const rows of batchesFor(founderRows, 3)) {
       await tx`
         insert into founders ${tx(rows, 'handle', 'display_name', 'avatar_url')}
         on conflict (handle) do update set
@@ -245,7 +246,7 @@ export async function computeAll(sql: postgres.Sql): Promise<ComputeReport> {
     // drives the "DING!" variant of the OG image. The CASE reads `excluded`
     // against the existing row, which holds per-row inside a multi-row insert
     // exactly as it did one at a time.
-    for (const rows of chunk(characterRows, 1000)) {
+    for (const rows of batchesFor(characterRows, 19)) {
       await tx`
         insert into characters ${tx(
           rows,
@@ -334,7 +335,7 @@ export async function computeAll(sql: postgres.Sql): Promise<ComputeReport> {
     const achievementRows = sheets.flatMap((sheet) =>
       sheet.achievements.map((code) => ({ handle: sheet.handle, code })),
     )
-    for (const rows of chunk(achievementRows, 1000)) {
+    for (const rows of batchesFor(achievementRows, 2)) {
       const result = await tx`
         insert into character_achievements ${tx(rows, 'handle', 'code')}
         on conflict (handle, code) do nothing
@@ -342,17 +343,21 @@ export async function computeAll(sql: postgres.Sql): Promise<ComputeReport> {
       achievementsGranted += result.count
     }
 
-    // Both of these are one statement each, for the same reason as above.
-    if (ownership.length > 0) {
-      const rows = ownership.map((o) => ({ handle: o.handle, startup_slug: o.slug, role: o.role }))
+    // Batched like the rest: one statement each stops fitting as the corpus grows.
+    const ownershipRows = ownership.map((o) => ({
+      handle: o.handle,
+      startup_slug: o.slug,
+      role: o.role,
+    }))
+    for (const rows of batchesFor(ownershipRows, 3)) {
       await tx`
         insert into founder_startups ${tx(rows, 'handle', 'startup_slug', 'role')}
         on conflict (handle, startup_slug) do update set role = excluded.role
       `
     }
 
-    if (edges.size > 0) {
-      const rows = [...edges.values()].map(([a, b]) => ({ a_handle: a, b_handle: b }))
+    const edgeRows = [...edges.values()].map(([a, b]) => ({ a_handle: a, b_handle: b }))
+    for (const rows of batchesFor(edgeRows, 2)) {
       await tx`
         insert into cofounder_edges ${tx(rows, 'a_handle', 'b_handle')}
         on conflict do nothing
@@ -544,17 +549,6 @@ function businessTypeOf(raw: TrustmrrStartup): string | null {
   const value = isString(insight) ? insight : isString(audience) ? audience : null
   // 'Unknown' is a real value in the payload and it is not an answer.
   return value === 'Unknown' ? null : value
-}
-
-/**
- * Postgres binds at most 65,535 parameters per statement, and a `characters`
- * row costs thirteen of them. Chunking is what stops the corpus growing into a
- * hard failure.
- */
-function chunk<T>(items: T[], size: number): T[][] {
-  const out: T[][] = []
-  for (let i = 0; i < items.length; i += size) out.push(items.slice(i, i + size))
-  return out
 }
 
 /** Every normalized pair a < b, for an undirected graph without duplicates. */
