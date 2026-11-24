@@ -73,4 +73,12 @@ describe('the crawl workflow', () => {
       for (const ref of uses) expect(ref).toMatch(/@[0-9a-f]{40}$/)
     }
   })
+
+  it('does not leave the checkout token behind, here and in CI', () => {
+    const ci = readFileSync(join(import.meta.dirname, '../.github/workflows/ci.yml'), 'utf8')
+    for (const file of [workflow, ci]) {
+      const checkout = file.split(/^ {6}- /m).find((s) => s.startsWith('uses: actions/checkout@'))
+      expect(checkout).toMatch(/^\s+persist-credentials: false$/m)
+    }
+  })
 })
