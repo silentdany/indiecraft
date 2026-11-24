@@ -1,4 +1,4 @@
-import { ImageResponse } from '@vercel/og'
+import { ImageResponse } from 'next/og'
 import { BrandMark, MARK_GROUND } from '@/components/brand-mark'
 
 export const runtime = 'nodejs'

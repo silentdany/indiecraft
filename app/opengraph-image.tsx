@@ -1,4 +1,4 @@
-import { ImageResponse } from '@vercel/og'
+import { ImageResponse } from 'next/og'
 import { BrandMark } from '@/components/brand-mark'
 import { OG, OG_SIZE, OgCard, OgIcon } from '@/components/og-card'
 import { RARITY_BY_NAME, SLOTS_BY_KEY, STAT_ICONS } from '@/engine'
@@ -216,6 +216,8 @@ function compactUsd(value: number): string {
     style: 'currency',
     currency: 'USD',
     notation: 'compact',
+    // Currency style would otherwise keep a trailing .0 ($10.0K).
+    minimumFractionDigits: 0,
     maximumFractionDigits: 1,
   }).format(value)
 }

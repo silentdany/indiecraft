@@ -35,7 +35,10 @@ export default defineConfig({
       'lib/negotiable.test.ts',
       'lib/markdown/*.test.ts',
       'lib/crawl-plan.test.ts',
+      'lib/batch.test.ts',
       'scripts/crawl-workflow.test.ts',
+      'scripts/dependency-floor.test.ts',
+      'scripts/next-config.test.ts',
     ],
   },
 })

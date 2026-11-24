@@ -483,6 +483,8 @@ function usd(value: number): string {
     style: 'currency',
     currency: 'USD',
     notation: value >= 10_000 ? 'compact' : 'standard',
+    // Currency style would otherwise keep a trailing .0 ($10.0K).
+    minimumFractionDigits: 0,
     maximumFractionDigits: value >= 10_000 ? 1 : 0,
   }).format(Math.max(value, 0))
 }

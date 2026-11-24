@@ -53,4 +53,24 @@ describe('the crawl workflow', () => {
     expect(trigger).toMatch(/CRON_SECRET/)
     expect(trigger).toMatch(/SITE_URL/)
   })
+
+  it('calls the canonical domain and treats a redirect as a failure', () => {
+    // A 308 from an alias is not an error to curl, so a green run could mean
+    // compute never ran. The step names its target and wants a 200.
+    const trigger = step('Trigger compute') ?? ''
+    expect(trigger).toMatch(/SITE_URL: https:\/\/indiecraft\.quest$/m)
+    expect(trigger).not.toMatch(/vars\.SITE_URL/)
+    expect(trigger).toMatch(/--write-out '%\{http_code\}'/)
+    expect(trigger).toMatch(/!= "200"/)
+    expect(trigger).not.toMatch(/(^|\s)(-L|--location)(\s|$)/m)
+  })
+
+  it('pins every action by commit, here and in CI', () => {
+    const ci = readFileSync(join(import.meta.dirname, '../.github/workflows/ci.yml'), 'utf8')
+    for (const file of [workflow, ci]) {
+      const uses = [...file.matchAll(/^\s*- uses: (\S+)/gm)].map((m) => m[1])
+      expect(uses.length).toBeGreaterThan(0)
+      for (const ref of uses) expect(ref).toMatch(/@[0-9a-f]{40}$/)
+    }
+  })
 })

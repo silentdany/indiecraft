@@ -1,4 +1,4 @@
-import { ImageResponse } from '@vercel/og'
+import { ImageResponse } from 'next/og'
 import { BrandMark } from '@/components/brand-mark'
 import { OgIcon } from '@/components/og-card'
 import { CLASS_COLORS, CLASS_ICONS, STAT_ICONS } from '@/engine'
