@@ -1114,6 +1114,8 @@ const usd = (v: number) =>
     style: 'currency',
     currency: 'USD',
     notation: v >= 10_000 ? 'compact' : 'standard',
+    // Currency style would otherwise keep a trailing .0 ($10.0K).
+    minimumFractionDigits: 0,
     maximumFractionDigits: v >= 10_000 ? 1 : 0,
   }).format(v)
 

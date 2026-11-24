@@ -482,6 +482,8 @@ function compact(xp: number): string {
     style: 'currency',
     currency: 'USD',
     notation: 'compact',
+    // Currency style would otherwise keep a trailing .0 ($10.0K).
+    minimumFractionDigits: 0,
     maximumFractionDigits: xp >= 1_000 ? 2 : 0,
   }).format(xp)
 }
