@@ -38,6 +38,7 @@ export default defineConfig({
       'lib/batch.test.ts',
       'scripts/crawl-workflow.test.ts',
       'scripts/dependency-floor.test.ts',
+      'scripts/next-config.test.ts',
     ],
   },
 })
